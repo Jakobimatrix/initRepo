@@ -7,6 +7,9 @@
 
 CLANG_FORMAT_VERSION="6.0";
 HOOK_FILE=".git/hooks/pre-commit";
+HOOK_SCRIPT="format_hook";
+FORMAT_FILE_F=".clang-format"
+FORMAT_FILE_T=".clang-tidy"
 
 # validate input
 REPRO="$1"
@@ -40,13 +43,16 @@ if [ -f "$HOOK_FILE" ]
 then
         read -p "pre-commit (file) already exists. Should I [c]oncatinate, [o]verwrite or [e]xit?" coe
         case $coe in
-                [Cc]* ) cat $HOOK_FILE clang-format > tmp.txt && mv tmp.txt $HOOK_FILE;;
-                [Oo]* ) cp clang-format $HOOK_FILE;;
+                [Cc]* ) cat $HOOK_FILE $HOOK_SCRIPT > tmp.txt && mv tmp.txt $HOOK_FILE;;
+                [Oo]* ) cp $HOOK_SCRIPT $HOOK_FILE;;
                 [Ee]* ) exit;;
         esac
 else
-       cp clang-format $HOOK_FILE
+       cp $HOOK_SCRIPT $HOOK_FILE
 fi
+
+cp $FORMAT_FILE_F $REPRO$FORMAT_FILE_F
+cp $FORMAT_FILE_T $REPRO$FORMAT_FILE_T
 
 chmod +x $HOOK_FILE
 echo "Clang-format installed in $HOOK_FILE"
