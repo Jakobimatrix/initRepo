@@ -10,6 +10,7 @@ HOOK_FILE=".git/hooks/pre-commit";
 HOOK_SCRIPT="format_hook";
 FORMAT_FILE_F=".clang-format"
 FORMAT_FILE_T=".clang-tidy"
+GIT_ATTRIBUTES_FILE=".gitattributes"
 
 # validate input
 REPRO="$1"
@@ -23,36 +24,60 @@ then
         echo "Given $REPRO does not exist!"
         exit
 fi
-
 SLASH_CHAR="/"
 [ "${REPRO: -1}" != "$SLASH_CHAR" ] && REPRO=$REPRO$SLASH_CHAR
 
 if [ ! -d "$REPRO.git/hooks/" ]
 then
-        echo "Given $REPRO is not a git repository"
-        exit
+  echo "Given $REPRO is not a git repository"
+  exit
 fi
 
-HOOK_FILE=$REPRO$HOOK_FILE
+askYesNo() {
+  echo; echo -e "\e[33m**********************\e[0m"; echo; 
+  while true; do     
+    read -p $'Do you want to \e[1;4;34m'"$task"$'\e[0m? [y/n]' yn
+    case $yn in
+      [Yy]* ) answer=1; break;; 
+      [Nn]* ) answer=0; break;;
+      * ) echo -e "\e[33mPlease answer yes or no.\e[0m";; 
+    esac 
+  done  
+}
 
-# install clang format
-apt-get install clang-format-$CLANG_FORMAT_VERSION -y
+task="Do you want to install clang format and hooks"
+askYesNo 
+if [ $answer = 1  ]
+then 
+  HOOK_FILE=$REPRO$HOOK_FILE
 
-# check if a pre-commit hook already exists
-if [ -f "$HOOK_FILE" ]
+  # install clang format
+  apt-get install clang-format-$CLANG_FORMAT_VERSION -y
+
+  # check if a pre-commit hook already exists
+  if [ -f "$HOOK_FILE" ]
+  then
+    read -p "pre-commit (file) already exists. Should I [c]oncatinate, [o]verwrite or [e]xit?" coe
+    case $coe in
+      [Cc]* ) cat $HOOK_FILE $HOOK_SCRIPT > tmp.txt && mv tmp.txt $HOOK_FILE;;
+      [Oo]* ) cp $HOOK_SCRIPT $HOOK_FILE;;
+      [Ee]* ) exit;;
+    esac
+  else
+    cp $HOOK_SCRIPT $HOOK_FILE
+  fi
+
+  cp $FORMAT_FILE_F $REPRO$FORMAT_FILE_F
+  cp $FORMAT_FILE_T $REPRO$FORMAT_FILE_T
+
+  chmod +x $HOOK_FILE
+  echo "Clang-format installed in $HOOK_FILE"
+fi
+
+task="Do you want to enforece LF line ending for that repro"
+askYesNo
+if [ $answer = 1 ]
 then
-        read -p "pre-commit (file) already exists. Should I [c]oncatinate, [o]verwrite or [e]xit?" coe
-        case $coe in
-                [Cc]* ) cat $HOOK_FILE $HOOK_SCRIPT > tmp.txt && mv tmp.txt $HOOK_FILE;;
-                [Oo]* ) cp $HOOK_SCRIPT $HOOK_FILE;;
-                [Ee]* ) exit;;
-        esac
-else
-       cp $HOOK_SCRIPT $HOOK_FILE
-fi
-
-cp $FORMAT_FILE_F $REPRO$FORMAT_FILE_F
-cp $FORMAT_FILE_T $REPRO$FORMAT_FILE_T
-
-chmod +x $HOOK_FILE
-echo "Clang-format installed in $HOOK_FILE"
+  cp $GIT_ATTRIBUTES_FILE $REPRO$GIT_ATTRIBUTES_FILE
+  echo ".gitattributes installed, LF line ending enforeced" 
+fi   
