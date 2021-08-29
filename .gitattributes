@@ -20,4 +20,12 @@
 *.jpg binary
 *.data binary
 *.png binary
+*.gif binary
 *.ttf binary
+*.pdf binary
+*.webp binary
+*.tiff binary
+*.psd binary
+*.raw binary
+*.bmp binary
+*.jpeg binary
