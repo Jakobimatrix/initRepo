@@ -8,7 +8,7 @@ then
 exit 0
 fi
 
-CLANG_FORMAT_VERSION=9
+CLANG_FORMAT_VERSION=18
 CLANG_FORMAT=$(which clang-format-$CLANG_FORMAT_VERSION)
 if [ "$CLANG_FORMAT" = "" ]
 then
