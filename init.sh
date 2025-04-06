@@ -5,12 +5,17 @@
 #
 #usage: sudo ./init.sh PATH_TO_YOUR_REPOSITORY
 
-CLANG_FORMAT_VERSION="6.0";
+
+CLANG_FORMAT_VERSION="18.0";
+CLANG_TIDY_VERSION="18.0";
 HOOK_FILE=".git/hooks/pre-commit";
-HOOK_SCRIPT="format_hook";
-FORMAT_FILE_F=".clang-format"
-FORMAT_FILE_T=".clang-tidy"
-GIT_ATTRIBUTES_FILE=".gitattributes"
+HOOK_SCRIPT="templates/format_hook";
+FORMAT_FILE_F="templates/.clang-format"
+FORMAT_FILE_T="templates/.clang-tidy"
+GIT_ATTRIBUTES_FILE="templates/.gitattributes"
+CMAKE_LISTS_FILE="templates/CMakeLists.txt"
+BUILD_FILE="templates/build.sh"
+PROCECT_STRUCUR="templates/src/"
 
 # validate input
 REPRO="$1"
@@ -45,14 +50,14 @@ askYesNo() {
   done  
 }
 
-task="Do you want to install clang format and hooks"
+task="Do you want to installUpdate clang-format-$CLANG_FORMAT_VERSION and hooks"
 askYesNo 
 if [ $answer = 1  ]
 then 
   HOOK_FILE=$REPRO$HOOK_FILE
 
   # install clang format
-  apt-get install clang-format-$CLANG_FORMAT_VERSION -y
+  apt install clang-format-$CLANG_FORMAT_VERSION -y
 
   # check if a pre-commit hook already exists
   if [ -f "$HOOK_FILE" ]
@@ -74,10 +79,75 @@ then
   echo "Clang-format installed in $HOOK_FILE"
 fi
 
-task="Do you want to enforece LF line ending for that repro"
+task="Do you want to install/update clang-tidy-$CLANG_TIDY_VERSION?"
+askYesNo
+if [ $answer = 1 ]
+then
+  apt install clang-tidy-$CLANG_TIDY_VERSION -y
+  echo "clang-tidy-$CLANG_TIDY_VERSION"
+fi
+
+task="Do you want to install cppcheck?"
+askYesNo
+if [ $answer = 1 ]
+then
+  apt install cppcheck -y
+  echo "cppcheck installed"
+fi
+
+task="Do you want to install valgrind?"
+askYesNo
+if [ $answer = 1 ]
+then
+  apt install valgrind -y
+  echo "valgrind installed"
+fi
+
+task="Do you want to enforece LF line ending for that repro?"
 askYesNo
 if [ $answer = 1 ]
 then
   cp $GIT_ATTRIBUTES_FILE $REPRO$GIT_ATTRIBUTES_FILE
   echo ".gitattributes installed, LF line ending enforeced" 
-fi   
+fi
+
+echo "Dont continue if you already initiated your repo!"
+
+task="Do you want to copy the Cmake project?"
+askYesNo
+if [ $answer = 1 ]
+then
+  if [ -f $REPRO$CMAKE_LISTS_FILE ]; then
+    cp $CMAKE_LISTS_FILE $REPRO$CMAKE_LISTS_FILE
+    echo "$CMAKE_LISTS_FILE installed"
+  else
+    echo "$CMAKE_LISTS_FILE already exists. Dont overwrite."
+  fi
+fi
+
+task="Do you want to copy the build script?"
+askYesNo
+if [ $answer = 1 ]
+then
+  if [ -f $REPRO$BUILD_FILE ]; then
+    cp $BUILD_FILE $REPRO$BUILD_FILE
+    echo "$BUILD_FILE installed"
+  else
+    echo "$BUILD_FILE already exists. Dont overwrite."
+  fi
+fi
+
+task="Do you want to copy the procect structure?"
+askYesNo
+if [ $answer = 1 ]
+then
+  if [ -d $REPRO$PROCECT_STRUCUR ]; then
+    cp -r $PROCECT_STRUCUR $REPRO$PROCECT_STRUCUR
+    echo "$PROCECT_STRUCUR installed"
+  else
+    echo "$PROCECT_STRUCUR already exists. Dont overwrite."
+  fi
+fi
+
+
+
