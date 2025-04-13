@@ -15,7 +15,7 @@ All is optional!
 - cppcheck
 - valgrind
 
-## Git hook
+### Git hook
 To enforce clang-tidy inside a repository for c, cpp, cxx, h, hpp files.
 The init.sh installes clang-tidy on the local machine and a git-hook for the specified repository to check the format before every commit.
 Look inside **format_hook** for the enforced clang-version
@@ -32,45 +32,45 @@ further reading:
 
 [githook-clang-format](https://github.com/andrewseidl/githook-clang-format)
 
-## LF
+### LF
 In case you are working on Linux And windof you probably want to enforce LF lineendings
 
 ## Provided structure COPIED
 This gives you a good starting point for your project. Some files are supposed to be changed by you or even renamed!
 
-├── build.sh                            --> Run this to make/build/install You probably want to change things in the script.
-├── CMakeLists.txt                      --> Already includes some cmake functions and the project structore 
-└── src                                 --> Contains all neded for making executables
-    ├── executables                     --> Here go all main() functions which become executables
-    │   ├── CMakeLists.txt              --> Contains CMake how to build and install the examples
-    │   └── src                         --> Here goes your code
-    │       ├── fuzzer_example.cpp      --> Example for fuzzy testing
-    │       └── hello_world.cpp         --> Example for an executable
-    ├── fuzzer_lib                      --> Libary for putting in helper functions for the fuzzer
-    │   ├── CMakeLists.txt              --> Contains CMake how to make the static library for the fuzzer
-    │   ├── include                     --> Header files go in include
-    │   │   └── fuzzer_lib              --> Foldername equals library name to enforce #include <library_name/file.hpp>
-    │   │       └── example_file.hpp    --> Empty header file for library declarations.
-    │   └── src                         --> Source files go in include
-    │       └── fuzzer_lib              --> Foldername equals library name to mirror include folder
-    │           └── example_file.cpp    --> Empty source file for library definitions.
-    ├── libary                          --> Example libary for putting in your functions. Please rename!
-    │   ├── CMakeLists.txt              --> Contains CMake how to make the static library
-    │   ├── include                     --> Header files go in include
-    │   │   └── library                 --> Foldername equals library name to enforce #include <library/file.hpp>  Please rename!
-    │   │       └── math.hpp            --> Header file for your library declarations.
-    │   └── src                         --> Source files go in include
-    │       └── library                 --> Foldername equals library name to mirror include folder.  Please rename!
-    │           └── math.cpp            --> Header file for your library definitions.
-    └── tests                           --> Example unit tests [Catch2](https://github.com/catchorg/Catch2) for your functions.
-        ├── CMakeLists.txt              --> Contains CMake how to build the tests.
-        └── src                         --> Source files go in include
-            └── hello_world_test.cpp    --> Contains the unit tests.
+```
+├── build.sh                            --> Run this to make/build/install You probably want to change things in the script.  
+├── CMakeLists.txt                      --> Already includes some cmake functions and the project structore   
+└── src                                 --> Contains all neded for making executables  
+    ├── executables                     --> Here go all main() functions which become executables  
+    │   ├── CMakeLists.txt              --> Contains CMake how to build and install the examples  
+    │   └── src                         --> Here goes your code  
+    │       ├── fuzzer_example.cpp      --> Example for fuzzy testing  
+    │       └── hello_world.cpp         --> Example for an executable  
+    ├── fuzzer_lib                      --> Libary for putting in helper functions for the fuzzer  
+    │   ├── CMakeLists.txt              --> Contains CMake how to make the static library for the fuzzer  
+    │   ├── include                     --> Header files go in include  
+    │   │   └── fuzzer_lib              --> Foldername equals library name to enforce #include <library_name/file.hpp>  
+    │   │       └── example_file.hpp    --> Empty header file for library declarations.  
+    │   └── src                         --> Source files go in include  
+    │         └── example_file.cpp      --> Empty source file for library definitions.  
+    ├── libary                          --> Example libary for putting in your functions. Please rename!  
+    │   ├── CMakeLists.txt              --> Contains CMake how to make the static library  
+    │   ├── include                     --> Header files go in include  
+    │   │   └── library                 --> Foldername equals library name to enforce #include <library/file.hpp>  Please rename!  
+    │   │       └── math.hpp            --> Header file for your library declarations.  
+    │   └── src                         --> Source files go in include  
+    │         └── math.cpp              --> Header file for your library definitions.  
+    └── tests                           --> Example unit tests [Catch2](https://github.com/catchorg/Catch2) for your functions.  
+        ├── CMakeLists.txt              --> Contains CMake how to build the tests.  
+        └── src                         --> Source files go in include  
+            └── hello_world_test.cpp    --> Contains the unit tests.  
+```
 
 ## Provided CMake functions 
 The root CMakeLists.txt which is copied will include some helper functions. These are managed by the repo "InitRepo"
 If change is needed, update the repo. All projects should be based on the same rules especially thouse which include other projects.
-
+```
 InitRepo
 ├── cmake
 │   ├── ClangFuzzyTests.cmake           --> if Option ENABLE_FUZZING is set, link the project against clang fuzzer
@@ -78,7 +78,7 @@ InitRepo
 │   ├── CompilerWarnings.cmake          --> All warnings are errors (except some exceptions)
 │   ├── Includes.cmake                  --> optional includes for third party libraries
 │   └── Options.cmake                   --> helps with shared libraries and mutlti threading
-
+```
 
 ## Usage
 1. `git clone YOUR_REPOSITORY`

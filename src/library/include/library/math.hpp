@@ -9,8 +9,17 @@
 
 #pragma once
 
-#include <cstdio>
 
 namespace lib {
-constexpr std::uint64_t fibonacci(std::uint64_t number);
+/**
+ * @brief Computes the nth Fibonacci number.
+ * 
+ * @param number The position in the Fibonacci sequence to compute.
+ * @return The nth Fibonacci number.
+ * 
+ * @note This implementation uses recursion and has exponential time complexity.
+ */
+    constexpr int fibonacci(int number) {
+        return number < 2 ? 1 : fibonacci(number - 1) + fibonacci(number - 2);
+      }
 }

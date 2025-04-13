@@ -19,7 +19,7 @@
 * @version 1.0
 **/
 
-
+#include <concepts>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -51,11 +51,21 @@ inline bool badFunction(const unsigned char *data, size_t size){
 /**
  * @brief Reads a binary file into a vector of bytes.
  *
+ * @tparam ByteType Must be either char, unsigned char, or std::uint8_t.
  * @param path Path to the file.
  * @return std::vector<uint8_t> Contents of the file.
  * @throws std::runtime_error if the file can't be opened.
  */
-std::vector<uint8_t> readFileBinary(const std::filesystem::path& path) {
+
+ template <typename ByteType>
+ concept ByteTypeAllowed =
+     !std::is_const_v<ByteType> &&
+     (std::same_as<ByteType, char> ||
+      std::same_as<ByteType, unsigned char> ||
+      std::same_as<ByteType, signed char> ||
+      std::same_as<ByteType, std::uint8_t>);
+template <ByteTypeAllowed ByteType>
+std::vector<ByteType> readFileBinary(const std::filesystem::path& path) {
   std::ifstream file(path, std::ios::binary | std::ios::ate);
   if (!file) {
     throw std::runtime_error("Failed to open file: " + path.string());
@@ -64,7 +74,7 @@ std::vector<uint8_t> readFileBinary(const std::filesystem::path& path) {
   std::streamsize size = file.tellg();
   file.seekg(0, std::ios::beg);
 
-  std::vector<uint8_t> buffer(size);
+  std::vector<ByteType> buffer(static_cast<size_t>(size));
   if (!file.read(reinterpret_cast<char*>(buffer.data()), size)) {
     throw std::runtime_error("Failed to read file: " + path.string());
   }
@@ -100,10 +110,10 @@ int main(int argc, char* argv[]) {
   }
 
   try {
-    auto data = read_file_binary(file_path);
+    auto data = readFileBinary<unsigned char>(file_path);
     printf("\nFile found and read. Now attach debugger and press enter.\n");
     getchar();
-    return static_cast<int>(badFunction(data, data.size()));
+    return static_cast<int>(badFunction(data.data(), data.size()));
   } catch (const std::exception& e) {
     std::cerr << "Error: " << e.what() << "\n";
     return 1;
