@@ -9,13 +9,14 @@
 CLANG_FORMAT_VERSION="19";
 CLANG_TIDY_VERSION="19";
 HOOK_FILE=".git/hooks/pre-commit";
-HOOK_SCRIPT="templates/format_hook";
-FORMAT_FILE_F="templates/.clang-format"
-FORMAT_FILE_T="templates/.clang-tidy"
-GIT_ATTRIBUTES_FILE="templates/.gitattributes"
-CMAKE_LISTS_FILE="templates/CMakeLists.txt"
-BUILD_FILE="templates/build.sh"
-FUZZER_FILE="templates/runFuzzer.sh"
+TEMPLATES_FOLDER="templates/"
+HOOK_SCRIPT="format_hook";
+FORMAT_FILE_F=".clang-format"
+FORMAT_FILE_T=".clang-tidy"
+GIT_ATTRIBUTES_FILE=".gitattributes"
+CMAKE_LISTS_FILE="CMakeLists.txt"
+BUILD_FILE="build.sh"
+FUZZER_FILE="runFuzzer.sh"
 PROCECT_STRUCUR="src/"
 
 # validate input
@@ -108,7 +109,7 @@ task="Do you want to enforece LF line ending for that repro?"
 askYesNo
 if [ $answer = 1 ]
 then
-  cp "$GIT_ATTRIBUTES_FILE" "$REPRO$GIT_ATTRIBUTES_FILE"
+  cp "$TEMPLATES_FOLDER$GIT_ATTRIBUTES_FILE" "$REPRO"
   echo ".gitattributes installed, LF line ending enforeced" 
 fi
 
@@ -119,7 +120,7 @@ askYesNo
 if [ $answer = 1 ]
 then
   if [ -f "$REPRO$CMAKE_LISTS_FILE" ]; then
-    cp "$CMAKE_LISTS_FILE" "$REPRO$CMAKE_LISTS_FILE"
+    cp "$TEMPLATES_FOLDER$CMAKE_LISTS_FILE" "$REPRO"
     echo "$CMAKE_LISTS_FILE installed"
   else
     echo "$CMAKE_LISTS_FILE already exists. Dont overwrite."
@@ -131,7 +132,7 @@ askYesNo
 if [ $answer = 1 ]
 then
   if [ -f "$REPRO$BUILD_FILE" ]; then
-    cp "$BUILD_FILE" "$REPRO$BUILD_FILE"
+    cp "$TEMPLATES_FOLDER$BUILD_FILE" "$REPRO"
     echo "$BUILD_FILE installed"
   else
     echo "$BUILD_FILE already exists. Dont overwrite."
@@ -144,7 +145,7 @@ if [ $answer = 1 ]
 then
   if [ -f "$REPRO/fuzz/$FUZZER_FILE" ]; then
     mkdir -p "$REPRO/fuzz/"
-    cp "$FUZZER_FILE" "$REPRO/fuzz/$FUZZER_FILE"
+    cp "$TEMPLATES_FOLDER$FUZZER_FILE" "$REPRO/fuzz/"
     echo "fuzz/$FUZZER_FILE installed"
     echo "please use git add -f fuzz/$FUZZER_FILE if you have installed the .gitignore file"
   else
