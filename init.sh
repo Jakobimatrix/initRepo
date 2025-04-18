@@ -15,7 +15,8 @@ FORMAT_FILE_T="templates/.clang-tidy"
 GIT_ATTRIBUTES_FILE="templates/.gitattributes"
 CMAKE_LISTS_FILE="templates/CMakeLists.txt"
 BUILD_FILE="templates/build.sh"
-PROCECT_STRUCUR="templates/src/"
+FUZZER_FILE="templates/runFuzzer.sh"
+PROCECT_STRUCUR="src/"
 
 # validate input
 REPRO="$1"
@@ -107,7 +108,7 @@ task="Do you want to enforece LF line ending for that repro?"
 askYesNo
 if [ $answer = 1 ]
 then
-  cp $GIT_ATTRIBUTES_FILE $REPRO$GIT_ATTRIBUTES_FILE
+  cp "$GIT_ATTRIBUTES_FILE" "$REPRO$GIT_ATTRIBUTES_FILE"
   echo ".gitattributes installed, LF line ending enforeced" 
 fi
 
@@ -117,8 +118,8 @@ task="Do you want to copy the Cmake project?"
 askYesNo
 if [ $answer = 1 ]
 then
-  if [ -f $REPRO$CMAKE_LISTS_FILE ]; then
-    cp $CMAKE_LISTS_FILE $REPRO$CMAKE_LISTS_FILE
+  if [ -f "$REPRO$CMAKE_LISTS_FILE" ]; then
+    cp "$CMAKE_LISTS_FILE" "$REPRO$CMAKE_LISTS_FILE"
     echo "$CMAKE_LISTS_FILE installed"
   else
     echo "$CMAKE_LISTS_FILE already exists. Dont overwrite."
@@ -129,11 +130,25 @@ task="Do you want to copy the build script?"
 askYesNo
 if [ $answer = 1 ]
 then
-  if [ -f $REPRO$BUILD_FILE ]; then
-    cp $BUILD_FILE $REPRO$BUILD_FILE
+  if [ -f "$REPRO$BUILD_FILE" ]; then
+    cp "$BUILD_FILE" "$REPRO$BUILD_FILE"
     echo "$BUILD_FILE installed"
   else
     echo "$BUILD_FILE already exists. Dont overwrite."
+  fi
+fi
+
+task="Do you want to copy the fuzzer run script?"
+askYesNo
+if [ $answer = 1 ]
+then
+  if [ -f "$REPRO/fuzz/$FUZZER_FILE" ]; then
+    mkdir -p "$REPRO/fuzz/"
+    cp "$FUZZER_FILE" "$REPRO/fuzz/$FUZZER_FILE"
+    echo "fuzz/$FUZZER_FILE installed"
+    echo "please use git add -f fuzz/$FUZZER_FILE if you have installed the .gitignore file"
+  else
+    echo "fuzz/$FUZZER_FILE already exists. Dont overwrite."
   fi
 fi
 
@@ -141,8 +156,8 @@ task="Do you want to copy the procect structure?"
 askYesNo
 if [ $answer = 1 ]
 then
-  if [ -d $REPRO$PROCECT_STRUCUR ]; then
-    cp -r $PROCECT_STRUCUR $REPRO$PROCECT_STRUCUR
+  if [ -d "$REPRO$PROCECT_STRUCUR" ]; then
+    cp -r "$PROCECT_STRUCUR" "$REPRO$PROCECT_STRUCUR"
     echo "$PROCECT_STRUCUR installed"
   else
     echo "$PROCECT_STRUCUR already exists. Dont overwrite."
