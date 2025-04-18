@@ -6,8 +6,8 @@
 #usage: sudo ./init.sh PATH_TO_YOUR_REPOSITORY
 
 
-CLANG_FORMAT_VERSION="18.0";
-CLANG_TIDY_VERSION="18.0";
+CLANG_FORMAT_VERSION="19";
+CLANG_TIDY_VERSION="19";
 HOOK_FILE=".git/hooks/pre-commit";
 HOOK_SCRIPT="templates/format_hook";
 FORMAT_FILE_F="templates/.clang-format"
