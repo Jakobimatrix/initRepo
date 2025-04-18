@@ -119,7 +119,7 @@ task="Do you want to copy the Cmake project?"
 askYesNo
 if [ $answer = 1 ]
 then
-  if [ -f "$REPRO$CMAKE_LISTS_FILE" ]; then
+  if [ ! -f "$REPRO$CMAKE_LISTS_FILE" ]; then
     cp "$TEMPLATES_FOLDER$CMAKE_LISTS_FILE" "$REPRO"
     echo "$CMAKE_LISTS_FILE installed"
   else
@@ -131,7 +131,7 @@ task="Do you want to copy the build script?"
 askYesNo
 if [ $answer = 1 ]
 then
-  if [ -f "$REPRO$BUILD_FILE" ]; then
+  if [ ! -f "$REPRO$BUILD_FILE" ]; then
     cp "$TEMPLATES_FOLDER$BUILD_FILE" "$REPRO"
     echo "$BUILD_FILE installed"
   else
@@ -143,7 +143,7 @@ task="Do you want to copy the fuzzer run script?"
 askYesNo
 if [ $answer = 1 ]
 then
-  if [ -f "$REPRO/fuzz/$FUZZER_FILE" ]; then
+  if [ ! -f "$REPRO/fuzz/$FUZZER_FILE" ]; then
     mkdir -p "$REPRO/fuzz/"
     cp "$TEMPLATES_FOLDER$FUZZER_FILE" "$REPRO/fuzz/"
     echo "fuzz/$FUZZER_FILE installed"
@@ -157,7 +157,7 @@ task="Do you want to copy the procect structure?"
 askYesNo
 if [ $answer = 1 ]
 then
-  if [ -d "$REPRO$PROCECT_STRUCUR" ]; then
+  if [ ! -d "$REPRO$PROCECT_STRUCUR" ]; then
     cp -r "$PROCECT_STRUCUR" "$REPRO$PROCECT_STRUCUR"
     echo "$PROCECT_STRUCUR installed"
   else
