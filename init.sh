@@ -25,23 +25,23 @@ TEMPLATE_FILE_PATH="$TEMPLATE_FILE_PATH/templates/"
 
 
 # validate input
-REPRO="$1"
+REPO="$1"
 
 if [ $# -lt 1 ]
 then
         echo "Usage: sudo ./init.sh PATH_TO_YOUR_REPOSITORY"
         exit
-elif [ ! -d "$REPRO" ]
+elif [ ! -d "$REPO" ]
 then
-        echo "Given $REPRO does not exist!"
+        echo "Given $REPO does not exist!"
         exit
 fi
 SLASH_CHAR="/"
-[ "${REPRO: -1}" != "$SLASH_CHAR" ] && REPRO="$REPRO$SLASH_CHAR"
+REPO="${REPO%/}$SLASH_CHAR"
 
-if [ ! -d "$REPRO.git/hooks/" ]
+if [ ! -d "$REPO.git/hooks/" ]
 then
-  echo "Given $REPRO is not a git repository"
+  echo "Given $REPO is not a git repository"
   exit
 fi
 
@@ -83,11 +83,11 @@ then
   # install clang format
   apt install clang-format-$CLANG_FORMAT_VERSION -y
 
-  cp "$TEMPLATE_FILE_PATH$HOOK_SCRIPT" "$REPRO$HOOK_FILE_DEST"
-  cp "$TEMPLATE_FILE_PATH$FORMAT_FILE_F" "$REPRO"
-  chmod +x "$REPRO$HOOK_FILE_DEST"
+  cp "$TEMPLATE_FILE_PATH$HOOK_SCRIPT" "$REPO$HOOK_FILE_DEST"
+  cp "$TEMPLATE_FILE_PATH$FORMAT_FILE_F" "$REPO"
+  chmod +x "$REPO$HOOK_FILE_DEST"
 
-  echo "Clang-format installed in $REPRO$HOOK_FILE_DEST"
+  echo "Clang-format installed in $REPO$HOOK_FILE_DEST"
 fi
 
 task="Do you want to install/update clang-tidy-$CLANG_TIDY_VERSION?"
@@ -95,7 +95,7 @@ askYesNo
 if [ $answer = 1 ]
 then
   apt install clang-tidy-$CLANG_TIDY_VERSION -y
-  cp "$TEMPLATE_FILE_PATH$FORMAT_FILE_T" "$REPRO"
+  cp "$TEMPLATE_FILE_PATH$FORMAT_FILE_T" "$REPO"
   echo "clang-tidy-$CLANG_TIDY_VERSION"
 fi
 
@@ -115,11 +115,11 @@ then
   echo "valgrind installed"
 fi
 
-task="Do you want to enforece LF line ending for that repro?"
+task="Do you want to enforece LF line ending for that REPO?"
 askYesNo
 if [ $answer = 1 ]
 then
-  cp "$TEMPLATE_FILE_PATH$GIT_ATTRIBUTES_FILE" "$REPRO"
+  cp "$TEMPLATE_FILE_PATH$GIT_ATTRIBUTES_FILE" "$REPO"
   echo ".gitattributes installed, LF line ending enforeced" 
 fi
 
@@ -128,19 +128,19 @@ echo "Dont continue if you already initiated your repo!"
 task="Do you want to copy the Cmake project?"
 askYesNo
 if [ $answer = 1 ]; then
-  copyFileWithPrompt "$TEMPLATE_FILE_PATH$CMAKE_LISTS_FILE" "$REPRO$CMAKE_LISTS_FILE"
+  copyFileWithPrompt "$TEMPLATE_FILE_PATH$CMAKE_LISTS_FILE" "$REPO$CMAKE_LISTS_FILE"
 fi
 
 task="Do you want to copy the build script?"
 askYesNo
 if [ $answer = 1 ]; then
-  copyFileWithPrompt "$TEMPLATE_FILE_PATH$BUILD_FILE" "$REPRO$BUILD_FILE"
+  copyFileWithPrompt "$TEMPLATE_FILE_PATH$BUILD_FILE" "$REPO$BUILD_FILE"
 fi
 
 task="Do you want to copy the fuzzer run script?"
 askYesNo
 if [ $answer = 1 ]; then
-  copyFileWithPrompt "$TEMPLATE_FILE_PATH$FUZZER_FILE" "$REPRO/fuzz/$FUZZER_FILE"
+  copyFileWithPrompt "$TEMPLATE_FILE_PATH$FUZZER_FILE" "${REPO}fuzz/$FUZZER_FILE"
 fi
 
 
@@ -148,11 +148,11 @@ task="Do you want to copy the procect structure?"
 askYesNo
 if [ $answer = 1 ]
 then
-  if [ ! -d "$REPRO$PROCECT_STRUCUR_FOLDER" ]; then
-    cp -r "$PROCECT_STRUCUR_TEMPLATE" "$REPRO$PROCECT_STRUCUR_FOLDER"
-    echo "$REPRO$PROCECT_STRUCUR_FOLDER installed"
+  if [ ! -d "$REPO$PROCECT_STRUCUR_FOLDER" ]; then
+    cp -r "$PROCECT_STRUCUR_TEMPLATE" "$REPO$PROCECT_STRUCUR_FOLDER"
+    echo "$REPO$PROCECT_STRUCUR_FOLDER installed"
   else
-    echo "$REPRO$PROCECT_STRUCUR_FOLDER already exists. Don't overwrite."
+    echo "$REPO$PROCECT_STRUCUR_FOLDER already exists. Don't overwrite."
   fi
 fi
 
