@@ -48,7 +48,7 @@ fi
 askYesNo() {
   echo; echo -e "\e[33m**********************\e[0m"; echo; 
   while true; do     
-    read -p -r $'Do you want to \e[1;4;34m'"$task"$'\e[0m? [y/n]' yn
+    read -p $'Do you want to \e[1;4;34m'"$task"$'\e[0m? [y/n]' yn
     case $yn in
       [Yy]* ) answer=1; break;; 
       [Nn]* ) answer=0; break;;
