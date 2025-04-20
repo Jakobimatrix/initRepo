@@ -3,7 +3,15 @@
 #Execute this script to install clang-format on your machine (if not installed)
 #and install hook in your git repository to check formating before committing.
 #
-#usage: sudo ./init.sh PATH_TO_YOUR_REPOSITORY
+#usage: ./init.sh PATH_TO_YOUR_REPOSITORY
+
+
+# Prevent running the script with sudo
+if [ "$EUID" -eq 0 ]; then
+  echo "This script should not be run as root or with sudo privileges."
+  exit 1
+fi
+
 
 TEMPLATE_FILE_PATH=$(realpath "$0" | sed 's|\(.*\)/.*|\1|')
 
@@ -29,7 +37,7 @@ REPO="$1"
 
 if [ $# -lt 1 ]
 then
-        echo "Usage: sudo ./init.sh PATH_TO_YOUR_REPOSITORY"
+        echo "Usage: ./init.sh PATH_TO_YOUR_REPOSITORY"
         exit
 elif [ ! -d "$REPO" ]
 then
@@ -81,7 +89,7 @@ askYesNo
 if [ $answer = 1  ]
 then 
   # install clang format
-  apt install clang-format-$CLANG_FORMAT_VERSION -y
+  sudo apt install clang-format-$CLANG_FORMAT_VERSION -y
 
   cp "$TEMPLATE_FILE_PATH$HOOK_SCRIPT" "$REPO$HOOK_FILE_DEST"
   cp "$TEMPLATE_FILE_PATH$FORMAT_FILE_F" "$REPO"
@@ -94,7 +102,7 @@ task="Do you want to install/update clang-tidy-$CLANG_TIDY_VERSION?"
 askYesNo
 if [ $answer = 1 ]
 then
-  apt install clang-tidy-$CLANG_TIDY_VERSION -y
+  sudo apt install clang-tidy-$CLANG_TIDY_VERSION -y
   cp "$TEMPLATE_FILE_PATH$FORMAT_FILE_T" "$REPO"
   echo "clang-tidy-$CLANG_TIDY_VERSION"
 fi
@@ -103,7 +111,7 @@ task="Do you want to install cppcheck?"
 askYesNo
 if [ $answer = 1 ]
 then
-  apt install cppcheck -y
+  sudo apt install cppcheck -y
   echo "cppcheck installed"
 fi
 
@@ -111,7 +119,7 @@ task="Do you want to install valgrind?"
 askYesNo
 if [ $answer = 1 ]
 then
-  apt install valgrind -y
+  sudo apt install valgrind -y
   echo "valgrind installed"
 fi
 
