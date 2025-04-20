@@ -85,7 +85,7 @@ cd "$BUILD_DIR"
 # Run CMake and build
 echo "Using compiler at: $COMPILER_PATH"
 echo "Configuring with CMake..."
-cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_CXX_COMPILER=$COMPILER_PATH -DBUILD_TESTING=$ENABLE_TESTS ..
+cmake -DCMAKE_BUILD_TYPE="$BUILD_TYPE" -DCMAKE_CXX_COMPILER="$COMPILER_PATH" -DBUILD_TESTING="$ENABLE_TESTS" ..
 echo "Building project..."
 cmake --build . -- -j$(nproc)
 

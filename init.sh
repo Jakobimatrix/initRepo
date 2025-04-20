@@ -5,11 +5,11 @@
 #
 #usage: sudo ./init.sh PATH_TO_YOUR_REPOSITORY
 
+TEMPLATE_FILE_PATH=$(realpath "$0" | sed 's|\(.*\)/.*|\1|')
 
 CLANG_FORMAT_VERSION="19";
 CLANG_TIDY_VERSION="19";
-HOOK_FILE=".git/hooks/pre-commit";
-TEMPLATES_FOLDER="templates/"
+HOOK_FILE_DEST="$.git/hooks/pre-commit";
 HOOK_SCRIPT="format_hook";
 FORMAT_FILE_F=".clang-format"
 FORMAT_FILE_T=".clang-tidy"
@@ -17,7 +17,12 @@ GIT_ATTRIBUTES_FILE=".gitattributes"
 CMAKE_LISTS_FILE="CMakeLists.txt"
 BUILD_FILE="build.sh"
 FUZZER_FILE="runFuzzer.sh"
-PROCECT_STRUCUR="src/"
+PROCECT_STRUCUR_FOLDER="src/"
+PROCECT_STRUCUR_TEMPLATE="$TEMPLATE_FILE_PATH/src/"
+
+TEMPLATE_FILE_PATH="$TEMPLATE_FILE_PATH/templates/"
+
+
 
 # validate input
 REPRO="$1"
@@ -32,7 +37,7 @@ then
         exit
 fi
 SLASH_CHAR="/"
-[ "${REPRO: -1}" != "$SLASH_CHAR" ] && REPRO=$REPRO$SLASH_CHAR
+[ "${REPRO: -1}" != "$SLASH_CHAR" ] && REPRO="$REPRO$SLASH_CHAR"
 
 if [ ! -d "$REPRO.git/hooks/" ]
 then
@@ -43,7 +48,7 @@ fi
 askYesNo() {
   echo; echo -e "\e[33m**********************\e[0m"; echo; 
   while true; do     
-    read -p $'Do you want to \e[1;4;34m'"$task"$'\e[0m? [y/n]' yn
+    read -p -r $'Do you want to \e[1;4;34m'"$task"$'\e[0m? [y/n]' yn
     case $yn in
       [Yy]* ) answer=1; break;; 
       [Nn]* ) answer=0; break;;
@@ -52,33 +57,37 @@ askYesNo() {
   done  
 }
 
+copyFileWithPrompt() {
+  local src="$1"
+  local dest="$2"
+
+  if [ ! -f "$dest" ]; then
+    cp "$src" "$dest"
+    echo "$(basename "$dest") installed"
+  else
+    task="The file $(basename "$dest") already exists. Do you want to overwrite it?"
+    askYesNo
+    if [ $answer = 1 ]; then
+      cp "$src" "$dest"
+      echo "$(basename "$dest") overwritten"
+    else
+      echo "$(basename "$dest") not overwritten"
+    fi
+  fi
+}
+
 task="Do you want to installUpdate clang-format-$CLANG_FORMAT_VERSION and hooks"
 askYesNo 
 if [ $answer = 1  ]
 then 
-  HOOK_FILE=$REPRO$HOOK_FILE
-
   # install clang format
   apt install clang-format-$CLANG_FORMAT_VERSION -y
 
-  # check if a pre-commit hook already exists
-  if [ -f "$HOOK_FILE" ]
-  then
-    read -p "pre-commit (file) already exists. Should I [c]oncatinate, [o]verwrite or [e]xit?" coe
-    case $coe in
-      [Cc]* ) cat $HOOK_FILE $HOOK_SCRIPT > tmp.txt && mv tmp.txt $HOOK_FILE;;
-      [Oo]* ) cp $HOOK_SCRIPT $HOOK_FILE;;
-      [Ee]* ) exit;;
-    esac
-  else
-    cp $HOOK_SCRIPT $HOOK_FILE
-  fi
+  cp "$TEMPLATE_FILE_PATH$HOOK_SCRIPT" "$REPRO$HOOK_FILE_DEST"
+  cp "$TEMPLATE_FILE_PATH$FORMAT_FILE_F" "$REPRO"
+  chmod +x "$REPRO$HOOK_FILE_DEST"
 
-  cp $FORMAT_FILE_F $REPRO$FORMAT_FILE_F
-  cp $FORMAT_FILE_T $REPRO$FORMAT_FILE_T
-
-  chmod +x $HOOK_FILE
-  echo "Clang-format installed in $HOOK_FILE"
+  echo "Clang-format installed in $REPRO$HOOK_FILE_DEST"
 fi
 
 task="Do you want to install/update clang-tidy-$CLANG_TIDY_VERSION?"
@@ -86,6 +95,7 @@ askYesNo
 if [ $answer = 1 ]
 then
   apt install clang-tidy-$CLANG_TIDY_VERSION -y
+  cp "$TEMPLATE_FILE_PATH$FORMAT_FILE_T" "$REPRO"
   echo "clang-tidy-$CLANG_TIDY_VERSION"
 fi
 
@@ -109,7 +119,7 @@ task="Do you want to enforece LF line ending for that repro?"
 askYesNo
 if [ $answer = 1 ]
 then
-  cp "$TEMPLATES_FOLDER$GIT_ATTRIBUTES_FILE" "$REPRO"
+  cp "$TEMPLATE_FILE_PATH$GIT_ATTRIBUTES_FILE" "$REPRO"
   echo ".gitattributes installed, LF line ending enforeced" 
 fi
 
@@ -117,51 +127,32 @@ echo "Dont continue if you already initiated your repo!"
 
 task="Do you want to copy the Cmake project?"
 askYesNo
-if [ $answer = 1 ]
-then
-  if [ ! -f "$REPRO$CMAKE_LISTS_FILE" ]; then
-    cp "$TEMPLATES_FOLDER$CMAKE_LISTS_FILE" "$REPRO"
-    echo "$CMAKE_LISTS_FILE installed"
-  else
-    echo "$CMAKE_LISTS_FILE already exists. Dont overwrite."
-  fi
+if [ $answer = 1 ]; then
+  copyFileWithPrompt "$TEMPLATE_FILE_PATH$CMAKE_LISTS_FILE" "$REPRO$CMAKE_LISTS_FILE"
 fi
 
 task="Do you want to copy the build script?"
 askYesNo
-if [ $answer = 1 ]
-then
-  if [ ! -f "$REPRO$BUILD_FILE" ]; then
-    cp "$TEMPLATES_FOLDER$BUILD_FILE" "$REPRO"
-    echo "$BUILD_FILE installed"
-  else
-    echo "$BUILD_FILE already exists. Dont overwrite."
-  fi
+if [ $answer = 1 ]; then
+  copyFileWithPrompt "$TEMPLATE_FILE_PATH$BUILD_FILE" "$REPRO$BUILD_FILE"
 fi
 
 task="Do you want to copy the fuzzer run script?"
 askYesNo
-if [ $answer = 1 ]
-then
-  if [ ! -f "$REPRO/fuzz/$FUZZER_FILE" ]; then
-    mkdir -p "$REPRO/fuzz/"
-    cp "$TEMPLATES_FOLDER$FUZZER_FILE" "$REPRO/fuzz/"
-    echo "fuzz/$FUZZER_FILE installed"
-    echo "please use git add -f fuzz/$FUZZER_FILE if you have installed the .gitignore file"
-  else
-    echo "fuzz/$FUZZER_FILE already exists. Dont overwrite."
-  fi
+if [ $answer = 1 ]; then
+  copyFileWithPrompt "$TEMPLATE_FILE_PATH$FUZZER_FILE" "$REPRO/fuzz/$FUZZER_FILE"
 fi
+
 
 task="Do you want to copy the procect structure?"
 askYesNo
 if [ $answer = 1 ]
 then
-  if [ ! -d "$REPRO$PROCECT_STRUCUR" ]; then
-    cp -r "$PROCECT_STRUCUR" "$REPRO$PROCECT_STRUCUR"
-    echo "$PROCECT_STRUCUR installed"
+  if [ ! -d "$REPRO$PROCECT_STRUCUR_FOLDER" ]; then
+    cp -r "$PROCECT_STRUCUR_TEMPLATE" "$REPRO$PROCECT_STRUCUR_FOLDER"
+    echo "$REPRO$PROCECT_STRUCUR_FOLDER installed"
   else
-    echo "$PROCECT_STRUCUR already exists. Dont overwrite."
+    echo "$REPRO$PROCECT_STRUCUR_FOLDER already exists. Don't overwrite."
   fi
 fi
 
