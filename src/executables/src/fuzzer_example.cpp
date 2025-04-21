@@ -3,7 +3,7 @@
 * @brief contains an nearly minimal example how to fuzz a function.
 *
 * @detail The Fuzzer creates a more or less (less it does some clever things) random binary string and tries to kill your application.
-*         1) Build in release mode
+*         1) Build in release mode with clang
 *         2) Run ./fuzzer_example -print_final_stats=1
 *         3) After it ended a crash-<md5hash> binary file was created containing the input that crashed the application
 *         4) Build in debug mode
