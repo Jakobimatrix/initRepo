@@ -22,6 +22,7 @@ HOOK_SCRIPT="format_hook";
 FORMAT_FILE_F=".clang-format"
 FORMAT_FILE_T=".clang-tidy"
 GIT_ATTRIBUTES_FILE=".gitattributes"
+GIT_IGNORE_FILE=".gitignore"
 CMAKE_LISTS_FILE="CMakeLists.txt"
 BUILD_FILE="build.sh"
 FUZZER_FILE="runFuzzer.sh"
@@ -132,6 +133,12 @@ then
 fi
 
 echo "Dont continue if you already initiated your repo!"
+
+task="Do you want to copy the .gitignore?"
+askYesNo
+if [ $answer = 1 ]; then
+  copyFileWithPrompt "$TEMPLATE_FILE_PATH$GIT_IGNORE_FILE" "$REPO$GIT_IGNORE_FILE"
+fi
 
 task="Do you want to copy the Cmake project?"
 askYesNo
