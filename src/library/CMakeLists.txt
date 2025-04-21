@@ -1,23 +1,31 @@
-
 # CHANGE THE NAME OF THE LIBRARY AND THE VERSION and the variable holding the version!
 
-if(TARGET library_lib)
-      message(WARNING "library_lib has already been included.")
-      message(WARNING "The current version being included is ${LIBARY_LIB_VERSION}.")
-else()
+# change the version if there are API changes!
+set(LIB_VERSION "0.0.1")
+# set the name of your library here!
+set(LIB_NAME "library_lib")
 
-    set(UTILS_LIB_VERSION "0.0.1")
+if(NOT DEFINED LIBRARY_LIB_VERSION)
+    set(LIBRARY_LIB_VERSION ${LIB_VERSION})
 
-    add_library(library_lib_${UTILS_LIB_VERSION} STATIC
+    add_library(${LIB_NAME}_${LIBRARY_LIB_VERSION} STATIC
       include/library/math.hpp
       src/math.cpp
-      )
+    )
 
-    target_link_libraries(library_lib_${UTILS_LIB_VERSION}
+    target_link_libraries(${LIB_NAME}_${LIBRARY_LIB_VERSION}
       PRIVATE
       ${ENVIRONMENT_SETTINGS}
-      )
+    )
 
-    target_include_directories(library_lib_${UTILS_LIB_VERSION} PUBLIC STATIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
+    target_include_directories(${LIB_NAME}_${LIBRARY_LIB_VERSION} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 
+elseif(LIBRARY_LIB_VERSION STREQUAL LIB_VERSION)
+    # LIBRARY_LIB_VERSION is defined and matches LIB_VERSION
+    # Do nothing
+
+else()
+    # LIBRARY_LIB_VERSION does not equal LIB_VERSION
+    message(FATAL_ERROR "${LIB_NAME} already included with a different version. This Version: ${LIB_VERSION}, Other Version: ${LIBRARY_LIB_VERSION}")
 endif()
+

@@ -64,6 +64,12 @@ elif [[ "$COMPILER" == "clang" ]]; then
     COMPILER="clang++"
 fi
 
+# Validate fuzzer option
+if [[ "$ENABLE_FUZZING" == "ON" && "$COMPILER" != "clang++" ]]; then
+    echo "Error: Fuzzing (-f) is only supported with the clang compiler."
+    exit 1
+fi
+
 find_compiler() {
     local base=$1
     local fallback
@@ -133,3 +139,4 @@ if [[ "$INSTALL" == true ]]; then
     echo "Installing project..."
     cmake --install .
 fi
+

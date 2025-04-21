@@ -6,7 +6,7 @@ if (FUZZER_ENABLED)
 
   target_link_libraries(fuzzer_example 
     PRIVATE 
-    fuzzer_lib
+    fuzzer_lib_my_project_0.0.1
     ${ENVIRONMENT_SETTINGS}
   )
 
@@ -25,3 +25,4 @@ else()
 
 
 endif()
+
