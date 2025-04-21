@@ -10,17 +10,17 @@ if (NOT DEFINED PROJECT_NAME)
     add_library("${ENVIRONMENT_SETTINGS}" INTERFACE)
 
     # ===== Compiler Settings =====
-    include(InitRepo/cmake/CompilerSetup.cmake)
+    include(initRepo/cmake/CompilerSetup.cmake)
 
     # ===== Warnings and Tools =====
-    include(InitRepo/cmake/CompilerWarnings.cmake)
+    include(initRepo/cmake/CompilerWarnings.cmake)
     set_project_warnings(${ENVIRONMENT_SETTINGS})
 
     # ===== External Dependencies =====
-    include(InitRepo/cmake/Includes.cmake)
+    include(initRepo/cmake/Includes.cmake)
 
     # ===== Options =====
-    include(InitRepo/cmake/Options.cmake)
+    include(initRepo/cmake/Options.cmake)
     enable_multithreading(${ENVIRONMENT_SETTINGS})
     enable_shared_libraries(${ENVIRONMENT_SETTINGS})
 
@@ -28,7 +28,7 @@ if (NOT DEFINED PROJECT_NAME)
     enforce_clang_stl(${ENVIRONMENT_SETTINGS} "libstdc++")
 
     # ===== Fuzzing =====
-    include(InitRepo/cmake/ClangFuzzyTests.cmake)
+    include(initRepo/cmake/ClangFuzzyTests.cmake)
 endif()
 
 # include_eigen(${ENVIRONMENT_SETTINGS})
