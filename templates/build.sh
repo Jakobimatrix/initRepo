@@ -13,6 +13,7 @@ show_help() {
     echo "  --compiler COMP Use specific compiler (e.g. gcc, clang)"
     echo "  -h              Show this help message"
     echo "  -t              Enable tests"
+    echo "  -f              Enable fuzzing"
     exit 0
 }
 
@@ -22,6 +23,7 @@ INSTALL=false
 BUILD_TYPE=""
 COMPILER=""
 ENABLE_TESTS=OFF
+ENABLE_FUZZING=OFF
 ARGS=()
 COMPILER="gcc"
 
@@ -38,6 +40,7 @@ while [[ $# -gt 0 ]]; do
             COMPILER="$1"
             ;;
         -t) ENABLE_TESTS=ON ;;
+        -f) ENABLE_FUZZING=ON ;;
         -h) show_help ;;
         *)
             echo "Unknown option: $1"
@@ -50,12 +53,47 @@ done
 # Validate build type
 if [[ -z "$BUILD_TYPE" ]]; then
     echo "Error: You must specify a build type (-d, -r, or -o)"
+    show_help
     exit 1
 fi
 
+# Normalize to correct C++ compiler
+if [[ "$COMPILER" == "gcc" ]]; then
+    COMPILER="g++"
+elif [[ "$COMPILER" == "clang" ]]; then
+    COMPILER="clang++"
+fi
+
+# Validate fuzzer option
+if [[ "$ENABLE_FUZZING" == "ON" && "$COMPILER" != "clang++" ]]; then
+    echo "Error: Fuzzing (-f) is only supported with the clang compiler."
+    exit 1
+fi
+
+find_compiler() {
+    local base=$1
+    local fallback
+
+    # Try unversioned first
+    fallback=$(command -v "$base" 2>/dev/null)
+    if [[ -n "$fallback" ]]; then
+        echo "$fallback"
+        return
+    fi
+
+    # Try to find highest versioned binary
+    fallback=$(compgen -c | grep -E "^${base}-[0-9]+$" | sort -V | tail -n1)
+    if [[ -n "$fallback" ]]; then
+        which "$fallback"
+        return
+    fi
+
+    echo "Error: Could not find $base or a versioned fallback like ${base}-13" >&2
+    exit 1
+}
 
 # Find full compiler path
-COMPILER_PATH=$(command -v "$COMPILER")
+COMPILER_PATH=$(find_compiler "$COMPILER")
 if [[ -z "$COMPILER_PATH" ]]; then
     echo "Error: Compiler '$COMPILER' not found in PATH"
     exit 1
@@ -85,7 +123,7 @@ cd "$BUILD_DIR"
 # Run CMake and build
 echo "Using compiler at: $COMPILER_PATH"
 echo "Configuring with CMake..."
-cmake -DCMAKE_BUILD_TYPE="$BUILD_TYPE" -DCMAKE_CXX_COMPILER="$COMPILER_PATH" -DBUILD_TESTING="$ENABLE_TESTS" ..
+cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_CXX_COMPILER=$COMPILER_PATH -DBUILD_TESTING=$ENABLE_TESTS -DENABLE_FUZZING=$ENABLE_FUZZING ..
 echo "Building project..."
 cmake --build . -- -j$(nproc)
 
@@ -101,3 +139,4 @@ if [[ "$INSTALL" == true ]]; then
     echo "Installing project..."
     cmake --install .
 fi
+
