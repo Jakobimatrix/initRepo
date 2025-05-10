@@ -31,6 +31,8 @@ if (NOT DEFINED PROJECT_NAME)
     include(initRepo/cmake/ClangFuzzyTests.cmake)
 endif()
 
+enable_testing()
+
 # include_eigen(${ENVIRONMENT_SETTINGS})
 # include_qt5(${ENVIRONMENT_SETTINGS})
 # include_open_cv(${ENVIRONMENT_SETTINGS})
