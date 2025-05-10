@@ -123,6 +123,7 @@ cd "$BUILD_DIR"
 # Run CMake and build
 echo "Using compiler at: $COMPILER_PATH"
 echo "Configuring with CMake..."
+echo "Running: cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_CXX_COMPILER=$COMPILER_PATH -DBUILD_TESTING=$ENABLE_TESTS -DENABLE_FUZZING=$ENABLE_FUZZING .."
 cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_CXX_COMPILER=$COMPILER_PATH -DBUILD_TESTING=$ENABLE_TESTS -DENABLE_FUZZING=$ENABLE_FUZZING ..
 echo "Building project..."
 cmake --build . -- -j$(nproc)
@@ -130,13 +131,13 @@ cmake --build . -- -j$(nproc)
 
 # Run tests if enabled
 if [[ "$ENABLE_TESTS" == "ON" ]]; then
-    echo "Running tests..."
+    echo "Running ctest --output-on-failure"
     ctest --output-on-failure
 fi
 
 # Install if requested
 if [[ "$INSTALL" == true ]]; then
-    echo "Installing project..."
+    echo "cmake --install ."
     cmake --install .
 fi
 
