@@ -156,6 +156,7 @@ fi
 task="Do you want to copy the fuzzer run script?"
 askYesNo
 if [ $answer = 1 ]; then
+  mkdir -p "${REPO}fuzz"
   copyFileWithPrompt "$TEMPLATE_FILE_PATH$FUZZER_FILE" "${REPO}fuzz/$FUZZER_FILE"
 fi
 
