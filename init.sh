@@ -17,7 +17,7 @@ TEMPLATE_FILE_PATH=$(realpath "$0" | sed 's|\(.*\)/.*|\1|')
 
 CLANG_FORMAT_VERSION="19";
 CLANG_TIDY_VERSION="19";
-HOOK_FILE_DEST="$.git/hooks/pre-commit";
+HOOK_FILE_DEST=".git/hooks/pre-commit";
 HOOK_SCRIPT="format_hook";
 FORMAT_FILE_F=".clang-format"
 FORMAT_FILE_T=".clang-tidy"
@@ -57,6 +57,7 @@ fi
 askYesNo() {
   echo; echo -e "\e[33m**********************\e[0m"; echo; 
   while true; do     
+    # shellcheck disable=SC2162
     read -p $'Do you want to \e[1;4;34m'"$task"$'\e[0m? [y/n]' yn
     case $yn in
       [Yy]* ) answer=1; break;; 
