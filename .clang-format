@@ -1,4 +1,6 @@
+DerivePointerAlignment: false
 BasedOnStyle: Google
+
 PenaltyExcessCharacter: 1
 BinPackArguments: false
 BinPackParameters: false
@@ -6,6 +8,8 @@ AllowShortIfStatementsOnASingleLine: false
 MaxEmptyLinesToKeep: 3
 KeepEmptyLinesAtTheStartOfBlocks: true
 SortIncludes: false
+
+RequiresClausePosition: OwnLine
 
 AlignConsecutiveMacros:
   Enabled: true
@@ -23,11 +27,7 @@ IndentWidth: 2
 TabWidth: 2
 UseTab: Never
 NamespaceIndentation: None
-MaxEmptyLinesToKeep: 1
-PackConstructorInitializersStyle: Never
-PointerAlignmentStyle: Left
-ReferenceAlignmentStyle: Left
-QualifierOrder: [friend, static, constexpr, virtual, inline, const, restrict, volatile, type]
-RequiresClausePositionStyle: OwnLine
-SeparateDefinitionStyle: Always
+PackConstructorInitializers: Never
+PointerAlignment: Left
+ReferenceAlignment: Left
 
