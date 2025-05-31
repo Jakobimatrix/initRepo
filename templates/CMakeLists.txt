@@ -24,9 +24,6 @@ if (NOT DEFINED PROJECT_NAME)
     enable_multithreading(${ENVIRONMENT_SETTINGS})
     enable_shared_libraries(${ENVIRONMENT_SETTINGS})
 
-    # one of these two above is needed, enable_shared_libraries must be used too!!
-    enforce_clang_stl(${ENVIRONMENT_SETTINGS} "libstdc++")
-
     # ===== Fuzzing =====
     include(initRepo/cmake/ClangFuzzyTests.cmake)
 endif()

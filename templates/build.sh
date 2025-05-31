@@ -14,6 +14,8 @@ show_help() {
     echo "  -h              Show this help message"
     echo "  -t              Enable tests"
     echo "  -f              Enable fuzzing"
+    echo "  -v              Verbode: dump CMake variables"
+    echo "  -l              List available compilers"
     exit 0
 }
 
@@ -24,8 +26,41 @@ BUILD_TYPE=""
 COMPILER=""
 ENABLE_TESTS=OFF
 ENABLE_FUZZING=OFF
+LIST_COMPILERS=false
+VERBOSE=false
 ARGS=()
-COMPILER="gcc"
+COMPILER="g++"
+
+CLANG_CPP_PATH="/usr/bin/clang++-19"
+CLANG_C_PATH="/usr/bin/clang-19"
+GCC_CPP_PATH="/usr/bin/g++-13"
+GCC_C_PATH="/usr/bin/gcc-13"
+
+
+list_available_compiler() {
+    for base in gcc g++ clang clang++; do
+        echo ""
+        echo "=== $base ==="
+        # Find unversioned
+        if command -v "$base" &>/dev/null; then
+            echo "  $(command -v $base)"
+        fi
+        # Find versioned (handle pluses for g++ and clang++)
+        if [[ "$base" == "g++" || "$base" == "clang++" ]]; then
+            compgen -c | grep -E "^${base//+/\\+}-[0-9]+$" | sort -V | while read -r ver; do
+                if command -v "$ver" &>/dev/null; then
+                    echo "  $(command -v $ver)"
+                fi
+            done
+        else
+            compgen -c | grep -E "^${base}-[0-9]+$" | sort -V | while read -r ver; do
+                if command -v "$ver" &>/dev/null; then
+                    echo "  $(command -v $ver)"
+                fi
+            done
+        fi
+    done
+}
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do
@@ -41,6 +76,8 @@ while [[ $# -gt 0 ]]; do
             ;;
         -t) ENABLE_TESTS=ON ;;
         -f) ENABLE_FUZZING=ON ;;
+        -v) VERBOSE=true ;;
+        -l) LIST_COMPILERS=true ;;
         -h) show_help ;;
         *)
             echo "Unknown option: $1"
@@ -49,6 +86,10 @@ while [[ $# -gt 0 ]]; do
     esac
     shift
 done
+
+if [[ -z "$LIST_COMPILERS" ]]; then
+    list_available_compiler
+fi
 
 # Validate build type
 if [[ -z "$BUILD_TYPE" ]]; then
@@ -64,50 +105,37 @@ elif [[ "$COMPILER" == "clang" ]]; then
     COMPILER="clang++"
 fi
 
+# set compiler paths
+if [[ "$COMPILER" == "g++" ]]; then
+    COMPILER_PATH="$GCC_CPP_PATH"
+    CC_PATH="$GCC_C_PATH"
+elif [[ "$COMPILER" == "clang++" ]]; then
+    COMPILER_PATH="$CLANG_CPP_PATH"
+    CC_PATH="$CLANG_C_PATH"
+else
+    echo "Error: $COMPILER not valid input."
+    exit 1
+fi
+
+if [ ! -f "$COMPILER_PATH" ]; then
+    echo "$COMPILER_PATH not found! Check the paths variables at the begin of this script!"
+    list_available_compiler
+    exit 1
+fi
+if [ ! -f "$CC_PATH" ]; then
+    echo "$CC_PATH not found! Check the paths variables at the begin of this script!"
+    list_available_compiler
+    exit 1
+fi
+
+
 # Validate fuzzer option
 if [[ "$ENABLE_FUZZING" == "ON" && "$COMPILER" != "clang++" ]]; then
     echo "Error: Fuzzing (-f) is only supported with the clang compiler."
     exit 1
 fi
 
-find_compiler() {
-    local base=$1
-    local fallback
 
-    # Try unversioned first
-    fallback=$(command -v "$base" 2>/dev/null)
-    if [[ -n "$fallback" ]]; then
-        echo "$fallback"
-        return
-    fi
-
-    # Try to find highest versioned binary
-    fallback=$(compgen -c | grep -E "^${base}-[0-9]+$" | sort -V | tail -n1)
-    if [[ -n "$fallback" ]]; then
-        which "$fallback"
-        return
-    fi
-
-    echo "Error: Could not find $base or a versioned fallback like ${base}-13" >&2
-    exit 1
-}
-
-# Find full compiler path
-COMPILER_PATH=$(find_compiler "$COMPILER")
-if [[ -z "$COMPILER_PATH" ]]; then
-    echo "Error: Compiler '$COMPILER' not found in PATH"
-    exit 1
-fi
-
-# Normalize compiler name
-if [[ "$COMPILER_PATH" =~ .*clang.* ]]; then
-    COMPILER_NAME="clang"
-elif [[ "$COMPILER_PATH" =~ .*g\+\+.* || "$COMPILER_PATH" =~ .*gcc.* ]]; then
-    COMPILER_NAME="gcc"
-else
-    echo "Error: Unknown compiler '$COMPILER' or path not found."
-    exit 1
-fi
 
 BUILD_DIR="build-${COMPILER_NAME,,}-${BUILD_TYPE,,}"
 
@@ -121,10 +149,16 @@ mkdir -p "$BUILD_DIR"
 cd "$BUILD_DIR"
 
 # Run CMake and build
-echo "Using compiler at: $COMPILER_PATH"
+echo "Using cpp compiler at: $COMPILER_PATH"
+echo "Using c compiler at: $CC_PATH"
+echo "To change compiler versions, set the variables in this script!!"
 echo "Configuring with CMake..."
-echo "Running: cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_CXX_COMPILER=$COMPILER_PATH -DBUILD_TESTING=$ENABLE_TESTS -DENABLE_FUZZING=$ENABLE_FUZZING .."
-cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_CXX_COMPILER=$COMPILER_PATH -DBUILD_TESTING=$ENABLE_TESTS -DENABLE_FUZZING=$ENABLE_FUZZING ..
+echo "Running: cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_CXX_COMPILER=$COMPILER_PATH -DCMAKE_C_COMPILER=$CC_PATH -DBUILD_TESTING=$ENABLE_TESTS -DENABLE_FUZZING=$ENABLE_FUZZING .."
+cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_CXX_COMPILER=$COMPILER_PATH -DCMAKE_C_COMPILER=$CC_PATH -DBUILD_TESTING=$ENABLE_TESTS -DENABLE_FUZZING=$ENABLE_FUZZING ..
+if [[ "$VERBOSE" == true ]]; then
+    echo "Dumping CMake variables:"
+    cmake -LAH ..
+fi
 echo "Building project..."
 cmake --build . -- -j$(nproc)
 
