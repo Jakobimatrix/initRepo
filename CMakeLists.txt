@@ -24,6 +24,7 @@ enable_shared_libraries(${ENVIRONMENT_SETTINGS})
 # ===== Fuzzing =====
 include(cmake/ClangFuzzyTests.cmake)
 
+enable_testing()
 
 add_subdirectory(src/library)
 add_subdirectory(src/fuzzer_lib)
