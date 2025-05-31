@@ -1,0 +1,4 @@
+[submodule "initRepo"]
+	path = initRepo
+	url = https://github.com/Jakobimatrix/initRepo.git
+	branch = main

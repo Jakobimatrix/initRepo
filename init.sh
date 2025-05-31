@@ -23,6 +23,9 @@ FORMAT_FILE_F=".clang-format"
 FORMAT_FILE_T=".clang-tidy"
 GIT_ATTRIBUTES_FILE=".gitattributes"
 GIT_IGNORE_FILE=".gitignore"
+GIT_MODULES_FILE=".gitmodules"
+GITHUB_HOOK_FILE="ubuntu_build_test.yml"
+GITHUB_HOOK_FILE_DEST=".github/workflows"
 CMAKE_LISTS_FILE="CMakeLists.txt"
 BUILD_FILE="build.sh"
 FUZZER_FILE="runFuzzer.sh"
@@ -141,6 +144,12 @@ if [ $answer = 1 ]; then
   copyFileWithPrompt "$TEMPLATE_FILE_PATH$GIT_IGNORE_FILE" "$REPO$GIT_IGNORE_FILE"
 fi
 
+task="Do you want to copy the .gitmodules?"
+askYesNo
+if [ $answer = 1 ]; then
+  copyFileWithPrompt "$TEMPLATE_FILE_PATH$GIT_MODULES_FILE" "$REPO$GIT_MODULES_FILE"
+fi
+
 task="Do you want to copy the Cmake project?"
 askYesNo
 if [ $answer = 1 ]; then
@@ -160,6 +169,13 @@ if [ $answer = 1 ]; then
   copyFileWithPrompt "$TEMPLATE_FILE_PATH$FUZZER_FILE" "${REPO}fuzz/$FUZZER_FILE"
 fi
 
+task="Do you want to copy the github hook script <build and test for ubuntu>?"
+askYesNo
+if [ $answer = 1 ]; then
+  mkdir -p "${REPO}$GITHUB_HOOK_FILE_DEST"
+  copyFileWithPrompt "$TEMPLATE_FILE_PATH$GITHUB_HOOK_FILE" "${REPO}$GITHUB_HOOK_FILE_DEST/$GITHUB_HOOK_FILE"
+fi
+
 
 task="Do you want to copy the procect structure?"
 askYesNo
@@ -173,5 +189,5 @@ then
   fi
 fi
 
-
+./build.sh -l
 
