@@ -32,6 +32,9 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y clang-19
 
+    - name: Install lld for Clang
+      run: sudo apt-get install -y lld
+
     - name: Set up Clang 19 as default
       run: |
         sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-19 100
