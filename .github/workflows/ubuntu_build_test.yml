@@ -30,7 +30,13 @@ jobs:
     - name: Install Clang 19
       run: |
         sudo apt-get update
-        sudo apt-get install -y clang-19
+        sudo apt-get install -y clang-19 lld
+
+    - name: Ensure ld.lld is available for Clang
+      run: |
+        if ! command -v ld.lld &>/dev/null; then
+          sudo ln -s /usr/bin/ld.lld-19 /usr/bin/ld.lld
+        fi
 
     - name: Set up Clang 19 as default
       run: |
@@ -43,8 +49,14 @@ jobs:
     - name: Build and test with Clang 19
       run: ./build.sh -c -d -t --compiler clang
 
+    - name: Build fuzzer with Clang 19
+      run: ./build.sh -d -f --compiler clang 
+
     - name: Build release and test with GCC 13
       run: ./build.sh -c -r -t --compiler gcc
 
     - name: Build release and test with Clang 19
       run: ./build.sh -c -r -t --compiler clang
+
+    - name: Build release fuzzer with Clang 19
+      run: ./build.sh -r -f --compiler clang
