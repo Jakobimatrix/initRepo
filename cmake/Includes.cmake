@@ -37,3 +37,17 @@ function(include_open_cv target_name)
     target_link_libraries(${target_name} INTERFACE ${OpenCV_LIBS})
 endfunction()
 
+function(setup_catch2_and_ctest)
+    if (NOT FUZZER_ENABLED)
+        include(FetchContent)
+        FetchContent_Declare(
+            Catch2
+            GIT_REPOSITORY https://github.com/catchorg/Catch2.git
+            GIT_TAG        v3.4.0
+        )
+        FetchContent_MakeAvailable(Catch2)
+        enable_testing()
+        include(Catch)
+        include(CTest)
+    endif()
+endfunction()

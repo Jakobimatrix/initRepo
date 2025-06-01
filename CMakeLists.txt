@@ -24,7 +24,8 @@ enable_shared_libraries(${ENVIRONMENT_SETTINGS})
 # ===== Fuzzing =====
 include(cmake/ClangFuzzyTests.cmake)
 
-enable_testing()
+# ===== CTest with Catch2 =====
+setup_catch2_and_ctest()
 
 add_subdirectory(src/library)
 add_subdirectory(src/fuzzer_lib)
