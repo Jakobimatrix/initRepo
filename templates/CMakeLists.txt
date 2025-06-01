@@ -25,10 +25,10 @@ if (NOT DEFINED PROJECT_NAME)
     enable_shared_libraries(${ENVIRONMENT_SETTINGS})
 
     # ===== Fuzzing =====
+    enable_testing()
     include(initRepo/cmake/ClangFuzzyTests.cmake)
 endif()
 
-enable_testing()
 
 # include_eigen(${ENVIRONMENT_SETTINGS})
 # include_qt5(${ENVIRONMENT_SETTINGS})

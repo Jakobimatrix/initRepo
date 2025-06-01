@@ -46,7 +46,6 @@ function(setup_catch2_and_ctest)
             GIT_TAG        v3.4.0
         )
         FetchContent_MakeAvailable(Catch2)
-        enable_testing()
         include(Catch)
         include(CTest)
     endif()

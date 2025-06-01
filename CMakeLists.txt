@@ -25,6 +25,7 @@ enable_shared_libraries(${ENVIRONMENT_SETTINGS})
 include(cmake/ClangFuzzyTests.cmake)
 
 # ===== CTest with Catch2 =====
+enable_testing()
 setup_catch2_and_ctest()
 
 add_subdirectory(src/library)
