@@ -15,7 +15,9 @@ if (ENABLE_FUZZING AND CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
         -ftest-coverage
     )
 
-    target_compile_definitions(${ENVIRONMENT_SETTINGS} INTERFACE FUZZER_ACTIVE)
-    target_compile_options(${ENVIRONMENT_SETTINGS} INTERFACE ${FUZZER_SAN_FLAGS})
-    target_link_options(${ENVIRONMENT_SETTINGS} INTERFACE ${FUZZER_SAN_FLAGS})
+    if (CMAKE_BUILD_TYPE STREQUAL "Release")
+        target_compile_definitions(${ENVIRONMENT_SETTINGS} INTERFACE FUZZER_ACTIVE)
+        target_compile_options(${ENVIRONMENT_SETTINGS} INTERFACE ${FUZZER_SAN_FLAGS})
+        target_link_options(${ENVIRONMENT_SETTINGS} INTERFACE ${FUZZER_SAN_FLAGS})
+    endif()
 endif ()
