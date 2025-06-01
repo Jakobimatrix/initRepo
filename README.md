@@ -1,7 +1,16 @@
 Dear stranger 
 If I write "you" I mean me. Though you might use this repo too, it is mostly for me to manage my projects (for example to enforce them to have the same structure)
 
-# initRepo [![C/C++ CI](https://github.com/Jakobimatrix/initRepo/actions/workflows/ubuntu_build_test.yml/badge.svg)](https://github.com/Jakobimatrix/initRepo/actions/workflows/ubuntu_build_test.yml)
+# initRepo 
+
+[![C/C++ CI](https://github.com/Jakobimatrix/initRepo/actions/workflows/ubuntu_build_test.yml/badge.svg)](https://github.com/Jakobimatrix/initRepo/actions/workflows/ubuntu_build_test.yml)
+
+ - OS: Ubuntu 24.04
+ - compiler: clang 19, gcc 13
+ - debug + release
+ - tests
+
+ ---
 
 This repo helps when createing a new project in cpp20. It provides a solid structure and enforces some rules.
 After creating a new  project add this repo as a submodule (or copy it)
