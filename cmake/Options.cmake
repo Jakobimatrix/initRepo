@@ -10,10 +10,9 @@ endfunction()
 
 # Enable multithreading for a target
 function(enable_multithreading target_name)
-    if (UNIX OR MINGW)
-        target_link_libraries("${target_name}" INTERFACE pthread)
-    endif ()
-    # MSVC links threads by default
+    # use cmakes build in function to link against -pthread or -mthreads if necessarry
+    find_package(Threads REQUIRED)
+    target_link_libraries("${target_name}" PUBLIC Threads::Threads)
 endfunction()
 
 
