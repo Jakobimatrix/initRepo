@@ -12,7 +12,7 @@ endfunction()
 function(enable_multithreading target_name)
     # use cmakes build in function to link against -pthread or -mthreads if necessarry
     find_package(Threads REQUIRED)
-    target_link_libraries("${target_name}" PUBLIC Threads::Threads)
+    target_link_libraries("${target_name}" INTERFACE Threads::Threads)
 endfunction()
 
 
