@@ -6,10 +6,12 @@ modernize-*,\
 -modernize-use-auto,\
 -modernize-raw-string-literal,\
 -modernize-return-braced-init-list,\
+-modernize-use-trailing-return-type,\
 cppcoreguidelines-*,\
 -cppcoreguidelines-pro-type-vararg,\
 -cppcoreguidelines-pro-bounds-array-to-pointer-decay,\
 misc-*,\
+-misc-include-cleaner,\
 llvm-namespace-comment,\
 readability-*,\
 -readability-implicit-bool-cast,\
@@ -32,7 +34,13 @@ HeaderFilterRegex: ''
 FormatStyle:     none
 
 CheckOptions:
+  # min variable length is 3, but I allow these because of math
   - key: readability-identifier-length.IgnoredVariableNames
-    value: 'x|y|z|dx|dy|dz'
+    value: 'x|y|z|dx|dy|dz|t|i|n|k'
   - key: readability-identifier-length.IgnoredParameterNames
-    value: 'x|y|z|dx|dy|dz'
+    value: 'x|y|z|dx|dy|dz|t|i|n|k'
+  - key: modernize-use-trailing-return-type.LambdaStyle
+    value: all_except_auto
+  # suppress false positives from Catch2 test suite macros
+  - key: SuppressedMacros
+    value: 'TEST_CASE,TEST_CASE_METHOD,TEST_CASE_TEMPLATE,TEST_CASE_TEMPLATE_DEFINE,TEST_CASE_TEMPLATE_INSTANTIATE,SECTION,SCENARIO,SCENARIO_METHOD,GIVEN,WHEN,THEN,AND_WHEN,AND_THEN,REQUIRE,CHECK,REQUIRE_FALSE,CHECK_FALSE,REQUIRE_THROWS,CHECK_THROWS,REQUIRE_THROWS_AS,CHECK_THROWS_AS,REQUIRE_THROWS_WITH,CHECK_THROWS_WITH,REQUIRE_NOTHROW,CHECK_NOTHROW,BENCHMARK,BENCHMARK_ADVANCED,CAPTURE,INFO,FAIL,SUCCESS,SKIP,GENERATE,STATIC_REQUIRE,STATIC_CHECK,STATIC_REQUIRE_FALSE,STATIC_CHECK_FALSE'

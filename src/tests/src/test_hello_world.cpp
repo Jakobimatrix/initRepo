@@ -2,7 +2,6 @@
 #include <catch2/catch_test_macros.hpp>
 #include <cstdio>
 #include <library/math.hpp>
-#include <sstream>
 
 // https://github.com/catchorg/Catch2/blob/devel/docs/Readme.md
 

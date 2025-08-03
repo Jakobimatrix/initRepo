@@ -16,9 +16,9 @@ REPO_ROOT="$(dirname "$(dirname "$SCRIPT_DIR")")"
 cd "${REPO_ROOT}"
 
 # run CMake in debug environment with tests enabled and take the build directory
-BUILD_INFO=$(./initRepo/scripts/build.sh -d -C -t)
+BUILD_INFO=$(./initRepo/scripts/build.sh -d -C -t --compiler clang)
 if [ $? -ne 0 ]; then
-    echo "Error: ./initRepo/scripts/build.sh -d -C -t."
+    echo "Error: ./initRepo/scripts/build.sh -d -C -t --compiler clang ."
     echo "{$BUILD_INFO}"
     exit 1
 fi

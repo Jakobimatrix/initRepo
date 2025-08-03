@@ -20,9 +20,13 @@
  **/
 
 #include <concepts>
+#include <cstdint>
+#include <cstdio>
+#include <exception>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <stdexcept>
 #include <vector>
 
 /**
@@ -33,7 +37,10 @@
  * @param size Size of the Data.
  * @return true if the input starts with "FUZZ".
  */
-inline bool badFunction(const unsigned char* data, size_t size) {
+
+// This bad example would be caught by the static analyser, so lets cheat a
+// little NOLINTBEGIN(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+inline static bool badFunction(const unsigned char* data, size_t size) {
   if (size >= 3) {
     if (data[0] == 'F') {
       if (data[1] == 'U') {
@@ -47,6 +54,7 @@ inline bool badFunction(const unsigned char* data, size_t size) {
   }
   return false;
 }
+// NOLINTEND(cppcoreguidelines-pro-bounds-pointer-arithmetic)
 
 /**
  * @brief Reads a binary file into a vector of bytes.
@@ -63,7 +71,7 @@ concept ByteTypeAllowed =
   (std::same_as<ByteType, char> || std::same_as<ByteType, unsigned char> ||
    std::same_as<ByteType, signed char> || std::same_as<ByteType, std::uint8_t>);
 template <ByteTypeAllowed ByteType>
-std::vector<ByteType> readFileBinary(const std::filesystem::path& path) {
+static std::vector<ByteType> readFileBinary(const std::filesystem::path& path) {
   std::ifstream file(path, std::ios::binary | std::ios::ate);
   if (!file) {
     throw std::runtime_error("Failed to open file: " + path.string());
@@ -96,11 +104,12 @@ extern "C" int LLVMFuzzerTestOneInput(const unsigned char* data, unsigned long s
 
 int main(int argc, char* argv[]) {
   if (argc != 2) {
-    std::cerr << "Usage: " << argv[0] << " <file_path>\n";
+    std::cerr << "Usage: " << argv[0]
+              << " <file_path>\n";  // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic) Thats how its done unfortunately
     return 1;
   }
 
-  std::filesystem::path file_path(argv[1]);
+  const std::filesystem::path file_path(argv[1]);
 
   if (!std::filesystem::exists(file_path)) {
     std::cerr << "File does not exist: " << file_path << "\n";
