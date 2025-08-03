@@ -34,13 +34,12 @@ show_help() {
 CLEAN=false
 INSTALL=false
 BUILD_TYPE=""
-COMPILER=""
 ENABLE_TESTS=OFF
 ENABLE_FUZZING=OFF
 LIST_COMPILERS=false
 VERBOSE=false
 ARGS=()
-COMPILER="g++"
+COMPILER="${DEFAULT_COMPILER}"
 CONFIG_CMAKE_ONLY=false
 
 # Source environment variables

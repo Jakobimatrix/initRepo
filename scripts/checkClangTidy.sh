@@ -15,6 +15,14 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd $SCRIPT_DIR # repo/initRepo/scripts/:
 cd ../../
 
+# run CMake in debug environment with tests enabled and take the build directory
+BUILD_INFO=$(./initRepo/scripts/build.sh -d -C -t)
+BUILD_DIR=$(echo "$BUILD_INFO" | grep '^BUILD_DIR=' | cut -d'=' -f2)
+
+if [ ! -f "compile_commands.json" ]; then
+    echo "Warning: compile_commands.json not found. CMake probably has failed."
+fi
+
 # Source environment variables
 source "initRepo/.environment"
 if [ -f ".environment" ]; then
@@ -23,12 +31,7 @@ fi
 
 for file in $FILES; do
     # Only check files that have a corresponding compilation database entry
-    if [ -f "compile_commands.json" ]; then
-        clang-tidy-${CLANG_TIDY_VERSION} "$file" --quiet --warnings-as-errors='*' --export-fixes=tidy-fixes.yaml || HAS_ISSUES=1
-    else
-        echo "Warning: compile_commands.json not found. Skipping clang-tidy for $file."
-        HAS_ISSUES=1
-    fi
+    clang-tidy-${CLANG_TIDY_VERSION} "$file" --quiet --warnings-as-errors='*' --export-fixes=tidy-fixes.yaml -p "$BUILD_DIR" || HAS_ISSUES=1
 done
 
 if [ $HAS_ISSUES -eq 0 ]; then

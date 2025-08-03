@@ -17,6 +17,9 @@ GCC_C_PATH="/usr/bin/gcc-${GCC_VERSION}"
 CLANG_CPP_PATH="/usr/bin/clang++-${CLANG_VERSION}"
 CLANG_C_PATH="/usr/bin/clang-${CLANG_VERSION}"
 
+# defaults
+DEFAULT_COMPILER="g++"
+
 # Tool paths (if needed, otherwise leave empty)
 # CLANG_FORMAT_PATH="/usr/bin/clang-format-${CLANG_FORMAT_VERSION}"
 # CLANG_TIDY_PATH="/usr/bin/clang-tidy-${CLANG_TIDY_VERSION}"
