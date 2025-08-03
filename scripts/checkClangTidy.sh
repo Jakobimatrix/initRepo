@@ -13,7 +13,7 @@ HAS_ISSUES=0
 # Ensure we are in the root repository folder 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(dirname "$(dirname "$SCRIPT_DIR")")"
-cd "${REPO_ROOT}"./
+cd "${REPO_ROOT}"
 
 # run CMake in debug environment with tests enabled and take the build directory
 BUILD_INFO=$(./initRepo/scripts/build.sh -d -C -t)
