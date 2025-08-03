@@ -1,0 +1,4 @@
+Checks: |
+  -ppcoreguidelines-avoid-non-const-global-variables.GlobList
+  -misc-use-internal-linkage.GlobList,
+  -misc-include-cleaner.GlobList

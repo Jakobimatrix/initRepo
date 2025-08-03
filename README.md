@@ -46,14 +46,7 @@ This gives you a good starting point for your project. Some files are supposed t
     │   ├── CMakeLists.txt              --> Contains CMake how to build and install the examples  
     │   └── src                         --> Here goes your code  
     │       ├── fuzzer_example.cpp      --> Example for fuzzy testing  
-    │       └── hello_world.cpp         --> Example for an executable  
-    ├── fuzzer_lib                      --> Libary for putting in helper functions for the fuzzer  
-    │   ├── CMakeLists.txt              --> Contains CMake how to make the static library for the fuzzer  
-    │   ├── include                     --> Header files go in include  
-    │   │   └── fuzzer_lib              --> Foldername equals library name to enforce #include <library_name/file.hpp>  
-    │   │       └── example_file.hpp    --> Empty header file for library declarations.  
-    │   └── src                         --> Source files go in include  
-    │         └── example_file.cpp      --> Empty source file for library definitions.  
+    │       └── hello_world.cpp         --> Example for an executable
     ├── libary                          --> Example libary for putting in your functions. Please rename!  
     │   ├── CMakeLists.txt              --> Contains CMake how to make the static library  
     │   ├── include                     --> Header files go in include  

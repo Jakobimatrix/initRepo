@@ -12,7 +12,7 @@
  * Fuzz your own function:
  *         1) Copy paste this file, and add a CMake entrie for the new executable
  *         2) Replace the contents of badFunction with a call to your function.
- *         3) If you have to create your own classes from the binary input. I highly suggest making a serializer/deserializer for your class Thouse and other helper functions can be put into fuzzer_lib.
+ *         3) If you have to create your own classes from the binary input. I highly suggest making a serializer/deserializer for your class.
  *
  * @date 30.03.2025
  * @author Jakob Wandel
@@ -88,6 +88,10 @@ std::vector<ByteType> readFileBinary(const std::filesystem::path& path) {
   std::vector<char> tempBuffer(static_cast<size_t>(size));
   if (!file.read(tempBuffer.data(), size)) {
     throw std::runtime_error("Failed to read file: " + path.string());
+  }
+
+  if constexpr (std::is_same<char, ByteType>()) {
+    return tempBuffer;
   }
 
   // Convert/copy to ByteType

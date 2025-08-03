@@ -1,33 +1,30 @@
-Checks: "bugprone-*,\
-clang-analyzer-*,\
-modernize-*,\
--modernize-use-bool-literals,\
--modernize-pass-by-value,\
--modernize-use-auto,\
--modernize-raw-string-literal,\
--modernize-return-braced-init-list,\
--modernize-use-trailing-return-type,\
-cppcoreguidelines-*,\
--cppcoreguidelines-pro-type-vararg,\
--cppcoreguidelines-pro-bounds-array-to-pointer-decay,\
-misc-*,\
--misc-include-cleaner,\
-llvm-namespace-comment,\
-readability-*,\
--readability-implicit-bool-cast,\
--readability-else-after-return,\
--readability-redundant-declaration,\
--readability-named-parameter,\
--readability-braces-around-statements,\
--readability-implicit-bool-conversion,\
-performance-*,\
--clang-analyzer-core.CallAndMessage,\
--clang-analyzer-security.FloatLoopCounter,\
--clang-diagnostic-zero-as-null-pointer-constant,\
--clang-diagnostic-c99-extensions,\
--clang-diagnostic-double-promotion,\
-google-explicit-constructor"
-
+Checks: |
+  bugprone-*,
+  clang-analyzer-*,
+  modernize-*,
+  -modernize-use-bool-literals,
+  -modernize-pass-by-value,
+  -modernize-use-auto,
+  -modernize-raw-string-literal,
+  -modernize-return-braced-init-list,
+  -modernize-use-trailing-return-type,
+  cppcoreguidelines-*,
+  -cppcoreguidelines-pro-type-vararg,
+  -cppcoreguidelines-pro-bounds-array-to-pointer-decay,
+  misc-*,
+  llvm-namespace-comment,
+  readability-*,
+  -readability-implicit-bool-cast,
+  -readability-else-after-return,
+  -readability-redundant-declaration,
+  -readability-named-parameter,
+  -readability-braces-around-statements,
+  -readability-implicit-bool-conversion,
+  performance-*,
+  -clang-analyzer-core.CallAndMessage,
+  -clang-analyzer-security.FloatLoopCounter,
+  -google-explicit-constructor,
+  -clang-diagnostic-*
 
 WarningsAsErrors: ''
 HeaderFilterRegex: ''
@@ -36,13 +33,8 @@ FormatStyle:     none
 CheckOptions:
   # min variable length is 3, but I allow these because of math
   - key: readability-identifier-length.IgnoredVariableNames
-    value: 'x|y|z|dx|dy|dz|t|i|n|k'
+    value: "x|y|z|dx|dy|dz|t|i|n|k"
   - key: readability-identifier-length.IgnoredParameterNames
-    value: 'x|y|z|dx|dy|dz|t|i|n|k'
+    value: "x|y|z|dx|dy|dz|t|i|n|k"
   - key: modernize-use-trailing-return-type.LambdaStyle
     value: all_except_auto
-  # disable global variable and internal linkage warnings for test files
-  - key: cppcoreguidelines-avoid-non-const-global-variables.GlobList
-    value: '-src/**/tests/**,-src/tests/**'
-  - key: misc-use-internal-linkage.GlobList
-    value: '-src/**/tests/**,-src/tests/**'
