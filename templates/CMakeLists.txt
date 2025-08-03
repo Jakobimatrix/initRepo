@@ -25,8 +25,11 @@ if (NOT DEFINED PROJECT_NAME)
     enable_shared_libraries(${ENVIRONMENT_SETTINGS})
 
     # ===== Fuzzing =====
-    enable_testing()
     include(initRepo/cmake/ClangFuzzyTests.cmake)
+
+    # ===== CTest with Catch2 =====
+    setup_catch2_and_ctest()
+    enable_testing()
 endif()
 
 
