@@ -1,5 +1,3 @@
 #include <library/math.hpp>
 
-namespace lib{
-
-}
+namespace lib {}
