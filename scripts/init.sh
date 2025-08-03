@@ -155,10 +155,12 @@ if [ $answer = 1 ]; then
   copyFileWithPrompt "$TEMPLATE_FILE_PATH$GIT_IGNORE_FILE" "$REPO$GIT_IGNORE_FILE"
 fi
 
-task="Do you want to copy the .gitmodules?"
-askYesNo
-if [ $answer = 1 ]; then
-  copyFileWithPrompt "$TEMPLATE_FILE_PATH$GIT_MODULES_FILE" "$REPO$GIT_MODULES_FILE"
+if [ ! -f "$REPO$GIT_MODULES_FILE" ];
+  task="Do you want to copy the .gitmodules?"
+  askYesNo
+  if [ $answer = 1 ]; then
+    cp "$TEMPLATE_FILE_PATH$GIT_MODULES_FILE" "$REPO$GIT_MODULES_FILE"
+  fi
 fi
 
 
@@ -183,7 +185,13 @@ then
     cp -r "$PROCECT_STRUCUR_TEMPLATE" "$REPO$PROCECT_STRUCUR_FOLDER"
     echo "$REPO$PROCECT_STRUCUR_FOLDER installed"
   else
-    echo "$REPO$PROCECT_STRUCUR_FOLDER already exists. Don't overwrite."
+    echo "$REPO$PROCECT_STRUCUR_FOLDER already exists. !!!Do you really want to Overwrite???"
+    askYesNo
+    if [ $answer = 1 ]
+      rm -rf "$REPO$PROCECT_STRUCUR_FOLDER"
+      cp -r "$PROCECT_STRUCUR_TEMPLATE" "$REPO$PROCECT_STRUCUR_FOLDER"
+      echo "$REPO$PROCECT_STRUCUR_FOLDER overwritten"
+    fi
   fi
 fi
 
