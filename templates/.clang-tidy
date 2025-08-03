@@ -41,6 +41,8 @@ CheckOptions:
     value: 'x|y|z|dx|dy|dz|t|i|n|k'
   - key: modernize-use-trailing-return-type.LambdaStyle
     value: all_except_auto
-  # suppress false positives from Catch2 test suite macros
-  - key: SuppressedMacros
-    value: 'TEST_CASE,TEST_CASE_METHOD,TEST_CASE_TEMPLATE,TEST_CASE_TEMPLATE_DEFINE,TEST_CASE_TEMPLATE_INSTANTIATE,SECTION,SCENARIO,SCENARIO_METHOD,GIVEN,WHEN,THEN,AND_WHEN,AND_THEN,REQUIRE,CHECK,REQUIRE_FALSE,CHECK_FALSE,REQUIRE_THROWS,CHECK_THROWS,REQUIRE_THROWS_AS,CHECK_THROWS_AS,REQUIRE_THROWS_WITH,CHECK_THROWS_WITH,REQUIRE_NOTHROW,CHECK_NOTHROW,BENCHMARK,BENCHMARK_ADVANCED,CAPTURE,INFO,FAIL,SUCCESS,SKIP,GENERATE,STATIC_REQUIRE,STATIC_CHECK,STATIC_REQUIRE_FALSE,STATIC_CHECK_FALSE'
+  # disable global variable and internal linkage warnings for test files
+  - key: cppcoreguidelines-avoid-non-const-global-variables.GlobList
+    value: '-src/**/tests/**'
+  - key: misc-use-internal-linkage.GlobList
+    value: '-src/**/tests/**'
