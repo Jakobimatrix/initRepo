@@ -26,6 +26,7 @@ show_help() {
     echo "  -f              Enable fuzzing"
     echo "  -v              Verbode: dump CMake variables"
     echo "  -l              List available compilers"
+    echo "  -C              only run CMake"
     exit 0
 }
 
@@ -40,6 +41,7 @@ LIST_COMPILERS=false
 VERBOSE=false
 ARGS=()
 COMPILER="g++"
+CONFIG_CMAKE_ONLY=false
 
 # Source environment variables
 source "../.environment"
@@ -104,6 +106,7 @@ while [[ $# -gt 0 ]]; do
         -v) VERBOSE=true ;;
         -l) LIST_COMPILERS=true ;;
         -h) show_help ;;
+        -C) CONFIG_CMAKE_ONLY=true ;;
         *)
             echo "Unknown option: $1"
             show_help
@@ -178,7 +181,7 @@ fi
 mkdir -p "$BUILD_DIR"
 cd "$BUILD_DIR"
 
-# Run CMake and build
+# Run CMake
 echo "Using cpp compiler at: $COMPILER_PATH"
 echo "Using c compiler at: $CC_PATH"
 echo "To change compiler versions, set the variables in this script!!"
@@ -189,6 +192,12 @@ if [[ "$VERBOSE" == true ]]; then
     echo "Dumping CMake variables:"
     cmake -LAH ..
 fi
+
+if [[ "$CONFIG_CMAKE_ONLY" == true ]]; then
+    echo "CMake configuration only (-C set). Exiting before build."
+    exit 0
+fi
+
 echo "Building project..."
 cmake --build . -- -j$(nproc)
 

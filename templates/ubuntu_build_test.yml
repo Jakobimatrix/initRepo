@@ -39,9 +39,6 @@ jobs:
         sudo apt-get install clang-format-${CLANG_FORMAT_VERSION}
         sudo apt-get install clang-format-${CLANG_TIDY_VERSION}
 
-    - name: Check clang-format
-      run: ./initRepo/checkClangFormat.sh
-
     - name: Check clang-tidy
       run: ./initRepo/checkClangTidy.sh
 
@@ -62,3 +59,6 @@ jobs:
 
     - name: Build release fuzzer with Clang
       run: ./initRepo/build.sh -r -f --compiler clang
+
+    - name: Check clang-format
+      run: ./initRepo/checkClangFormat.sh

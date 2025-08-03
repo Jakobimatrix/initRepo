@@ -45,5 +45,8 @@ if(ENABLE_LTO)
     endif()
 endif()
 
+# Export compile_commands.json for clang-tidy/clangd
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 message(STATUS "Compiler: ${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}")
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
