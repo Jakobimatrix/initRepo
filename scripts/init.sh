@@ -151,14 +151,17 @@ fi
 
 task="Do you want to copy the .gitignore?"
 askYesNo
-if [ $answer = 1 ]; then
+if [ $answer = 1 ]
+then
   copyFileWithPrompt "$TEMPLATE_FILE_PATH$GIT_IGNORE_FILE" "$REPO$GIT_IGNORE_FILE"
 fi
 
-if [ ! -f "$REPO$GIT_MODULES_FILE" ];
+if [ ! -f "$REPO$GIT_MODULES_FILE" ]
+then
   task="Do you want to copy the .gitmodules?"
   askYesNo
-  if [ $answer = 1 ]; then
+  if [ $answer = 1 ]
+    then
     cp "$TEMPLATE_FILE_PATH$GIT_MODULES_FILE" "$REPO$GIT_MODULES_FILE"
   fi
 fi
@@ -166,7 +169,8 @@ fi
 
 task="Do you want to copy the github hook script <build and test for ubuntu>?"
 askYesNo
-if [ $answer = 1 ]; then
+if [ $answer = 1 ]
+then
   mkdir -p "${REPO}$GITHUB_HOOK_FILE_DEST"
   copyFileWithPrompt "$TEMPLATE_FILE_PATH$GITHUB_HOOK_FILE" "${REPO}$GITHUB_HOOK_FILE_DEST/$GITHUB_HOOK_FILE"
 fi
