@@ -191,7 +191,7 @@ then
   else
     echo "$REPO$PROCECT_STRUCUR_FOLDER already exists. !!!Do you really want to Overwrite???"
     askYesNo
-    if [ $answer = 1 ]
+    if [ $answer = 1 ]; then
       rm -rf "$REPO$PROCECT_STRUCUR_FOLDER"
       cp -r "$PROCECT_STRUCUR_TEMPLATE" "$REPO$PROCECT_STRUCUR_FOLDER"
       echo "$REPO$PROCECT_STRUCUR_FOLDER overwritten"
