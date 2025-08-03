@@ -25,6 +25,12 @@ show_help() {
     exit 0
 }
 
+# Source environment variables
+source "initRepo/.environment"
+if [ -f ".environment" ]; then
+    source ".environment"
+fi
+
 # Defaults
 CLEAN=false
 INSTALL=false
@@ -37,17 +43,11 @@ ARGS=()
 COMPILER="${DEFAULT_COMPILER}"
 CONFIG_CMAKE_ONLY=false
 
-# Source environment variables
-source "initRepo/.environment"
-if [ -f ".environment" ]; then
-    source ".environment"
-fi
-
 # Compiler paths from .environment
-CLANG_CPP_PATH="${CLANG_CPP_PATH:-/usr/bin/clang++-19}"
-CLANG_C_PATH="${CLANG_C_PATH:-/usr/bin/clang-19}"
-GCC_CPP_PATH="${GCC_CPP_PATH:-/usr/bin/g++-13}"
-GCC_C_PATH="${GCC_C_PATH:-/usr/bin/gcc-13}"
+CLANG_CPP_PATH="${CLANG_CPP_PATH}"
+CLANG_C_PATH="${CLANG_C_PATH}"
+GCC_CPP_PATH="${GCC_CPP_PATH}"
+GCC_C_PATH="${GCC_C_PATH}"
 
 
 list_available_compiler() {
@@ -132,7 +132,7 @@ elif [[ "$COMPILER" == "clang++" ]]; then
     CC_PATH="$CLANG_C_PATH"
     COMPILER_NAME="clang"
 else
-    echo "Error: $COMPILER not valid input."
+    echo "Error: Compiler "$COMPILER" is not a valid input."
     exit 1
 fi
 

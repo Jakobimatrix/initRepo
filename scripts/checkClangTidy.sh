@@ -12,11 +12,16 @@ HAS_ISSUES=0
 
 # Ensure we are in the root repository folder 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-cd $SCRIPT_DIR # repo/initRepo/scripts/:
-cd ../../
+REPO_ROOT="$(dirname "$(dirname "$SCRIPT_DIR")")"
+cd "${REPO_ROOT}"./
 
 # run CMake in debug environment with tests enabled and take the build directory
 BUILD_INFO=$(./initRepo/scripts/build.sh -d -C -t)
+if [ $? -ne 0 ]; then
+    echo "Error: ./initRepo/scripts/build.sh -d -C -t."
+    echo "{$BUILD_INFO}"
+    exit 1
+fi
 BUILD_DIR=$(echo "$BUILD_INFO" | grep '^BUILD_DIR=' | cut -d'=' -f2)
 
 if [ ! -f "compile_commands.json" ]; then
