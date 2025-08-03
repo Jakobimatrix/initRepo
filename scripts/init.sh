@@ -12,9 +12,12 @@ if [ "$EUID" -eq 0 ]; then
   exit 1
 fi
 
-# Ensure we are in the root folder of the repository:
+# Ensure we are in the script folder repo/initRepo/scripts/:
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd $SCRIPT_DIR
+
+# find all scripts in the current folder and make them executable
+find . -maxdepth 1 -type f -name "*.sh" -exec chmod +x {} \;
 
 
 # Source environment variables
@@ -40,21 +43,7 @@ PROCECT_STRUCUR_TEMPLATE="../src/"
 TEMPLATE_FILE_PATH="../templates/"
 
 
-
-# validate input
-REPO="$1"
-
-if [ $# -lt 1 ]
-then
-        echo "Usage: ./init.sh PATH_TO_YOUR_REPOSITORY"
-        exit
-elif [ ! -d "$REPO" ]
-then
-        echo "Given $REPO does not exist!"
-        exit
-fi
-SLASH_CHAR="/"
-REPO="${REPO%/}$SLASH_CHAR"
+REPO="../../"
 
 if [ ! -d "$REPO.git/hooks/" ]
 then

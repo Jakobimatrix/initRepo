@@ -3,15 +3,6 @@ If I write "you" I mean me. Though you might use this repo too, it is mostly for
 
 # initRepo 
 
-[![C/C++ CI](https://github.com/Jakobimatrix/initRepo/actions/workflows/ubuntu_build_test.yml/badge.svg)](https://github.com/Jakobimatrix/initRepo/actions/workflows/ubuntu_build_test.yml)
-
- - OS: Ubuntu 24.04
- - compiler: clang 19, gcc 13
- - debug + release
- - tests
-
- ---
-
 This repo helps when createing a new project in cpp20. It provides a solid structure and enforces some rules.
 After creating a new  project add this repo as a submodule (or copy it)
 Than run ./ init.sh This copies the base structur installes helpfull tools and provides a Template for the CMakeLists.txt.
@@ -77,10 +68,10 @@ This gives you a good starting point for your project. Some files are supposed t
 ```
 
 ## Provided CMake functions 
-The root CMakeLists.txt which is copied will include some helper functions. These are managed by the repo "InitRepo"
+The root CMakeLists.txt which is copied will include some helper functions. These are managed by the repo "initRepo"
 If change is needed, update the repo. All projects should be based on the same rules especially thouse which include other projects.
 ```
-InitRepo
+initRepo
 ├── cmake
 │   ├── ClangFuzzyTests.cmake           --> if Option ENABLE_FUZZING is set, link the project against clang fuzzer
 │   ├── CompilerSetup.cmake             --> sets c++ standard 20, defines release/debug modes, enables LTO if ENABLE_LTO is set
@@ -89,12 +80,27 @@ InitRepo
 │   └── Options.cmake                   --> helps with shared libraries and mutlti threading
 ```
 
+## Provided Scripts
+The scripts make your life better. Simmilar to the cmake scripts these shall not be copied but managed by the initRepo and called from there.
+You may add your own .environment in the root of your repository to overwrite paths and versions.
+```
+initRepo
+├── scripts
+│   ├── build.sh               --> helps to build your project
+│   ├── checkClangFormat.sh    --> checks if clang format rules are followed
+│   ├── checkClangTidy.sh      --> checks if clang tidy rules are followed
+│   ├── init.sh                --> used to install files and project struckture in your new repository
+│   ├── installCompilers.sh    --> used to install compilers
+│   ├── runFuzzer.sh           --> used to run the fuzzy tests
+
+```
+
 ## Usage
 1. `git clone YOUR_REPOSITORY`
 2. `cd YOUR_REPOSITORY`
-3. `git submodule add https://github.com/Jakobimatrix/initRepo.git`  // @stranger OR COPY if you dont want submodules
+3. `git submodule add https://github.com/Jakobimatrix/initRepo.git`  // @stranger OR COPY if you dont want submodules, but it needs to be at the root of your repo
 4. `cd initRepo`
-4. `chmod +x initRepo/init.sh`
-5. `sudo ./initRepo/init.sh ../`
+4. `chmod +x initRepo/scripts/init.sh`
+5. `./initRepo/scripts/init.sh`
 
    
