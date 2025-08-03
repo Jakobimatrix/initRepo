@@ -29,6 +29,14 @@
 #include <stdexcept>
 #include <vector>
 
+// Concept must be outside the anonymous namespace for C++20
+
+template <typename ByteType>
+concept ByteTypeAllowed =
+  !std::is_const_v<ByteType> &&
+  (std::same_as<ByteType, char> || std::same_as<ByteType, unsigned char> ||
+   std::same_as<ByteType, signed char> || std::same_as<ByteType, std::uint8_t>);
+
 namespace {
 
 /**
@@ -67,11 +75,6 @@ inline bool badFunction(const unsigned char* data, size_t size) {
  * @throws std::runtime_error if the file can't be opened.
  */
 
-template <typename ByteType>
-concept ByteTypeAllowed =
-  !std::is_const_v<ByteType> &&
-  (std::same_as<ByteType, char> || std::same_as<ByteType, unsigned char> ||
-   std::same_as<ByteType, signed char> || std::same_as<ByteType, std::uint8_t>);
 template <ByteTypeAllowed ByteType>
 std::vector<ByteType> readFileBinary(const std::filesystem::path& path) {
   std::ifstream file(path, std::ios::binary | std::ios::ate);
@@ -82,11 +85,13 @@ std::vector<ByteType> readFileBinary(const std::filesystem::path& path) {
   const std::streamsize size = file.tellg();
   file.seekg(0, std::ios::beg);
 
-  std::vector<ByteType> buffer(static_cast<size_t>(size));
-  if (!file.read(reinterpret_cast<char*>(buffer.data()), size)) {
+  std::vector<char> tempBuffer(static_cast<size_t>(size));
+  if (!file.read(tempBuffer.data(), size)) {
     throw std::runtime_error("Failed to read file: " + path.string());
   }
 
+  // Convert/copy to ByteType
+  std::vector<ByteType> buffer(tempBuffer.begin(), tempBuffer.end());
   return buffer;
 }
 

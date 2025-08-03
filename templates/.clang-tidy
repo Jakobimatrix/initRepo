@@ -43,6 +43,6 @@ CheckOptions:
     value: all_except_auto
   # disable global variable and internal linkage warnings for test files
   - key: cppcoreguidelines-avoid-non-const-global-variables.GlobList
-    value: '-src/**/tests/**'
+    value: '-src/**/tests/**,-src/tests/**'
   - key: misc-use-internal-linkage.GlobList
-    value: '-src/**/tests/**'
+    value: '-src/**/tests/**,-src/tests/**'
