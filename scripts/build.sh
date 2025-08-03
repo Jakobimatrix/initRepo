@@ -6,12 +6,6 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(dirname "$(dirname "$SCRIPT_DIR")")"
 
-echo $SCRIPT_DIR
-echo $REPO_ROOT
-ls
-
-exit
-
 show_help() {
     echo "Usage: ./build.sh [options]"
     echo "Options:"
@@ -193,7 +187,8 @@ if [[ "$VERBOSE" == true ]]; then
 fi
 
 if [[ "$CONFIG_CMAKE_ONLY" == true ]]; then
-    echo "CMake configuration only (-C set). Exiting before build."
+    echo "CMake configuration only (-C set). Exiting before build.\n"
+    echo "BUILD_DIR=$BUILD_DIR"
     exit 0
 fi
 
