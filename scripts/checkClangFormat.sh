@@ -10,8 +10,14 @@ FILES=$(git ls-files '*.c' '*.cpp' '*.h' '*.hpp' ':!:build*' ':!:*/build*' ':!:_
 
 BAD_FILES=()
 
+# Source environment variables
+source "../.environment"
+if [ -f "../../.environment" ]; then
+    source "../../.environment"
+fi
+
 for file in $FILES; do
-    if ! clang-format --dry-run --Werror "$file"; then
+    if ! clang-format-${CLANG_FORMAT_VERSION}  --dry-run --Werror "$file"; then
         BAD_FILES+=("$file")
     fi
 done
