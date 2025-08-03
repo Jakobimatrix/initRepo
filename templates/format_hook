@@ -8,7 +8,17 @@ then
 exit 0
 fi
 
-CLANG_FORMAT_VERSION=19
+# Source environment variables relative to the git root
+GIT_ROOT="$(git rev-parse --show-toplevel)"
+if [ ! -f "$GIT_ROOT/initRepo/.environment" ]; then
+  echo "I can not find the environment of initRepo!"
+  exit 1
+fi
+source "$GIT_ROOT/initRepo/.environment"
+if [ -f "$GIT_ROOT/.environment" ]; then
+  source "$GIT_ROOT/.environment"
+fi
+
 CLANG_FORMAT=$(which clang-format-$CLANG_FORMAT_VERSION)
 if [ "$CLANG_FORMAT" = "" ]
 then

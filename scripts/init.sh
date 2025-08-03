@@ -84,19 +84,25 @@ copyFileWithPrompt() {
 }
 
 if ! command -v clang-format-${CLANG_FORMAT_VERSION} >/dev/null 2>&1; then
-  task="Do you want to installUpdate clang-format-${CLANG_FORMAT_VERSION} and hooks"
+  task="Do you want to install clang-format-${CLANG_FORMAT_VERSION}"
   askYesNo 
   if [ $answer = 1  ]
   then 
     # install clang format
     sudo apt install clang-format-${CLANG_FORMAT_VERSION} -y
-
-    cp "$TEMPLATE_FILE_PATH$HOOK_SCRIPT" "$REPO$HOOK_FILE_DEST"
-    chmod +x "$REPO$HOOK_FILE_DEST"
-
-    echo "Clang-format installed in $REPO$HOOK_FILE_DEST"
+    echo "clang-format-${CLANG_FORMAT_VERSION} installed"
   fi
 fi
+
+task="Do you want to install clang-format::> pre-comit git hook?"
+askYesNo
+if [ $answer = 1 ]
+then
+  cp "$TEMPLATE_FILE_PATH$HOOK_SCRIPT" "$REPO$HOOK_FILE_DEST"
+  chmod +x "$REPO$HOOK_FILE_DEST"
+  echo "Clang-format hook installed in $REPO$HOOK_FILE_DEST"
+fi
+
 cp "$TEMPLATE_FILE_PATH$FORMAT_FILE_F" "$REPO"
 echo ".clang-format copied"
 

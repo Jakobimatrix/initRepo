@@ -22,7 +22,7 @@ if [ -f ".environment" ]; then
 fi
 
 for file in $FILES; do
-    if ! clang-format-${CLANG_FORMAT_VERSION}  --dry-run --Werror "$file"; then
+    if ! clang-format-${CLANG_FORMAT_VERSION} -style=file --dry-run --Werror "$file"; then
         BAD_FILES+=("$file")
     fi
 done
@@ -35,5 +35,7 @@ else
     for f in "${BAD_FILES[@]}"; do
         echo "$f"
     done
+    echo "You can format them by running:\n"
+    echo "clang-format-${CLANG_FORMAT_VERSION} -style=file -i ${BAD_FILES[@]}"
     exit 1
 fi
