@@ -1,0 +1,24 @@
+# .environment
+# This file defines environment variables for compiler versions, paths, and tool versions.
+# Source this file in bash scripts: source .environment
+
+# Compiler versions
+GCC_VERSION=13
+CLANG_VERSION=19
+MSVC_VERSION=""
+
+# Tool versions
+CLANG_FORMAT_VERSION=19
+CLANG_TIDY_VERSION=19
+
+# Compiler paths
+GCC_CPP_PATH="/usr/bin/g++-${GCC_VERSION}"
+GCC_C_PATH="/usr/bin/gcc-${GCC_VERSION}"
+CLANG_CPP_PATH="/usr/bin/clang++-${CLANG_VERSION}"
+CLANG_C_PATH="/usr/bin/clang-${CLANG_VERSION}"
+
+# Tool paths (if needed, otherwise leave empty)
+# CLANG_FORMAT_PATH="/usr/bin/clang-format-${CLANG_FORMAT_VERSION}"
+# CLANG_TIDY_PATH="/usr/bin/clang-tidy-${CLANG_TIDY_VERSION}"
+
+# Add more variables as needed

@@ -25,8 +25,8 @@ All is optional!
 - valgrind
 
 ### Git hook
-To enforce clang-tidy inside a repository for c, cpp, cxx, h, hpp files.
-The init.sh installes clang-tidy on the local machine and a git-hook for the specified repository to check the format before every commit.
+To enforce clang-format inside a repository for c, cpp, cxx, h, hpp files.
+The init.sh installes clang-format on the local machine and a git-hook for the specified repository to check the format before every commit.
 Look inside **format_hook** for the enforced clang-version
 
 Now every time you commit a file not meeting the clang-format rules you will be asked to format properly.

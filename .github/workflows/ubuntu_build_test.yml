@@ -17,31 +17,42 @@ jobs:
     - name: Update submodules
       run: git submodule update --init --recursive
 
-    - name: Install GCC 13
+    - name: Install GCC
       run: |
+        source .environment
         sudo apt-get update
-        sudo apt-get install -y gcc-13 g++-13
+        sudo apt-get install -y gcc-${GCC_VERSION} g++-${GCC_VERSION}
 
-    - name: Set up GCC 13 as default
+    - name: Set up GCC as default
       run: |
-        sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-13 100
-        sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-13 100
+        source .environment
+        sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-${GCC_VERSION} 100
+        sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-${GCC_VERSION} 100
 
-    - name: Install Clang 19
+    - name: Install Clang
       run: |
+        source .environment
         sudo apt-get update
-        sudo apt-get install -y clang-19 lld
+        sudo apt-get install -y clang-${CLANG_VERSION} lld
 
     - name: Ensure ld.lld is available for Clang
       run: |
+        source .environment
         if ! command -v ld.lld &>/dev/null; then
-          sudo ln -s /usr/bin/ld.lld-19 /usr/bin/ld.lld
+          sudo ln -s /usr/bin/ld.lld-${CLANG_VERSION} /usr/bin/ld.lld
         fi
 
-    - name: Set up Clang 19 as default
+    - name: Set up Clang as default
       run: |
-        sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-19 100
-        sudo update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-19 100
+        source .environment
+        sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-${CLANG_VERSION} 100
+        sudo update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-${CLANG_VERSION} 100
+
+    - name: Check clang-format
+      run: ./checkClangFormat.sh
+
+    - name: Check clang-tidy
+      run: ./checkClangTidy.sh
 
     - name: Build and test with GCC 13
       run: ./build.sh -c -d -t --compiler gcc

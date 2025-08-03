@@ -12,11 +12,18 @@ if [ "$EUID" -eq 0 ]; then
   exit 1
 fi
 
+# Ensure we are in the root folder of the repository:
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd $SCRIPT_DIR
 
-TEMPLATE_FILE_PATH=$(realpath "$0" | sed 's|\(.*\)/.*|\1|')
 
-CLANG_FORMAT_VERSION="19";
-CLANG_TIDY_VERSION="19";
+# Source environment variables
+source "../.environment"
+if [ -f "../../.environment" ]; then
+    source "../../.environment"
+fi
+
+
 HOOK_FILE_DEST=".git/hooks/pre-commit";
 HOOK_SCRIPT="format_hook";
 FORMAT_FILE_F=".clang-format"
@@ -27,12 +34,10 @@ GIT_MODULES_FILE=".gitmodules"
 GITHUB_HOOK_FILE="ubuntu_build_test.yml"
 GITHUB_HOOK_FILE_DEST=".github/workflows"
 CMAKE_LISTS_FILE="CMakeLists.txt"
-BUILD_FILE="build.sh"
-FUZZER_FILE="runFuzzer.sh"
 PROCECT_STRUCUR_FOLDER="src/"
-PROCECT_STRUCUR_TEMPLATE="$TEMPLATE_FILE_PATH/src/"
+PROCECT_STRUCUR_TEMPLATE="../src/"
 
-TEMPLATE_FILE_PATH="$TEMPLATE_FILE_PATH/templates/"
+TEMPLATE_FILE_PATH="../templates/"
 
 
 
@@ -89,44 +94,57 @@ copyFileWithPrompt() {
   fi
 }
 
-task="Do you want to installUpdate clang-format-$CLANG_FORMAT_VERSION and hooks"
-askYesNo 
-if [ $answer = 1  ]
-then 
-  # install clang format
-  sudo apt install clang-format-$CLANG_FORMAT_VERSION -y
+if ! command -v clang-format-${CLANG_FORMAT_VERSION} >/dev/null 2>&1; then
+  task="Do you want to installUpdate clang-format-${CLANG_FORMAT_VERSION} and hooks"
+  askYesNo 
+  if [ $answer = 1  ]
+  then 
+    # install clang format
+    sudo apt install clang-format-${CLANG_FORMAT_VERSION} -y
 
-  cp "$TEMPLATE_FILE_PATH$HOOK_SCRIPT" "$REPO$HOOK_FILE_DEST"
-  cp "$TEMPLATE_FILE_PATH$FORMAT_FILE_F" "$REPO"
-  chmod +x "$REPO$HOOK_FILE_DEST"
+    cp "$TEMPLATE_FILE_PATH$HOOK_SCRIPT" "$REPO$HOOK_FILE_DEST"
+    chmod +x "$REPO$HOOK_FILE_DEST"
 
-  echo "Clang-format installed in $REPO$HOOK_FILE_DEST"
+    echo "Clang-format installed in $REPO$HOOK_FILE_DEST"
+  fi
+fi
+cp "$TEMPLATE_FILE_PATH$FORMAT_FILE_F" "$REPO"
+echo ".clang-format copied"
+
+if ! command -v clang-tidy-${CLANG_TIDY_VERSION} >/dev/null 2>&1; then
+  task="Do you want to install/update clang-tidy-${CLANG_TIDY_VERSION}?"
+  askYesNo
+  if [ $answer = 1 ]
+  then
+    sudo apt install clang-tidy-${CLANG_TIDY_VERSION} -y
+    echo "clang-tidy-${CLANG_TIDY_VERSION} installed"
+  fi
+fi
+cp "$TEMPLATE_FILE_PATH$FORMAT_FILE_T" "$REPO"
+echo ".clang-tidy copied"
+
+if ! command -v cppcheck >/dev/null 2>&1; then
+  task="Do you want to install cppcheck?"
+  askYesNo
+  if [ $answer = 1 ]
+  then
+    sudo apt install cppcheck -y
+    echo "cppcheck installed"
+  fi
 fi
 
-task="Do you want to install/update clang-tidy-$CLANG_TIDY_VERSION?"
-askYesNo
-if [ $answer = 1 ]
-then
-  sudo apt install clang-tidy-$CLANG_TIDY_VERSION -y
-  cp "$TEMPLATE_FILE_PATH$FORMAT_FILE_T" "$REPO"
-  echo "clang-tidy-$CLANG_TIDY_VERSION"
+if ! command -v valgrind >/dev/null 2>&1; then
+  task="Do you want to install valgrind?"
+  askYesNo
+  if [ $answer = 1 ]
+  then
+    sudo apt install valgrind -y
+    echo "valgrind installed"
+  fi
 fi
 
-task="Do you want to install cppcheck?"
-askYesNo
-if [ $answer = 1 ]
-then
-  sudo apt install cppcheck -y
-  echo "cppcheck installed"
-fi
+echo "Dont continue if you already initiated your repo!"
 
-task="Do you want to install valgrind?"
-askYesNo
-if [ $answer = 1 ]
-then
-  sudo apt install valgrind -y
-  echo "valgrind installed"
-fi
 
 task="Do you want to enforece LF line ending for that REPO?"
 askYesNo
@@ -135,8 +153,6 @@ then
   cp "$TEMPLATE_FILE_PATH$GIT_ATTRIBUTES_FILE" "$REPO"
   echo ".gitattributes installed, LF line ending enforeced" 
 fi
-
-echo "Dont continue if you already initiated your repo!"
 
 task="Do you want to copy the .gitignore?"
 askYesNo
@@ -150,24 +166,6 @@ if [ $answer = 1 ]; then
   copyFileWithPrompt "$TEMPLATE_FILE_PATH$GIT_MODULES_FILE" "$REPO$GIT_MODULES_FILE"
 fi
 
-task="Do you want to copy the Cmake project?"
-askYesNo
-if [ $answer = 1 ]; then
-  copyFileWithPrompt "$TEMPLATE_FILE_PATH$CMAKE_LISTS_FILE" "$REPO$CMAKE_LISTS_FILE"
-fi
-
-task="Do you want to copy the build script?"
-askYesNo
-if [ $answer = 1 ]; then
-  copyFileWithPrompt "$TEMPLATE_FILE_PATH$BUILD_FILE" "$REPO$BUILD_FILE"
-fi
-
-task="Do you want to copy the fuzzer run script?"
-askYesNo
-if [ $answer = 1 ]; then
-  mkdir -p "${REPO}fuzz"
-  copyFileWithPrompt "$TEMPLATE_FILE_PATH$FUZZER_FILE" "${REPO}fuzz/$FUZZER_FILE"
-fi
 
 task="Do you want to copy the github hook script <build and test for ubuntu>?"
 askYesNo
@@ -176,6 +174,11 @@ if [ $answer = 1 ]; then
   copyFileWithPrompt "$TEMPLATE_FILE_PATH$GITHUB_HOOK_FILE" "${REPO}$GITHUB_HOOK_FILE_DEST/$GITHUB_HOOK_FILE"
 fi
 
+task="Do you want to copy the Cmake project?"
+askYesNo
+if [ $answer = 1 ]; then
+  copyFileWithPrompt "$TEMPLATE_FILE_PATH$CMAKE_LISTS_FILE" "$REPO$CMAKE_LISTS_FILE"
+fi
 
 task="Do you want to copy the procect structure?"
 askYesNo

@@ -2,6 +2,16 @@
 
 set -e
 
+# Ensure we are in the root folder of the repository:
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(dirname "$(dirname "$SCRIPT_DIR")")"
+
+echo $SCRIPT_DIR
+echo $REPO_ROOT
+ls
+
+exit
+
 show_help() {
     echo "Usage: ./build.sh [options]"
     echo "Options:"
@@ -31,10 +41,25 @@ VERBOSE=false
 ARGS=()
 COMPILER="g++"
 
-CLANG_CPP_PATH="/usr/bin/clang++-19"
-CLANG_C_PATH="/usr/bin/clang-19"
-GCC_CPP_PATH="/usr/bin/g++-13"
-GCC_C_PATH="/usr/bin/gcc-13"
+# Source environment variables
+source "../.environment"
+if [ -f "$REPO_ROOT/.environment" ]; then
+    source "$REPO_ROOT/.environment"
+fi
+
+# Compiler paths from .environment
+CLANG_CPP_PATH="${CLANG_CPP_PATH:-/usr/bin/clang++-19}"
+CLANG_C_PATH="${CLANG_C_PATH:-/usr/bin/clang-19}"
+GCC_CPP_PATH="${GCC_CPP_PATH:-/usr/bin/g++-13}"
+GCC_C_PATH="${GCC_C_PATH:-/usr/bin/gcc-13}"
+
+
+if [[ ! -f "$REPO_ROOT/.git/config" ]]; then
+    echo "Error: .git folder not found in repository root ($REPO_ROOT)."
+    exit 1
+fi
+
+cd "$REPO_ROOT"
 
 
 list_available_compiler() {
