@@ -58,6 +58,9 @@ install_manifest.txt
 compile_commands.json
 CTestTestfile.cmake
 
+# clang-tidy
+tidy-fixes.yaml
+
 
 # VSCode
 .vscode/
