@@ -24,8 +24,9 @@ if [ $? -ne 0 ]; then
 fi
 BUILD_DIR=$(echo "$BUILD_INFO" | grep '^BUILD_DIR=' | cut -d'=' -f2)
 
-if [ ! -f "compile_commands.json" ]; then
+if [ ! -f "${BUILD_DIR}/compile_commands.json" ]; then
     echo "Warning: compile_commands.json not found. CMake probably has failed."
+    exit 1
 fi
 
 # Source environment variables
