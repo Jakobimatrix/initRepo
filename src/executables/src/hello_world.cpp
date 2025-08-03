@@ -1,8 +1,8 @@
-#include <cstdio>
-
+#include <format>
+#include <iostream>
 #include <library/math.hpp>
 
 int main() {
-  printf("Hello, World {%}!\n", lib::fibonacci(3));
+  std::cout << std::format("Hello, World {}!\n", lib::fibonacci(3));
   return 0;
 }
