@@ -35,6 +35,5 @@ endif()
 # include_open_cv(${ENVIRONMENT_SETTINGS})
 
 add_subdirectory(src/library)
-add_subdirectory(src/fuzzer_lib)
 add_subdirectory(src/executables)
 add_subdirectory(src/tests)
