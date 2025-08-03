@@ -10,10 +10,15 @@ FILES=$(git ls-files '*.c' '*.cpp' ':!:build*' ':!:*/build*' ':!:_deps/*' ':!:*/
 
 HAS_ISSUES=0
 
+# Ensure we are in the root repository folder 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd $SCRIPT_DIR # repo/initRepo/scripts/:
+cd ../../
+
 # Source environment variables
-source "../.environment"
-if [ -f "../../.environment" ]; then
-    source "../../.environment"
+source "initRepo/.environment"
+if [ -f ".environment" ]; then
+    source ".environment"
 fi
 
 for file in $FILES; do
