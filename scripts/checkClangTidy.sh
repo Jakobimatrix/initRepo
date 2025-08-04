@@ -15,6 +15,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(dirname "$(dirname "$SCRIPT_DIR")")"
 cd "${REPO_ROOT}"
 
+source ./initRepo/scripts/ensureToolVersion.sh
+ensure_tool_versioned clang-tidy "${CLANG_TIDY_VERSION}"
+
 # run CMake in debug environment with tests enabled and take the build directory
 BUILD_INFO=$(./initRepo/scripts/build.sh -d -C -t --compiler clang)
 if [ $? -ne 0 ]; then

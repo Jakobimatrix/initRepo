@@ -45,8 +45,16 @@ jobs:
         fi
         sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-${CLANG_VERSION} 100
         sudo update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-${CLANG_VERSION} 100
-        sudo apt-get install clang-format-${CLANG_FORMAT_VERSION}
-        sudo apt-get install clang-format-${CLANG_TIDY_VERSION}
+        sudo apt-get install -y clang-format-${CLANG_FORMAT_VERSION}
+        sudo apt-get install -y clang-tidy-${CLANG_TIDY_VERSION}
+        
+        source ./initRepo/scripts/ensureToolVersion.sh
+        ensure_tool_versioned clang-format "${CLANG_FORMAT_VERSION}"
+        ensure_tool_versioned clang-tidy "${CLANG_TIDY_VERSION}"
+        ensure_tool_versioned g++ "${GCC_VERSION}"
+        ensure_tool_versioned gcc "${GCC_VERSION}"
+        ensure_tool_versioned clang++ "${CLANG_VERSION}"
+        ensure_tool_versioned clang "${CLANG_VERSION}"
 
     - name: Check clang-tidy
       run: ./initRepo/scripts/checkClangTidy.sh

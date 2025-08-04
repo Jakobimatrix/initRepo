@@ -136,6 +136,12 @@ else
     exit 1
 fi
 
+source ./initRepo/scripts/ensureToolVersion.sh
+ensure_tool_versioned g++ "${GCC_VERSION}"
+ensure_tool_versioned gcc "${GCC_VERSION}"
+ensure_tool_versioned clang++ "${CLANG_VERSION}"
+ensure_tool_versioned clang "${CLANG_VERSION}"
+
 if [ ! -f "$COMPILER_PATH" ]; then
     echo "$COMPILER_PATH not found! Check the paths variables at the begin of this script!"
     list_available_compiler
