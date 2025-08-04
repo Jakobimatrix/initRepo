@@ -2,9 +2,18 @@ name: C/C++ CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches:
+      - main
+      - dev
+      - master
+      - release
   pull_request:
-    branches: [ "main" ]
+    branches:
+      - main
+      - dev
+      - master
+      - release
+    
 
 jobs:
   build:
@@ -40,25 +49,26 @@ jobs:
         sudo apt-get install clang-format-${CLANG_TIDY_VERSION}
 
     - name: Check clang-tidy
-      run: ./initRepo/checkClangTidy.sh
+      run: ./initRepo/scripts/checkClangTidy.sh
 
     - name: Build and test with GCC
-      run: ./initRepo/build.sh -c -d -t --compiler gcc
+      run: ./initRepo/scripts/build.sh -c -d -t --compiler gcc
 
     - name: Build and test with Clang
-      run: ./initRepo/build.sh -c -d -t --compiler clang
+      run: ./initRepo/scripts/build.sh -c -d -t --compiler clang
 
     - name: Build fuzzer with Clang
-      run: ./initRepo/build.sh -d -f --compiler clang 
+      run: ./initRepo/scripts/build.sh -d -f --compiler clang
 
     - name: Build release and test with GCC
-      run: ./binitRepo/uild.sh -c -r -t --compiler gcc
+      run: ./initRepo/scripts/build.sh -c -r -t --compiler gcc
 
     - name: Build release and test with Clang
-      run: ./initRepo/build.sh -c -r -t --compiler clang
+      run: ./initRepo/scripts/build.sh -c -r -t --compiler clang
 
     - name: Build release fuzzer with Clang
-      run: ./initRepo/build.sh -r -f --compiler clang
+      run: ./initRepo/scripts/build.sh -r -f --compiler clang
 
     - name: Check clang-format
-      run: ./initRepo/checkClangFormat.sh
+      run: ./initRepo/scripts/checkClangFormat.sh
+      
