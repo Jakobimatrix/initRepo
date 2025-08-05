@@ -1,6 +1,9 @@
 Dear stranger 
 If I write "you" I mean me. Though you might use this repo too, it is mostly for me to manage my projects (for example to enforce them to have the same structure)
 
+Due to the structure of the repository its tests are in a seperate [test repository](https://github.com/Jakobimatrix/initRepoTest) using this repo as a subrepository
+[![C/C++ CI](https://github.com/Jakobimatrix/initRepoTest/actions/workflows/ubuntu_build_test.yml/badge.svg)](https://github.com/Jakobimatrix/initRepoTest/actions/workflows/ubuntu_build_test.yml)
+
 # initRepo 
 
 This repo helps when createing a new project in cpp20. It provides a solid structure and enforces some rules.
