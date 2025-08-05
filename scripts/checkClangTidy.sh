@@ -15,6 +15,13 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(dirname "$(dirname "$SCRIPT_DIR")")"
 cd "${REPO_ROOT}"
 
+# Source environment variables
+# shellcheck source-path=../ 
+source "initRepo/.environment"
+if [ -f ".environment" ]; then
+    source ".environment"
+fi
+
 # shellcheck source-path=SCRIPTDIR source=ensureToolVersion.sh
 source ./initRepo/scripts/ensureToolVersion.sh
 ensure_tool_versioned clang-tidy "${CLANG_TIDY_VERSION}"
@@ -32,13 +39,6 @@ BUILD_DIR=$(echo "$BUILD_INFO" | grep '^BUILD_DIR=' | cut -d'=' -f2)
 if [ ! -f "${BUILD_DIR}/compile_commands.json" ]; then
     echo "Warning: compile_commands.json not found. CMake probably has failed."
     exit 1
-fi
-
-# Source environment variables
-# shellcheck source-path=../ 
-source "initRepo/.environment"
-if [ -f ".environment" ]; then
-    source ".environment"
 fi
 
 for file in $FILES; do
