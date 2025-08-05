@@ -8,17 +8,18 @@ Due to the structure of the repository its tests are in a seperate [test reposit
 
 This repo helps when createing a new project in cpp20. It provides a solid structure and enforces some rules.
 After creating a new  project add this repo as a submodule (or copy it)
-Than run ./ init.sh This copies the base structur installes helpfull tools and provides a Template for the CMakeLists.txt.
+Than run ./initRepo/scripts/init.sh. This copies the base structur installes helpfull tools and provides a Template for the CMakeLists.txt.
 
-All is optional!
+All is optional! Read what the script says.
 
 ## Installments
 - clang-tidy
 - clang-format
 - cppcheck
 - valgrind
+- chellcheck
 
-### Git hook
+### Git hook for clang format
 To enforce clang-format inside a repository for c, cpp, cxx, h, hpp files.
 The init.sh installes clang-format on the local machine and a git-hook for the specified repository to check the format before every commit.
 Look inside **format_hook** for the enforced clang-version
@@ -31,14 +32,14 @@ btw. Your IDE probably is able to enforce clang-format upon saving too.
 **USE ONLY FOR NEW REPOSITORIES! OTHERWISE YOU BREAK GIT BLAME**
 
 further reading:
-[How-to-use-Clang-Tidy-to-automatically-correct-code](https://github.com/KratosMultiphysics/Kratos/wiki/How-to-use-Clang-Tidy-to-automatically-correct-code)
 
 [githook-clang-format](https://github.com/andrewseidl/githook-clang-format)
 
 ### LF
 In case you are working on Linux And windof you probably want to enforce LF lineendings
 
-## Provided structure COPIED
+
+## Provided structure COPIED with init.sh
 This gives you a good starting point for your project. Some files are supposed to be changed by you or even renamed!
 
 ```
@@ -85,18 +86,32 @@ initRepo
 │   ├── build.sh               --> helps to build your project
 │   ├── checkClangFormat.sh    --> checks if clang format rules are followed
 │   ├── checkClangTidy.sh      --> checks if clang tidy rules are followed
+│   ├── checkShellCheck.sh     --> checks if shellcheck rules are followed (for bash)
 │   ├── init.sh                --> used to install files and project struckture in your new repository
 │   ├── installCompilers.sh    --> used to install compilers
 │   ├── runFuzzer.sh           --> used to run the fuzzy tests
+│   ├── update.sh              --> update the subrepository and scripts
 
 ```
 
+## CI / CD
+A simple CI / CD pipeline for github is included. 
+ - It uses the check*.sh scripts to ensure rules.
+ - It builds the project with clang and gcc in debug and release mode
+ - It runns available tests
+
+ ## .environment
+ There is a .environment inside the initRepo root folder dictating compiler paths, versions etc.
+ To overwrite one or more variables just create your own .environment in your repository root.
+
 ## Usage
-1. `git clone YOUR_REPOSITORY`
+1. `git clone YOUR_REPOSITORY`  // clone your new empty repository
 2. `cd YOUR_REPOSITORY`
 3. `git submodule add https://github.com/Jakobimatrix/initRepo.git`  // @stranger OR COPY if you dont want submodules, but it needs to be at the root of your repo
-4. `cd initRepo`
 4. `chmod +x initRepo/scripts/init.sh`
-5. `./initRepo/scripts/init.sh`
+5. `./initRepo/scripts/init.sh`  // answer the questions (with yes if you want the feature)
+6. In case you answered yes for the ci cd pipeline, the sample project structure and the cmake file, after you commit, the CI / CD pipeline should automatically run (green)
+7. you can copy initRepo/.environment into your root and change the settings.
+6. To update scripts: `./initRepo/scripts/update.sh`
 
    
