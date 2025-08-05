@@ -14,15 +14,17 @@ fi
 
 # Ensure we are in the script folder repo/initRepo/scripts/:
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-cd $SCRIPT_DIR
+cd "$SCRIPT_DIR" || exit 1
 
 # find all scripts in the current folder and make them executable
 find . -maxdepth 1 -type f -name "*.sh" -exec chmod +x {} \;
 
 
 # Source environment variables
+# shellcheck disable=SC1091 # its there trust me
 source "../.environment"
 if [ -f "../../.environment" ]; then
+    # shellcheck disable=SC1091 # its there trust me
     source "../../.environment"
 fi
 
@@ -83,13 +85,13 @@ copyFileWithPrompt() {
   fi
 }
 
-if ! command -v clang-format-${CLANG_FORMAT_VERSION} >/dev/null 2>&1; then
+if ! command -v clang-format-"${CLANG_FORMAT_VERSION}" >/dev/null 2>&1; then
   task="Do you want to install clang-format-${CLANG_FORMAT_VERSION}"
   askYesNo 
   if [ $answer = 1  ]
   then 
     # install clang format
-    sudo apt install clang-format-${CLANG_FORMAT_VERSION} -y
+    sudo apt install clang-format-"${CLANG_FORMAT_VERSION}" -y
     echo "clang-format-${CLANG_FORMAT_VERSION} installed"
   fi
 fi
@@ -103,15 +105,24 @@ then
   echo "Clang-format hook installed in $REPO$HOOK_FILE_DEST"
 fi
 
+if ! command -v shellcheck >/dev/null 2>&1; then
+  task="Do you want to install shellcheck?"
+  askYesNo
+  if [ $answer = 1 ]
+  then
+    sudo apt install shellcheck -y
+  fi
+fi
+
 cp "$TEMPLATE_FILE_PATH$FORMAT_FILE_F" "$REPO"
 echo ".clang-format copied"
 
-if ! command -v clang-tidy-${CLANG_TIDY_VERSION} >/dev/null 2>&1; then
+if ! command -v clang-tidy-"${CLANG_TIDY_VERSION}" >/dev/null 2>&1; then
   task="Do you want to install/update clang-tidy-${CLANG_TIDY_VERSION}?"
   askYesNo
   if [ $answer = 1 ]
   then
-    sudo apt install clang-tidy-${CLANG_TIDY_VERSION} -y
+    sudo apt install clang-tidy-"${CLANG_TIDY_VERSION}" -y
     echo "clang-tidy-${CLANG_TIDY_VERSION} installed"
   fi
 fi

@@ -10,7 +10,7 @@ ensure_tool_versioned() {
   if ! command -v "${full_name}" &>/dev/null; then
     if command -v "${tool_name}" &>/dev/null; then
       echo "${full_name} not found, linking to system ${tool_name}"
-      sudo ln -s "$(command -v ${tool_name})" "/usr/bin/${full_name}"
+      sudo ln -s "$(command -v "${tool_name}")" "/usr/bin/${full_name}"
     else
       echo "Error: ${tool_name} not found at all!" >&2
       exit 1

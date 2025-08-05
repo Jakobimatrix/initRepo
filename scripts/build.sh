@@ -26,6 +26,7 @@ show_help() {
 }
 
 # Source environment variables
+# shellcheck source-path=../ 
 source "initRepo/.environment"
 if [ -f ".environment" ]; then
     source ".environment"
@@ -39,7 +40,6 @@ ENABLE_TESTS=OFF
 ENABLE_FUZZING=OFF
 LIST_COMPILERS=false
 VERBOSE=false
-ARGS=()
 COMPILER="${DEFAULT_COMPILER}"
 CONFIG_CMAKE_ONLY=false
 
@@ -62,13 +62,13 @@ list_available_compiler() {
         if [[ "$base" == "g++" || "$base" == "clang++" ]]; then
             compgen -c | grep -E "^${base//+/\\+}-[0-9]+$" | sort -V | while read -r ver; do
                 if command -v "$ver" &>/dev/null; then
-                    echo "  $(command -v $ver)"
+                    echo "  $(command -v "$ver")"
                 fi
             done
         else
             compgen -c | grep -E "^${base}-[0-9]+$" | sort -V | while read -r ver; do
                 if command -v "$ver" &>/dev/null; then
-                    echo "  $(command -v $ver)"
+                    echo "  $(command -v "$ver")"
                 fi
             done
         fi
@@ -132,10 +132,11 @@ elif [[ "$COMPILER" == "clang++" ]]; then
     CC_PATH="$CLANG_C_PATH"
     COMPILER_NAME="clang"
 else
-    echo "Error: Compiler "$COMPILER" is not a valid input."
+    echo "Error: Compiler \"$COMPILER\" is not a valid input."
     exit 1
 fi
 
+# shellcheck source-path=SCRIPTDIR source=ensureToolVersion.sh
 source ./initRepo/scripts/ensureToolVersion.sh
 ensure_tool_versioned g++ "${GCC_VERSION}"
 ensure_tool_versioned gcc "${GCC_VERSION}"
@@ -186,13 +187,13 @@ if [[ "$VERBOSE" == true ]]; then
 fi
 
 if [[ "$CONFIG_CMAKE_ONLY" == true ]]; then
-    echo "CMake configuration only (-C set). Exiting before build.\n"
+    echo "CMake configuration only (-C set). Exiting before build."
     echo "BUILD_DIR=$BUILD_DIR"
     exit 0
 fi
 
 echo "Building project..."
-cmake --build . -- -j$(nproc)
+cmake --build . -- -j"$(nproc)"
 
 
 # Run tests if enabled

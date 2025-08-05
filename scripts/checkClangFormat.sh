@@ -12,15 +12,17 @@ BAD_FILES=()
 
 # Ensure we are in the root repository folder 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-cd $SCRIPT_DIR # repo/initRepo/scripts/:
+cd "$SCRIPT_DIR" # repo/initRepo/scripts/:
 cd ../../
 
 # Source environment variables
+# shellcheck source-path=../ 
 source "initRepo/.environment"
 if [ -f ".environment" ]; then
     source ".environment"
 fi
 
+# shellcheck source-path=SCRIPTDIR source=ensureToolVersion.sh
 source ./initRepo/scripts/ensureToolVersion.sh
 ensure_tool_versioned clang-format "${CLANG_FORMAT_VERSION}"
 
@@ -38,7 +40,7 @@ else
     for f in "${BAD_FILES[@]}"; do
         echo "$f"
     done
-    echo "You can format them by running:\n"
-    echo "clang-format-${CLANG_FORMAT_VERSION} -style=file -i ${BAD_FILES[@]}"
+    echo "You can format them by running:"
+    echo "clang-format-${CLANG_FORMAT_VERSION} -style=file -i" "${BAD_FILES[@]}"
     exit 1
 fi

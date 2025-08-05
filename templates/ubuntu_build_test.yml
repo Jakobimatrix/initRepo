@@ -56,6 +56,11 @@ jobs:
         ensure_tool_versioned clang++ "${CLANG_VERSION}"
         ensure_tool_versioned clang "${CLANG_VERSION}"
 
+        sudo apt install shellcheck -y
+
+    - name: Check bash scripts
+      run: ./initRepo/scripts/checkShellCheck.sh
+
     - name: Check clang-tidy
       run: ./initRepo/scripts/checkClangTidy.sh
 

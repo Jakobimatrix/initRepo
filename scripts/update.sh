@@ -17,7 +17,7 @@ cd ../../
 
 git add initRepo
 
-# Ask user if they want to update default files
+# shellcheck disable=SC2162 # read -r does not work here
 read -p "Update default files? [y/n]: " yn
 case $yn in
     [Yy]* )
