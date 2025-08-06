@@ -17,7 +17,7 @@ All is optional! Read what the script says.
 - clang-format
 - cppcheck
 - valgrind
-- chellcheck
+- shellcheck
 
 ### Git hook for clang format
 To enforce clang-format inside a repository for c, cpp, cxx, h, hpp files.
