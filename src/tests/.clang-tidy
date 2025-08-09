@@ -3,7 +3,10 @@
 Checks: |
   -ppcoreguidelines-avoid-non-const-global-variables.GlobList
   -misc-use-internal-linkage.GlobList,
-  -misc-include-cleaner.GlobList
+  -misc-include-cleaner.GlobList,
+  -misc-use-anonymous-namespace,
+  -bugprone-chained-comparison,
+  -cppcoreguidelines-avoid-do-while
   
 InheritParentConfig: true
 
