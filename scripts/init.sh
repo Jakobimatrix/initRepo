@@ -178,7 +178,7 @@ then
 fi
 
 
-task="Do you want to copy the github hook script <build and test for ubuntu>?"
+task="Do you want to copy the github CI/CD pipeline script <build and test for ubuntu>?"
 askYesNo
 if [ $answer = 1 ]
 then
