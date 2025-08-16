@@ -210,16 +210,10 @@ jobs:
             
       - name: Generate coverage report
         run: |
-          gcovr --gcov-executable gcov-${{ env.GCC_VERSION }} -r . build-gcc-${{ env.GCC_VERSION }}-debug/src --exclude '.*_deps/.*' --gcov-ignore-parse-errors > coverage.txt 2>/dev/null
-          cat coverage.txt
           gcovr --gcov-executable gcov-${{ env.GCC_VERSION }} \
             -r . build-gcc-${{ env.GCC_VERSION }}-debug/src \
             --exclude '.*_deps/.*' --gcov-ignore-parse-errors \
             --xml-pretty -o coverage.xml
-          gcovr --gcov-executable gcov-${{ env.GCC_VERSION }} \
-            -r . build-gcc-${{ env.GCC_VERSION }}-debug/src \
-            --exclude '.*_deps/.*' --gcov-ignore-parse-errors \
-            --html-details -o coverage.html
 
       - name: Publish coverage summary
         uses: irongut/CodeCoverageSummary@v1.3.0
@@ -405,14 +399,4 @@ jobs:
           if [ "${{ needs.gcc_unit_tests_and_coverage.outputs.failed }}" = "true" ]; then failed=true; echo " - gcc unit tests: FAILED"; else echo " - gcc unit tests: OK"; fi
 
           if $failed; then exit 1; fi
-          
-      - name: Coverage Summary
-        if: always()
-        run: |
-          echo "## Coverage Report" >> $GITHUB_STEP_SUMMARY
-          if [ -f coverage.txt ]; then
-            cat coverage.txt >> $GITHUB_STEP_SUMMARY
-          else
-            echo "No coverage report found." >> $GITHUB_STEP_SUMMARY
-          fi
 
