@@ -365,6 +365,8 @@ jobs:
         with:
           name: clang-debug-build
           path: .
+    
+      - run: tar -xzf clang_debug_build.tar.gz -C 
 
       - name: Install environment
         run: |
