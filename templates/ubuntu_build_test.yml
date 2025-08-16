@@ -210,15 +210,9 @@ jobs:
             
       - name: Generate coverage report
         run: |
-          gcovr -r . --xml-pretty -o coverage.xml
-          gcovr -r . --html-details coverage.html
-          gcovr -r . --txt > coverage.txt
-
-      - name: Upload coverage artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-report
-          path: coverage.html
+          gcovr --gcov-executable gcov-${{ env.GCC_VERSION }} -r . build-gcc-${{ env.GCC_VERSION }}-debug/src --exclude '.*_deps/.*' --gcov-ignore-parse-errors > coverage.txt 2>/dev/null
+          cat coverage.txt
+          gcovr --gcov-executable gcov-${{ env.GCC_VERSION }} -r . build-gcc-${{ env.GCC_VERSION }}-debug/src --exclude '.*_deps/.*' --gcov-ignore-parse-errors --xml-pretty -o coverage.xml 2>/dev/null
 
       - name: Publish coverage summary
         uses: mikepenz/action-junit-report@v4
