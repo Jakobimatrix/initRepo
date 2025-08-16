@@ -211,7 +211,7 @@ cmake --build . -- -j"$(nproc)"
 if [[ "$RUN_TESTS" == "ON" ]]; then
     echo "Running ctest --output-on-failure"
 
-    if [[ "$TEST_OUTPUT_JUNIT" == false]]; then
+    if [[ "$TEST_OUTPUT_JUNIT" == false ]]; then
         echo "Running ctest --output-on-failure --output-junit test_results.xml"
         ctest --output-on-failure --output-junit test_results.xml
     else
