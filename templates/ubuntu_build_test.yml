@@ -212,12 +212,22 @@ jobs:
         run: |
           gcovr --gcov-executable gcov-${{ env.GCC_VERSION }} -r . build-gcc-${{ env.GCC_VERSION }}-debug/src --exclude '.*_deps/.*' --gcov-ignore-parse-errors > coverage.txt 2>/dev/null
           cat coverage.txt
-          gcovr --gcov-executable gcov-${{ env.GCC_VERSION }} -r . build-gcc-${{ env.GCC_VERSION }}-debug/src --exclude '.*_deps/.*' --gcov-ignore-parse-errors --xml-pretty -o coverage.xml 2>/dev/null
+          gcovr --gcov-executable gcov-${{ env.GCC_VERSION }} \
+            -r . build-gcc-${{ env.GCC_VERSION }}-debug/src \
+            --exclude '.*_deps/.*' --gcov-ignore-parse-errors \
+            --xml-pretty -o coverage.xml
+          gcovr --gcov-executable gcov-${{ env.GCC_VERSION }} \
+            -r . build-gcc-${{ env.GCC_VERSION }}-debug/src \
+            --exclude '.*_deps/.*' --gcov-ignore-parse-errors \
+            --html-details -o coverage.html
 
       - name: Publish coverage summary
-        uses: mikepenz/action-junit-report@v4
+        uses: irongut/CodeCoverageSummary@v1.3.0
         with:
-          report_paths: coverage.xml
+            filename: coverage.xml
+            badge: true
+            format: markdown
+            output: both
 
 
   clang_compile:
@@ -341,7 +351,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [clang_compile]
     outputs:
-      failed: ${{ steps.tidy_result.outputs.failed }}
+      failed: ${{ steps.clang_tidy.outputs.failed }}
     steps:
       - uses: actions/download-artifact@v4
         with:
