@@ -74,7 +74,7 @@ copyFileWithPrompt() {
     cp "$src" "$dest"
     echo "$(basename "$dest") installed"
   else
-    task="The file $(basename "$dest") already exists. Do you want to overwrite it?"
+    task="\e[33mThe file $(basename "$dest") already exists. Do you want to overwrite it?\e[0m"
     askYesNo
     if [ $answer = 1 ]; then
       cp -f "$src" "$dest"
@@ -209,7 +209,7 @@ then
     cp -r "$PROCECT_STRUCUR_TEMPLATE" "$REPO$PROCECT_STRUCUR_FOLDER"
     echo "$REPO$PROCECT_STRUCUR_FOLDER installed"
   else
-    echo "$REPO$PROCECT_STRUCUR_FOLDER already exists. !!!Do you really want to Overwrite???"
+    echo "\e[33m$REPO$PROCECT_STRUCUR_FOLDER already exists. !!!Do you really want to Overwrite???\nARE\nYOU\nSURE\n?\e[0m"
     askYesNo
     if [ $answer = 1 ]; then
       rm -rf "$REPO$PROCECT_STRUCUR_FOLDER"
