@@ -1,6 +1,13 @@
 **/build-*/
 **/fuzz/
 
+# gcov
+coverage.txt
+coverage.xml
+
+# clang-tidy
+tidy-fixes.yaml
+
 # Prerequisites
 *.d
 
@@ -57,9 +64,6 @@ cmake_install.cmake
 install_manifest.txt
 compile_commands.json
 CTestTestfile.cmake
-
-# clang-tidy
-tidy-fixes.yaml
 
 
 # VSCode
