@@ -53,11 +53,16 @@ then
   exit
 fi
 
+WARN() {
+    # Bold (1) + 256-color (38;5;208m) + reset (0m)
+    printf "\e[1;38;5;208m%s\e[0m\n" "$*"
+}
+
 askYesNo() {
   echo; echo -e "\e[33m**********************\e[0m"; echo; 
   while true; do     
     # shellcheck disable=SC2162
-    read -p $'Do you want to \e[1;4;34m'"$task"$'\e[0m? [y/n]' yn
+    read -p $'\e[1;4;34m'"$task"$'\e[0m? [y/n]' yn
     case $yn in
       [Yy]* ) answer=1; break;; 
       [Nn]* ) answer=0; break;;
@@ -74,7 +79,8 @@ copyFileWithPrompt() {
     cp "$src" "$dest"
     echo "$(basename "$dest") installed"
   else
-    task="\e[33mThe file $(basename "$dest") already exists. Do you want to overwrite it?\e[0m"
+    WARN $'The file $(basename "$dest") already exists.'
+    task="Do you want to overwrite $dest?"
     askYesNo
     if [ $answer = 1 ]; then
       cp -f "$src" "$dest"
@@ -158,7 +164,7 @@ if ! command -v valgrind >/dev/null 2>&1; then
   fi
 fi
 
-echo "Dont continue if you already initiated your repo!"
+WARN "Dont continue if you already initiated your repo!"
 
 
 task="Do you want to enforece LF line ending for that REPO?"
@@ -209,7 +215,7 @@ then
     cp -r "$PROCECT_STRUCUR_TEMPLATE" "$REPO$PROCECT_STRUCUR_FOLDER"
     echo "$REPO$PROCECT_STRUCUR_FOLDER installed"
   else
-    echo "\e[33m$REPO$PROCECT_STRUCUR_FOLDER already exists. !!!Do you really want to Overwrite???\nARE\nYOU\nSURE\n?\e[0m"
+    WARN $'\e[33m$REPO$PROCECT_STRUCUR_FOLDER already exists. !!!Do you really want to Overwrite???\nARE\nYOU\nSURE\n?\e[0m'
     askYesNo
     if [ $answer = 1 ]; then
       rm -rf "$REPO$PROCECT_STRUCUR_FOLDER"
