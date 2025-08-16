@@ -137,10 +137,12 @@ if [[ "$COMPILER" == "g++" ]]; then
     COMPILER_PATH="$GCC_CPP_PATH"
     CC_PATH="$GCC_C_PATH"
     COMPILER_NAME="gcc"
+    COMPILER_VERSION="${GCC_VERSION}"
 elif [[ "$COMPILER" == "clang++" ]]; then
     COMPILER_PATH="$CLANG_CPP_PATH"
     CC_PATH="$CLANG_C_PATH"
     COMPILER_NAME="clang"
+    COMPILER_VERSION="${CLANG_VERSION}"
 else
     echo "Error: Compiler \"$COMPILER\" is not a valid input."
     exit 1
@@ -173,7 +175,7 @@ fi
 
 
 
-BUILD_DIR="build-${COMPILER_NAME,,}-${BUILD_TYPE,,}"
+BUILD_DIR="build-${COMPILER_NAME,,}-${COMPILER_VERSION,,}-${BUILD_TYPE,,}"
 
 # Clean build directory if requested
 if [[ "$CLEAN" == true ]]; then
