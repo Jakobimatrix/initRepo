@@ -17,12 +17,13 @@ show_help() {
     echo "  -i              Install after build"
     echo "  --compiler COMP Use specific compiler (e.g. gcc, clang)"
     echo "  -h              Show this help message"
-    echo "  -t              Enable tests"
+    echo "  -t              Build tests"
+    echo "  -T              Run Tests after build"
+    echo "  -J              Test output returns junit"
     echo "  -f              Enable fuzzing"
     echo "  -v              Verbode: dump CMake variables"
     echo "  -l              List available compilers"
     echo "  -C              only run CMake"
-    echo "  -T              only run Tests, for CI CD return junit"
     exit 0
 }
 
@@ -43,7 +44,8 @@ LIST_COMPILERS=false
 VERBOSE=false
 COMPILER="${DEFAULT_COMPILER}"
 CONFIG_CMAKE_ONLY=false
-TESTS_ONLY=false
+RUN_TESTS=false
+TEST_OUTPUT_JUNIT=false
 
 # Compiler paths from .environment
 CLANG_CPP_PATH="${CLANG_CPP_PATH}"
@@ -96,9 +98,10 @@ while [[ $# -gt 0 ]]; do
         -h) show_help ;;
         -C) CONFIG_CMAKE_ONLY=true ;;
         -T) 
-            TESTS_ONLY=true 
+            RUN_TESTS=true 
             ENABLE_TESTS=ON
             ;;
+        -J) TEST_OUTPUT_JUNIT=true ;;
         *)
             echo "Unknown option: $1"
             show_help
@@ -181,14 +184,6 @@ fi
 mkdir -p "$BUILD_DIR"
 cd "$BUILD_DIR"
 
-if [[ "$TESTS_ONLY" == true ]] 
-    echo "Script was run with -T Expecting tests already build and ready to run!"
-    echo "Running ctest --output-on-failure --output-junit test_results.xml"
-    ctest --output-on-failure --output-junit test_results.xml
-    return 0
-fi
-
-
 # Run CMake
 echo "Using cpp compiler at: $COMPILER_PATH"
 echo "Using c compiler at: $CC_PATH"
@@ -213,16 +208,24 @@ cmake --build . -- -j"$(nproc)"
 
 
 # Run tests if enabled
-if [[ "$ENABLE_TESTS" == "ON" ]]; then
+if [[ "$RUN_TESTS" == "ON" ]]; then
     echo "Running ctest --output-on-failure"
-    ctest --output-on-failure
 
-    # Check if any tests were found
-    NUM_TESTS=$(ctest -N | grep -c "Test #[0-9]\+:" || true)
-    if [[ "$NUM_TESTS" -eq 0 ]]; then
-        echo "ERROR: No tests were found or executed!"
-        exit 2
+    if [[ "$TEST_OUTPUT_JUNIT" == false]]; then
+        echo "Running ctest --output-on-failure --output-junit test_results.xml"
+        ctest --output-on-failure --output-junit test_results.xml
+    else
+        echo "Running ctest --output-on-failure"
+        ctest --output-on-failure
+
+        # Check if any tests were found
+        NUM_TESTS=$(ctest -N | grep -c "Test #[0-9]\+:" || true)
+        if [[ "$NUM_TESTS" -eq 0 ]]; then
+            echo "ERROR: No tests were found or executed!"
+            exit 2
+        fi
     fi
+
 fi
 
 # Install if requested
@@ -230,4 +233,3 @@ if [[ "$INSTALL" == true ]]; then
     echo "cmake --install ."
     cmake --install .
 fi
-
