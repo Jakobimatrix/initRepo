@@ -5,6 +5,9 @@
 coverage.txt
 coverage.xml
 
+# clang-tidy
+tidy-fixes.yaml
+
 # Prerequisites
 *.d
 
