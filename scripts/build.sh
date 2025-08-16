@@ -24,6 +24,7 @@ show_help() {
     echo "  -v              Verbode: dump CMake variables"
     echo "  -l              List available compilers"
     echo "  -C              only run CMake"
+    echo "  -s              skip cmake and build [to be combined with -T, expects complete build]"
     exit 0
 }
 
@@ -46,6 +47,7 @@ COMPILER="${DEFAULT_COMPILER}"
 CONFIG_CMAKE_ONLY=false
 RUN_TESTS=false
 TEST_OUTPUT_JUNIT=false
+SKIP_BUILD=false
 
 # Compiler paths from .environment
 CLANG_CPP_PATH="${CLANG_CPP_PATH}"
@@ -87,6 +89,7 @@ while [[ $# -gt 0 ]]; do
         -r) BUILD_TYPE="Release" ;;
         -o) BUILD_TYPE="RelWithDebInfo" ;;
         -i) INSTALL=true ;;
+        -s) SKIP_BUILD=true ;;
         --compiler)
             shift
             COMPILER="$1"
@@ -148,65 +151,70 @@ else
     exit 1
 fi
 
-# shellcheck source-path=SCRIPTDIR source=ensureToolVersion.sh
-source ./initRepo/scripts/ensureToolVersion.sh
-ensure_tool_versioned g++ "${GCC_VERSION}"
-ensure_tool_versioned gcc "${GCC_VERSION}"
-ensure_tool_versioned clang++ "${CLANG_VERSION}"
-ensure_tool_versioned clang "${CLANG_VERSION}"
-
-if [ ! -f "$COMPILER_PATH" ]; then
-    echo "$COMPILER_PATH not found! Check the paths variables at the begin of this script!"
-    list_available_compiler
-    exit 1
-fi
-if [ ! -f "$CC_PATH" ]; then
-    echo "$CC_PATH not found! Check the paths variables at the begin of this script!"
-    list_available_compiler
-    exit 1
-fi
-
-
-# Validate fuzzer option
-if [[ "$ENABLE_FUZZING" == "ON" && "$COMPILER" != "clang++" ]]; then
-    echo "Error: Fuzzing (-f) is only supported with the clang compiler."
-    exit 1
-fi
-
-
-
 BUILD_DIR="build-${COMPILER_NAME,,}-${COMPILER_VERSION,,}-${BUILD_TYPE,,}"
 
-# Clean build directory if requested
-if [[ "$CLEAN" == true ]]; then
-    echo "Cleaning build directory: $BUILD_DIR"
-    rm -rf "$BUILD_DIR"
+if [[ "$SKIP_BUILD" == false ]]; then
+
+    # shellcheck source-path=SCRIPTDIR source=ensureToolVersion.sh
+    source ./initRepo/scripts/ensureToolVersion.sh
+    ensure_tool_versioned g++ "${GCC_VERSION}"
+    ensure_tool_versioned gcc "${GCC_VERSION}"
+    ensure_tool_versioned clang++ "${CLANG_VERSION}"
+    ensure_tool_versioned clang "${CLANG_VERSION}"
+
+    if [ ! -f "$COMPILER_PATH" ]; then
+        echo "$COMPILER_PATH not found! Check the paths variables at the begin of this script!"
+        list_available_compiler
+        exit 1
+    fi
+    if [ ! -f "$CC_PATH" ]; then
+        echo "$CC_PATH not found! Check the paths variables at the begin of this script!"
+        list_available_compiler
+        exit 1
+    fi
+
+
+    # Validate fuzzer option
+    if [[ "$ENABLE_FUZZING" == "ON" && "$COMPILER" != "clang++" ]]; then
+        echo "Error: Fuzzing (-f) is only supported with the clang compiler."
+        exit 1
+    fi
+
+
+    # Clean build directory if requested
+    if [[ "$CLEAN" == true ]]; then
+        echo "Cleaning build directory: $BUILD_DIR"
+        rm -rf "$BUILD_DIR"
+    fi
+
+    mkdir -p "$BUILD_DIR"
+    cd "$BUILD_DIR"
+
+    # Run CMake
+    echo "Using cpp compiler at: $COMPILER_PATH"
+    echo "Using c compiler at: $CC_PATH"
+    echo "To change compiler versions, set the variables in the .environment!!"
+    echo "Configuring with CMake..."
+    echo "Running: cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_CXX_COMPILER=$COMPILER_PATH -DCMAKE_C_COMPILER=$CC_PATH -DBUILD_TESTING=$ENABLE_TESTS -DENABLE_FUZZING=$ENABLE_FUZZING .."
+    cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_CXX_COMPILER=$COMPILER_PATH -DCMAKE_C_COMPILER=$CC_PATH -DBUILD_TESTING=$ENABLE_TESTS -DENABLE_FUZZING=$ENABLE_FUZZING ..
+    if [[ "$VERBOSE" == true ]]; then
+        echo "Dumping CMake variables:"
+        cmake -LAH ..
+    fi
+
+    if [[ "$CONFIG_CMAKE_ONLY" == true ]]; then
+        echo "CMake configuration only (-C set). Exiting before build."
+        echo "BUILD_DIR=$BUILD_DIR"
+        exit 0
+    fi
+
+
+    echo "Building project..."
+    cmake --build . -- -j"$(nproc)"
+
+else
+    cd "$BUILD_DIR"
 fi
-
-mkdir -p "$BUILD_DIR"
-cd "$BUILD_DIR"
-
-# Run CMake
-echo "Using cpp compiler at: $COMPILER_PATH"
-echo "Using c compiler at: $CC_PATH"
-echo "To change compiler versions, set the variables in the .environment!!"
-echo "Configuring with CMake..."
-echo "Running: cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_CXX_COMPILER=$COMPILER_PATH -DCMAKE_C_COMPILER=$CC_PATH -DBUILD_TESTING=$ENABLE_TESTS -DENABLE_FUZZING=$ENABLE_FUZZING .."
-cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_CXX_COMPILER=$COMPILER_PATH -DCMAKE_C_COMPILER=$CC_PATH -DBUILD_TESTING=$ENABLE_TESTS -DENABLE_FUZZING=$ENABLE_FUZZING ..
-if [[ "$VERBOSE" == true ]]; then
-    echo "Dumping CMake variables:"
-    cmake -LAH ..
-fi
-
-if [[ "$CONFIG_CMAKE_ONLY" == true ]]; then
-    echo "CMake configuration only (-C set). Exiting before build."
-    echo "BUILD_DIR=$BUILD_DIR"
-    exit 0
-fi
-
-
-echo "Building project..."
-cmake --build . -- -j"$(nproc)"
 
 
 # Run tests if enabled
@@ -227,7 +235,6 @@ if [[ "$RUN_TESTS" == true ]]; then
             exit 2
         fi
     fi
-
 fi
 
 # Install if requested
