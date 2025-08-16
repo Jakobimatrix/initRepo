@@ -1,11 +1,14 @@
 name: C/C++ CI
 
+permissions:
+  contents: read
+  checks: write
+
 on:
   push:
     branches: [ main, dev, master, release ]
   pull_request:
     branches: [ main, dev, master, release ]
-
 
 jobs:
 
@@ -60,6 +63,7 @@ jobs:
           echo "failed=$( [ $rc -ne 0 ] && echo true || echo false)" >> $GITHUB_OUTPUT
           exit 0
 
+
   clang_format:
     runs-on: ubuntu-latest
     needs: setup
@@ -90,9 +94,13 @@ jobs:
           echo "failed=$( [ $rc -ne 0 ] && echo true || echo false)" >> $GITHUB_OUTPUT
           exit 0
 
+
   gcc_compile:
     runs-on: ubuntu-latest
     needs: setup
+    outputs:
+      failed: ${{ steps.set_result.outputs.failed }}
+      uploaded: ${{ steps.set_result.outputs.uploaded }}
     steps:
       - uses: actions/download-artifact@v4
         with:
@@ -119,10 +127,41 @@ jobs:
           ./initRepo/scripts/build.sh -c -d -t --compiler gcc
           ./initRepo/scripts/build.sh -c -r -t --compiler gcc
 
+      - id: set_result
+        run: |
+          source initRepo/.environment || exit 1
+          if [ -f .environment ]; then source .environment; fi
+          if [ -d "build-gcc-${GCC_VERSION}-debug" ] && [ -d "build-gcc-${GCC_VERSION}-release" ]; then
+            tar -czf gcc_debug_build.tar.gz build-gcc-${GCC_VERSION}-debug
+            tar -czf gcc_release_build.tar.gz build-gcc-${GCC_VERSION}-release
+            echo "failed=false" >> $GITHUB_OUTPUT
+            echo "uploaded=true" >> $GITHUB_OUTPUT
+          else
+            echo "failed=true" >> $GITHUB_OUTPUT
+            echo "uploaded=false" >> $GITHUB_OUTPUT
+            exit 1
+          fi
 
-  clang_compile:
+      - if: steps.set_result.outputs.uploaded == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: gcc-debug-build
+          path: gcc_debug_build.tar.gz
+          retention-days: 1
+
+      - if: steps.set_result.outputs.uploaded == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: gcc-release-build
+          path: gcc_release_build.tar.gz
+          retention-days: 1
+
+
+  gcc_unit_tests:
     runs-on: ubuntu-latest
-    needs: setup
+    needs: [setup, gcc_compile]
+    outputs:
+      failed: ${{ steps.gcc_unit_tests.outputs.failed }}
     steps:
       - uses: actions/download-artifact@v4
         with:
@@ -131,10 +170,55 @@ jobs:
 
       - run: tar -xzf workspace.tar.gz -C .
 
-      - run: |
-          if [ -f clang_debug_build.tar.gz ]; then
-            tar -xzf clang_debug_build.tar.gz -C .
+      - name: Install environment
+        run: |
+          source initRepo/.environment || exit 1
+          if [ -f .environment ]; then source .environment; fi
+          echo "GCC_VERSION=$GCC_VERSION" >> $GITHUB_ENV
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: gcc-debug-build
+          path: .
+
+      - run: tar -xzf gcc_debug_build.tar.gz -C .
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: gcc-release-build
+          path: .
+
+      - run: tar -xzf gcc_release_build.tar.gz -C .
+
+      - name: Run GCC unit tests
+        run: |
+          ./initRepo/scripts/build.sh -t -T -d -J --compiler gcc || TEST_FAILED=true
+          ./initRepo/scripts/build.sh -t -T -r -J --compiler gcc || TEST_FAILED=true
+          if [ "$TEST_FAILED" = true ]; then
+            echo "failed=$( [ $rc -ne 0 ] && echo true || echo false)" >> $GITHUB_OUTPUT
           fi
+
+      - name: Publish GCC test results
+        if: always()
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        with:
+          files: |
+            build-gcc-${{ env.GCC_VERSION }}-debug/test_results.xml
+            build-gcc-${{ env.GCC_VERSION }}-release/test_results.xml
+
+  clang_compile:
+    runs-on: ubuntu-latest
+    needs: setup
+    outputs:
+      failed: ${{ steps.set_result.outputs.failed }}
+      uploaded: ${{ steps.set_result.outputs.uploaded }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: workspace
+          path: .
+
+      - run: tar -xzf workspace.tar.gz -C .
 
       - name: Install environment
         run: |
@@ -155,27 +239,45 @@ jobs:
         run: |
           set +e
           ./initRepo/scripts/build.sh -c -d -t --compiler clang
-          ./initRepo/scripts/build.sh -d -f --compiler clang
+          ./initRepo/scripts/build.sh -d -f -t --compiler clang
           ./initRepo/scripts/build.sh -c -r -t --compiler clang
-          ./initRepo/scripts/build.sh -r -f --compiler clang
-          
-      - name: Update Workspace for clang-tidy
+          ./initRepo/scripts/build.sh -r -f -t --compiler clang
+
+      - id: set_result
         run: |
-          if [ -d "build-clang-${CLANG_VERSION}-debug" ]; then
+          source initRepo/.environment || exit 1
+          if [ -f .environment ]; then source .environment; fi
+          if [ -d "build-clang-${CLANG_VERSION}-debug" ] && [ -d "build-clang-${CLANG_VERSION}-release" ]; then
             tar -czf clang_debug_build.tar.gz build-clang-${CLANG_VERSION}-debug
+            tar -czf clang_release_build.tar.gz build-clang-${CLANG_VERSION}-release
+            echo "failed=false" >> $GITHUB_OUTPUT
             echo "uploaded=true" >> $GITHUB_OUTPUT
           else
+            echo "failed=true" >> $GITHUB_OUTPUT
             echo "uploaded=false" >> $GITHUB_OUTPUT
+            exit 1
           fi
 
-          exit 0
+      - if: steps.set_result.outputs.uploaded == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: clang-debug-build
+          path: clang_debug_build.tar.gz
+          retention-days: 1
 
-  clang_tidy:
+      - if: steps.set_result.outputs.uploaded == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: clang-release-build
+          path: clang_release_build.tar.gz
+          retention-days: 1
+
+
+  clang_unit_tests:
     runs-on: ubuntu-latest
     needs: [setup, clang_compile]
     outputs:
-      failed: ${{ steps.tidy_result.outputs.failed }}
-      uploaded: ${{ steps.upload_art.outputs.uploaded }}
+      failed: ${{ steps.clang_unit_tests.outputs.failed }}
     steps:
       - uses: actions/download-artifact@v4
         with:
@@ -183,6 +285,67 @@ jobs:
           path: .
 
       - run: tar -xzf workspace.tar.gz -C .
+
+      - name: Install environment
+        run: |
+          source initRepo/.environment || exit 1
+          if [ -f .environment ]; then source .environment; fi
+          echo "CLANG_VERSION=$CLANG_VERSION" >> $GITHUB_ENV
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: clang-debug-build
+          path: .
+
+      - run: tar -xzf clang_debug_build.tar.gz -C .
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: clang-release-build
+          path: .
+
+      - run: tar -xzf clang_release_build.tar.gz -C .
+
+      - name: Run Clang unit tests
+        run: |
+          ./initRepo/scripts/build.sh -t -T -d -J --compiler clang || TEST_FAILED=true
+          ./initRepo/scripts/build.sh -t -T -r -J --compiler clang || TEST_FAILED=true
+          if [ "$TEST_FAILED" = true ]; then
+            echo "failed=$( [ $rc -ne 0 ] && echo true || echo false)" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Publish Clang test results
+        if: always()
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        with:
+          files: |
+            build-clang-${{ env.CLANG_VERSION }}-debug/test_results.xml
+            build-clang-${{ env.CLANG_VERSION }}-release/test_results.xml
+
+
+
+  clang_tidy:
+    runs-on: ubuntu-latest
+    needs: [setup, clang_compile]
+    outputs:
+      failed: ${{ steps.tidy_result.outputs.failed }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: workspace
+          path: .
+
+      - run: tar -xzf workspace.tar.gz -C .
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: clang-debug-build
+          path: .
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: clang-release-build
+          path: .
 
       - name: Install environment
         run: |
@@ -201,17 +364,9 @@ jobs:
           echo "failed=$( [ $rc -ne 0 ] && echo true || echo false)" >> $GITHUB_OUTPUT
 
 
-      - id: upload_art
-        if: steps.tidy_result.outputs.uploaded == 'true'
-        uses: actions/upload-artifact@v4
-        with:
-          name: clang-debug-build
-          path: clang_debug_build.tar.gz
-          retention-days: 1
-          
   finalize:
     runs-on: ubuntu-latest
-    needs: [shellcheck, clang_format, clang_tidy, gcc_compile, clang_compile]
+    needs: [shellcheck, clang_format, clang_tidy, gcc_compile, clang_compile, clang_unit_tests, gcc_unit_tests]
     if: always()
     steps:
       - run: |
@@ -221,7 +376,10 @@ jobs:
           if [ "${{ needs.shellcheck.outputs.failed }}" = "true" ]; then failed=true; echo " - shellcheck: FAILED"; else echo " - shellcheck: OK"; fi
           if [ "${{ needs.clang_format.outputs.failed }}" = "true" ]; then failed=true; echo " - clang-format: FAILED"; else echo " - clang-format: OK"; fi
           if [ "${{ needs.clang_tidy.outputs.failed }}" = "true" ]; then failed=true; echo " - clang-tidy: FAILED"; else echo " - clang-tidy: OK"; fi
-          if [ "${{ needs.gcc_compile.result }}" != "success" ]; then failed=true; echo " - gcc builds: FAILED"; else echo " - gcc builds: OK"; fi
-          if [ "${{ needs.clang_compile.result }}" != "success" ]; then failed=true; echo " - clang builds: FAILED"; else echo " - clang builds: OK"; fi
+          if [ "${{ needs.gcc_compile.outputs.failed }}" = "true" ]; then failed=true; echo " - gcc builds: FAILED"; else echo " - gcc builds: OK"; fi
+          if [ "${{ needs.clang_compile.outputs.failed }}" = "true" ]; then failed=true; echo " - clang builds: FAILED"; else echo " - clang builds: OK"; fi
+          if [ "${{ needs.clang_unit_tests.outputs.failed }}" = "true" ]; then failed=true; echo " - clang unit tests: FAILED"; else echo " - clang unit tests: OK"; fi
+          if [ "${{ needs.gcc_unit_tests.outputs.failed }}" = "true" ]; then failed=true; echo " - gcc unit tests: FAILED"; else echo " - gcc unit tests: OK"; fi
 
           if $failed; then exit 1; fi
+
