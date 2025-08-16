@@ -218,10 +218,14 @@ jobs:
       - name: Publish coverage summary
         uses: irongut/CodeCoverageSummary@v1.3.0
         with:
-            filename: coverage.xml
-            badge: true
-            format: markdown
-            output: both
+          filename: coverage.xml
+          badge: true
+          format: markdown
+          output: file
+      - name: Append coverage to summary # workaround: publish-unit-test-result-action overwrites the summary
+        run: |
+          echo "## Code Coverage" >> $GITHUB_STEP_SUMMARY
+          cat code-coverage-results.md >> $GITHUB_STEP_SUMMARY
 
 
   clang_compile:
