@@ -79,7 +79,7 @@ copyFileWithPrompt() {
     cp "$src" "$dest"
     echo "$(basename "$dest") installed"
   else
-    WARN $'The file $(basename "$dest") already exists.'
+    WARN $'The file $dest already exists.'
     task="Do you want to overwrite $dest?"
     askYesNo
     if [ $answer = 1 ]; then
