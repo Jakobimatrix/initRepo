@@ -79,8 +79,8 @@ copyFileWithPrompt() {
     cp "$src" "$dest"
     echo "$(basename "$dest") installed"
   else
-    WARN $'The file $dest already exists.'
-    task="Do you want to overwrite $dest?"
+    WARN "The file $(basename "$dest") already exists."
+    task="Do you want to overwrite $(basename "$dest")?"
     askYesNo
     if [ $answer = 1 ]; then
       cp -f "$src" "$dest"
