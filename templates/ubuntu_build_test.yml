@@ -366,11 +366,6 @@ jobs:
           name: clang-debug-build
           path: .
 
-      - uses: actions/download-artifact@v4
-        with:
-          name: clang-release-build
-          path: .
-
       - name: Install environment
         run: |
           set -e

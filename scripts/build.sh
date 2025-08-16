@@ -25,7 +25,6 @@ show_help() {
     echo "  -l              List available compilers"
     echo "  -s              skip cmake and build [to be combined with -T, expects complete build]"
     echo "  -g              enable code coverage (only in combination with -d)"
-    exit 0
 }
 
 # Source environment variables
@@ -108,6 +107,7 @@ while [[ $# -gt 0 ]]; do
          *)
             echo "Unknown option: $1"
             show_help
+            exit 1
             ;;
     esac
     shift

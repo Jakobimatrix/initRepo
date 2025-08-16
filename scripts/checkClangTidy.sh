@@ -26,20 +26,18 @@ fi
 source ./initRepo/scripts/ensureToolVersion.sh
 ensure_tool_versioned clang-tidy "${CLANG_TIDY_VERSION}"
 
-# run CMake in debug environment with tests enabled and take the build directory
-BUILD_INFO=$(./initRepo/scripts/build.sh -d -C -t --compiler clang)
-# shellcheck disable=SC2181 # Reason: output goes into variable before I check if the command was successfull
-if [ $? -ne 0 ]; then
-    echo "Error: ./initRepo/scripts/build.sh -d -C -t --compiler clang ."
-    echo "{$BUILD_INFO}"
-    exit 1
-fi
 BUILD_DIR=build-clang-${CLANG_VERSION}-debug
+
+if [ ! -f "${BUILD_DIR}/compile_commands.json" ]; then
+    ./initRepo/scripts/build.sh -d -t -f --compiler clang
+fi
 
 if [ ! -f "${BUILD_DIR}/compile_commands.json" ]; then
     echo "Warning: compile_commands.json not found. CMake probably has failed."
     exit 1
 fi
+
+
 
 for file in $FILES; do
     # Only check files that have a corresponding compilation database entry
