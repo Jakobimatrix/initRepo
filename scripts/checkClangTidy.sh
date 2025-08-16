@@ -34,7 +34,7 @@ if [ $? -ne 0 ]; then
     echo "{$BUILD_INFO}"
     exit 1
 fi
-BUILD_DIR=$(echo "$BUILD_INFO" | grep '^BUILD_DIR=' | cut -d'=' -f2)
+BUILD_DIR=build-clang-${CLANG_VERSION}-debug
 
 if [ ! -f "${BUILD_DIR}/compile_commands.json" ]; then
     echo "Warning: compile_commands.json not found. CMake probably has failed."
