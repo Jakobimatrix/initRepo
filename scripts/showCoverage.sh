@@ -22,7 +22,7 @@ if ! command -v gcovr >/dev/null 2>&1; then
     exit
 fi
 
-./initRepo/scripts/build.sh -d -g -t -T --compiler gcc
+./initRepo/scripts/build.sh -c -d -g -t -T --compiler gcc
 
-gcovr -r . --txt > coverage.txt
+gcovr --gcov-executable gcov-${GCC_VERSION} -r . --txt > coverage.txt
 less coverage.txt

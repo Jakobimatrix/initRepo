@@ -23,7 +23,6 @@ show_help() {
     echo "  -f              Enable fuzzing"
     echo "  -v              Verbode: dump CMake variables"
     echo "  -l              List available compilers"
-    echo "  -C              only run CMake"
     echo "  -s              skip cmake and build [to be combined with -T, expects complete build]"
     echo "  -g              enable code coverage (only in combination with -d)"
     exit 0
@@ -45,7 +44,6 @@ ENABLE_FUZZING=OFF
 LIST_COMPILERS=false
 VERBOSE=false
 COMPILER="${DEFAULT_COMPILER}"
-CONFIG_CMAKE_ONLY=false
 RUN_TESTS=false
 TEST_OUTPUT_JUNIT=false
 SKIP_BUILD=false
@@ -102,13 +100,12 @@ while [[ $# -gt 0 ]]; do
         -l) LIST_COMPILERS=true ;;
         -h) show_help ;;
         -g) ENABLE_COVERAGE=ON ;;
-        -C) CONFIG_CMAKE_ONLY=true ;;
         -T) 
             RUN_TESTS=true 
             ENABLE_TESTS=ON
             ;;
         -J) TEST_OUTPUT_JUNIT=true ;;
-        *)
+         *)
             echo "Unknown option: $1"
             show_help
             ;;
@@ -198,19 +195,12 @@ if [[ "$SKIP_BUILD" == false ]]; then
     echo "Using c compiler at: $CC_PATH"
     echo "To change compiler versions, set the variables in the .environment!!"
     echo "Configuring with CMake..."
-    echo "Running: cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_CXX_COMPILER=$COMPILER_PATH -DCMAKE_C_COMPILER=$CC_PATH -DBUILD_TESTING=$ENABLE_TESTS -DENABLE_FUZZING=$ENABLE_FUZZING .."
+    echo "Running: cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_CXX_COMPILER=$COMPILER_PATH -DCMAKE_C_COMPILER=$CC_PATH -DBUILD_TESTING=$ENABLE_TESTS -DENABLE_FUZZING=$ENABLE_FUZZING -DENABLE_COVERAGE=$ENABLE_COVERAGE .."
     cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_CXX_COMPILER=$COMPILER_PATH -DCMAKE_C_COMPILER=$CC_PATH -DBUILD_TESTING=$ENABLE_TESTS -DENABLE_FUZZING=$ENABLE_FUZZING -DENABLE_COVERAGE=$ENABLE_COVERAGE ..
     if [[ "$VERBOSE" == true ]]; then
         echo "Dumping CMake variables:"
         cmake -LAH ..
     fi
-
-    if [[ "$CONFIG_CMAKE_ONLY" == true ]]; then
-        echo "CMake configuration only (-C set). Exiting before build."
-        echo "BUILD_DIR=$BUILD_DIR"
-        exit 0
-    fi
-
 
     echo "Building project..."
     cmake --build . -- -j"$(nproc)"
