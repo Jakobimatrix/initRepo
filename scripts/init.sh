@@ -215,7 +215,7 @@ then
     cp -r "$PROCECT_STRUCUR_TEMPLATE" "$REPO$PROCECT_STRUCUR_FOLDER"
     echo "$REPO$PROCECT_STRUCUR_FOLDER installed"
   else
-    WARN $'\e[33m$REPO$PROCECT_STRUCUR_FOLDER already exists. !!!Do you really want to Overwrite???\nARE\nYOU\nSURE\n?\e[0m'
+    WARN "$REPO$PROCECT_STRUCUR_FOLDER already exists. !!!Do you really want to Overwrite???\nARE\nYOU\nSURE\n?"
     askYesNo
     if [ $answer = 1 ]; then
       rm -rf "$REPO$PROCECT_STRUCUR_FOLDER"
