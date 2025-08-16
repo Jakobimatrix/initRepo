@@ -22,6 +22,7 @@ show_help() {
     echo "  -v              Verbode: dump CMake variables"
     echo "  -l              List available compilers"
     echo "  -C              only run CMake"
+    echo "  -T              only run Tests, for CI CD return junit"
     exit 0
 }
 
@@ -42,6 +43,7 @@ LIST_COMPILERS=false
 VERBOSE=false
 COMPILER="${DEFAULT_COMPILER}"
 CONFIG_CMAKE_ONLY=false
+TESTS_ONLY=false
 
 # Compiler paths from .environment
 CLANG_CPP_PATH="${CLANG_CPP_PATH}"
@@ -93,6 +95,10 @@ while [[ $# -gt 0 ]]; do
         -l) LIST_COMPILERS=true ;;
         -h) show_help ;;
         -C) CONFIG_CMAKE_ONLY=true ;;
+        -T) 
+            TESTS_ONLY=true 
+            ENABLE_TESTS=ON
+            ;;
         *)
             echo "Unknown option: $1"
             show_help
@@ -100,6 +106,7 @@ while [[ $# -gt 0 ]]; do
     esac
     shift
 done
+
 
 if [[ "$LIST_COMPILERS" == true ]]; then
     list_available_compiler
@@ -174,6 +181,14 @@ fi
 mkdir -p "$BUILD_DIR"
 cd "$BUILD_DIR"
 
+if [[ "$TESTS_ONLY" == true ]] 
+    echo "Script was run with -T Expecting tests already build and ready to run!"
+    echo "Running ctest --output-on-failure --output-junit test_results.xml"
+    ctest --output-on-failure --output-junit test_results.xml
+    return 0
+fi
+
+
 # Run CMake
 echo "Using cpp compiler at: $COMPILER_PATH"
 echo "Using c compiler at: $CC_PATH"
@@ -191,6 +206,7 @@ if [[ "$CONFIG_CMAKE_ONLY" == true ]]; then
     echo "BUILD_DIR=$BUILD_DIR"
     exit 0
 fi
+
 
 echo "Building project..."
 cmake --build . -- -j"$(nproc)"
