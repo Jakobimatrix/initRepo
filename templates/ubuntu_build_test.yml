@@ -161,7 +161,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [gcc_compile]
     outputs:
-      failed: ${{ steps.gcc_unit_tests.outputs.failed }}
+      failed: ${{ steps.gcc_unit_tests_and_coverage.outputs.failed }}
     steps:
       - uses: actions/download-artifact@v4
         with:
@@ -379,7 +379,7 @@ jobs:
 
   finalize:
     runs-on: ubuntu-latest
-    needs: [shellcheck, clang_format, clang_tidy, gcc_compile, clang_compile, clang_unit_tests, gcc_unit_tests]
+    needs: [shellcheck, clang_format, clang_tidy, gcc_compile, clang_compile, clang_unit_tests, gcc_unit_tests_and_coverage]
     if: always()
     steps:
       - run: |
@@ -392,7 +392,7 @@ jobs:
           if [ "${{ needs.gcc_compile.outputs.failed }}" = "true" ]; then failed=true; echo " - gcc builds: FAILED"; else echo " - gcc builds: OK"; fi
           if [ "${{ needs.clang_compile.outputs.failed }}" = "true" ]; then failed=true; echo " - clang builds: FAILED"; else echo " - clang builds: OK"; fi
           if [ "${{ needs.clang_unit_tests.outputs.failed }}" = "true" ]; then failed=true; echo " - clang unit tests: FAILED"; else echo " - clang unit tests: OK"; fi
-          if [ "${{ needs.gcc_unit_tests.outputs.failed }}" = "true" ]; then failed=true; echo " - gcc unit tests: FAILED"; else echo " - gcc unit tests: OK"; fi
+          if [ "${{ needs.gcc_unit_tests_and_coverage.outputs.failed }}" = "true" ]; then failed=true; echo " - gcc unit tests: FAILED"; else echo " - gcc unit tests: OK"; fi
 
           if $failed; then exit 1; fi
           
