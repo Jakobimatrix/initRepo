@@ -1,6 +1,10 @@
 **/build-*/
 **/fuzz/
 
+# gcov
+coverage.txt
+coverage.xml
+
 # Prerequisites
 *.d
 
