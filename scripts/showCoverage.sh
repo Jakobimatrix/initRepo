@@ -18,13 +18,11 @@ if [ -f ".environment" ]; then
 fi
 
 if ! command -v gcovr >/dev/null 2>&1; then
-    echo "installing gcc code coverage reporter: apt-get install -y gcovr lcov"
-    sudo apt-get install -y gcovr lcov
+    echo "You need to install gcc code coverage reporter: 'apt-get install -y gcovr lcov'"
+    exit
 fi
 
-./initRepo/scripts/build.sh -d -g -t -T
+./initRepo/scripts/build.sh -d -g -t -T --compiler gcc
 
-gcovr -r . --xml-pretty -o coverage.xml
-gcovr -r . --html-details coverage.html
 gcovr -r . --txt > coverage.txt
 less coverage.txt

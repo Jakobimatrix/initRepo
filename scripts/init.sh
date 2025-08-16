@@ -96,7 +96,7 @@ if ! command -v clang-format-"${CLANG_FORMAT_VERSION}" >/dev/null 2>&1; then
   fi
 fi
 
-task="Do you want to install clang-format::> pre-comit git hook?"
+task="Do you want to install clang-format --> pre-comit git hook?"
 askYesNo
 if [ $answer = 1 ]
 then
@@ -111,6 +111,15 @@ if ! command -v shellcheck >/dev/null 2>&1; then
   if [ $answer = 1 ]
   then
     sudo apt install shellcheck -y
+  fi
+fi
+
+if ! command -v gcovr >/dev/null 2>&1; then
+  task="o you want to install gcovr --> code coverage for gcc"
+  askYesNo
+  if [ $answer = 1 ]
+  then
+    sudo apt install gcovr -y
   fi
 fi
 
