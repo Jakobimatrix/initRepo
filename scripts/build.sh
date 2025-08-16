@@ -189,7 +189,7 @@ cd "$BUILD_DIR"
 # Run CMake
 echo "Using cpp compiler at: $COMPILER_PATH"
 echo "Using c compiler at: $CC_PATH"
-echo "To change compiler versions, set the variables in this script!!"
+echo "To change compiler versions, set the variables in the .environment!!"
 echo "Configuring with CMake..."
 echo "Running: cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_CXX_COMPILER=$COMPILER_PATH -DCMAKE_C_COMPILER=$CC_PATH -DBUILD_TESTING=$ENABLE_TESTS -DENABLE_FUZZING=$ENABLE_FUZZING .."
 cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_CXX_COMPILER=$COMPILER_PATH -DCMAKE_C_COMPILER=$CC_PATH -DBUILD_TESTING=$ENABLE_TESTS -DENABLE_FUZZING=$ENABLE_FUZZING ..
@@ -210,7 +210,7 @@ cmake --build . -- -j"$(nproc)"
 
 
 # Run tests if enabled
-if [[ "$RUN_TESTS" == "ON" ]]; then
+if [[ "$RUN_TESTS" == true ]]; then
     echo "Running ctest --output-on-failure"
 
     if [[ "$TEST_OUTPUT_JUNIT" == false ]]; then
