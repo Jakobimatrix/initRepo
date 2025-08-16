@@ -77,7 +77,7 @@ copyFileWithPrompt() {
     task="The file $(basename "$dest") already exists. Do you want to overwrite it?"
     askYesNo
     if [ $answer = 1 ]; then
-      cp "$src" "$dest"
+      cp -f "$src" "$dest"
       echo "$(basename "$dest") overwritten"
     else
       echo "$(basename "$dest") not overwritten"
