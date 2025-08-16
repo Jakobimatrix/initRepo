@@ -25,6 +25,7 @@ show_help() {
     echo "  -l              List available compilers"
     echo "  -C              only run CMake"
     echo "  -s              skip cmake and build [to be combined with -T, expects complete build]"
+    echo "  -g              enable code coverage (only in combination with -d)"
     exit 0
 }
 
@@ -48,6 +49,7 @@ CONFIG_CMAKE_ONLY=false
 RUN_TESTS=false
 TEST_OUTPUT_JUNIT=false
 SKIP_BUILD=false
+ENABLE_COVERAGE=OFF
 
 # Compiler paths from .environment
 CLANG_CPP_PATH="${CLANG_CPP_PATH}"
@@ -99,6 +101,7 @@ while [[ $# -gt 0 ]]; do
         -v) VERBOSE=true ;;
         -l) LIST_COMPILERS=true ;;
         -h) show_help ;;
+        -g) ENABLE_COVERAGE=ON ;;
         -C) CONFIG_CMAKE_ONLY=true ;;
         -T) 
             RUN_TESTS=true 
@@ -196,7 +199,7 @@ if [[ "$SKIP_BUILD" == false ]]; then
     echo "To change compiler versions, set the variables in the .environment!!"
     echo "Configuring with CMake..."
     echo "Running: cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_CXX_COMPILER=$COMPILER_PATH -DCMAKE_C_COMPILER=$CC_PATH -DBUILD_TESTING=$ENABLE_TESTS -DENABLE_FUZZING=$ENABLE_FUZZING .."
-    cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_CXX_COMPILER=$COMPILER_PATH -DCMAKE_C_COMPILER=$CC_PATH -DBUILD_TESTING=$ENABLE_TESTS -DENABLE_FUZZING=$ENABLE_FUZZING ..
+    cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_CXX_COMPILER=$COMPILER_PATH -DCMAKE_C_COMPILER=$CC_PATH -DBUILD_TESTING=$ENABLE_TESTS -DENABLE_FUZZING=$ENABLE_FUZZING -DENABLE_COVERAGE=$ENABLE_COVERAGE ..
     if [[ "$VERBOSE" == true ]]; then
         echo "Dumping CMake variables:"
         cmake -LAH ..

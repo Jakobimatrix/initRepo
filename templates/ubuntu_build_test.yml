@@ -124,8 +124,8 @@ jobs:
       - name: Run GCC build
         run: |
           set +e
-          ./initRepo/scripts/build.sh -c -d -t --compiler gcc
-          ./initRepo/scripts/build.sh -c -r -t --compiler gcc
+          ./initRepo/scripts/build.sh -c -d -t -g --compiler gcc # debug + tests + code coverage -> used by "gcc_unit_tests"
+          ./initRepo/scripts/build.sh -c -r -t --compiler gcc    # release + tests -> used by "gcc_unit_tests"
 
       - id: set_result
         run: |
@@ -157,7 +157,7 @@ jobs:
           retention-days: 1
 
 
-  gcc_unit_tests:
+  gcc_unit_tests_and_coverage:
     runs-on: ubuntu-latest
     needs: [gcc_compile]
     outputs:
@@ -175,6 +175,8 @@ jobs:
           source initRepo/.environment || exit 1
           if [ -f .environment ]; then source .environment; fi
           echo "GCC_VERSION=$GCC_VERSION" >> $GITHUB_ENV
+          sudo apt-get update
+          sudo apt-get install -y gcovr lcov
 
       - uses: actions/download-artifact@v4
         with:
@@ -192,8 +194,8 @@ jobs:
 
       - name: Run GCC unit tests
         run: |
-          ./initRepo/scripts/build.sh -s -T -d -J --compiler gcc || TEST_FAILED=true
-          ./initRepo/scripts/build.sh -s -T -r -J --compiler gcc || TEST_FAILED=true
+          ./initRepo/scripts/build.sh -s -T -d -J --compiler gcc || TEST_FAILED=true  # skip cmake and build, + debug + run Tests in Junit format output (+ coverage report)
+          ./initRepo/scripts/build.sh -s -T -r -J --compiler gcc || TEST_FAILED=true  # skip cmake and build, + release + run Tests in Junit format output
           if [ "$TEST_FAILED" = true ]; then
             echo "failed=$( [ $rc -ne 0 ] && echo true || echo false)" >> $GITHUB_OUTPUT
           fi
@@ -205,6 +207,23 @@ jobs:
           files: |
             build-gcc-${{ env.GCC_VERSION }}-debug/test_results.xml
             build-gcc-${{ env.GCC_VERSION }}-release/test_results.xml
+            
+      - name: Generate coverage report
+        run: |
+          gcovr -r . --xml-pretty -o coverage.xml
+          gcovr -r . --html-details coverage.html
+          gcovr -r . --txt > coverage.txt
+
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage.html
+
+      - name: Publish coverage summary
+        uses: mikepenz/action-junit-report@v4
+        with:
+          report_paths: coverage.xml
 
 
   clang_compile:
@@ -239,10 +258,10 @@ jobs:
       - name: Run Clang builds
         run: |
           set +e
-          ./initRepo/scripts/build.sh -c -d -f --compiler clang
-          ./initRepo/scripts/build.sh -d -t --compiler clang
-          ./initRepo/scripts/build.sh -c -r -f --compiler clang
-          ./initRepo/scripts/build.sh -r -t --compiler clang
+          ./initRepo/scripts/build.sh -c -d -f --compiler clang # debug + fuzzer
+          ./initRepo/scripts/build.sh -d -t --compiler clang    # debug + tests -> used by "clang_unit_tests"
+          ./initRepo/scripts/build.sh -c -r -f --compiler clang # release + fuzzer
+          ./initRepo/scripts/build.sh -r -t --compiler clang    # release + tests -> used by "clang_unit_tests"
 
       - id: set_result
         run: |
@@ -382,4 +401,14 @@ jobs:
           if [ "${{ needs.gcc_unit_tests.outputs.failed }}" = "true" ]; then failed=true; echo " - gcc unit tests: FAILED"; else echo " - gcc unit tests: OK"; fi
 
           if $failed; then exit 1; fi
+          
+      - name: Coverage Summary
+        if: always()
+        run: |
+          echo "## Coverage Report" >> $GITHUB_STEP_SUMMARY
+          if [ -f coverage.txt ]; then
+            cat coverage.txt >> $GITHUB_STEP_SUMMARY
+          else
+            echo "No coverage report found." >> $GITHUB_STEP_SUMMARY
+          fi
 
