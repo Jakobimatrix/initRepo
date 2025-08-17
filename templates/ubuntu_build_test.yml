@@ -24,6 +24,7 @@ jobs:
 
       - name: Create workspace tar (exclude .git and IDE stuff)
         run: |
+          set -e
           touch workspace.tar
           touch workspace.tar.gz
           tar --exclude='workspace.tar.gz' --exclude='workspace.tar' --exclude-vcs --exclude='**/.idea' --exclude='**/.vscode' --exclude='**/*.log' -cf workspace.tar .
@@ -35,12 +36,17 @@ jobs:
           name: workspace
           path: workspace.tar.gz
           retention-days: 1
+          
+      - name: make sure scripts exist
+        run: |
+          set -e
+          source initRepo/.environment || exit 1
+          source initRepo/scripts/ensureToolVersion.sh || exit 1
 
 
   shellcheck:
     runs-on: ubuntu-latest
     needs: setup
-    continue-on-error: true
     outputs:
       failed: ${{ steps.shell_result.outputs.failed }}
     steps:
@@ -49,7 +55,9 @@ jobs:
           name: workspace
           path: .
 
-      - run: tar -xzf workspace.tar.gz -C .
+      - run: |
+          set -e
+          tar -xzf workspace.tar.gz -C .
 
       - name: Install environment
         run: |
@@ -58,50 +66,42 @@ jobs:
 
       - id: shell_result
         run: |
-          set +e
+          set -e
           ./initRepo/scripts/checkShellCheck.sh
-          rc=$?
-          echo "failed=$( [ $rc -ne 0 ] && echo true || echo false)" >> $GITHUB_OUTPUT
-          exit $rc
 
 
   clang_format:
     runs-on: ubuntu-latest
     needs: setup
-    continue-on-error: true
-    outputs:
-      failed: ${{ steps.format_result.outputs.failed }}
     steps:
       - uses: actions/download-artifact@v4
         with:
           name: workspace
           path: .
 
-      - run: tar -xzf workspace.tar.gz -C .
+      - run: |
+          set -e
+          tar -xzf workspace.tar.gz -C .
 
       - name: Install environment
         run: |
           set -e
-          source initRepo/.environment || exit 1
+          source initRepo/.environment
           if [ -f .environment ]; then source .environment; fi
           sudo apt-get install -y clang-format-${CLANG_FORMAT_VERSION}
-          source initRepo/scripts/ensureToolVersion.sh || exit 1
+          source initRepo/scripts/ensureToolVersion.sh
           ensure_tool_versioned clang-format "${CLANG_FORMAT_VERSION}"
 
       - id: format_result
         run: |
-          set +e
+          set -e
           ./initRepo/scripts/checkClangFormat.sh
-          rc=$?
-          echo "failed=$( [ $rc -ne 0 ] && echo true || echo false)" >> $GITHUB_OUTPUT
-          exit $rc
 
 
   gcc_compile:
     runs-on: ubuntu-latest
     needs: setup
     outputs:
-      failed: ${{ steps.set_result.outputs.failed }}
       uploaded: ${{ steps.set_result.outputs.uploaded }}
     steps:
       - uses: actions/download-artifact@v4
@@ -109,17 +109,19 @@ jobs:
           name: workspace
           path: .
 
-      - run: tar -xzf workspace.tar.gz -C .
+      - run: |
+          set -e
+          tar -xzf workspace.tar.gz -C .
 
       - name: Install environment
         run: |
           set -e
-          source initRepo/.environment || exit 1
+          source initRepo/.environment
           if [ -f .environment ]; then source .environment; fi
           sudo apt-get install -y gcc-${GCC_VERSION} g++-${GCC_VERSION}
           sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-${GCC_VERSION} 100 || true
           sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-${GCC_VERSION} 100 || true
-          source initRepo/scripts/ensureToolVersion.sh || exit 1
+          source initRepo/scripts/ensureToolVersion.sh
           ensure_tool_versioned g++ "${GCC_VERSION}"
           ensure_tool_versioned gcc "${GCC_VERSION}"
 
@@ -131,29 +133,23 @@ jobs:
 
       - id: set_result
         run: |
-          set +e
-          source initRepo/.environment || exit 1
+          set -e
+          source initRepo/.environment
           if [ -f .environment ]; then source .environment; fi
           if [ -d "build-gcc-${GCC_VERSION}-debug" ] && [ -d "build-gcc-${GCC_VERSION}-release" ]; then
             tar -czf gcc_debug_build.tar.gz build-gcc-${GCC_VERSION}-debug
             tar -czf gcc_release_build.tar.gz build-gcc-${GCC_VERSION}-release
-            echo "failed=false" >> $GITHUB_OUTPUT
-            echo "uploaded=true" >> $GITHUB_OUTPUT
           else
-            echo "failed=true" >> $GITHUB_OUTPUT
-            echo "uploaded=false" >> $GITHUB_OUTPUT
             exit 1
           fi
 
-      - if: steps.set_result.outputs.uploaded == 'true'
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
           name: gcc-debug-build
           path: gcc_debug_build.tar.gz
           retention-days: 1
 
-      - if: steps.set_result.outputs.uploaded == 'true'
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
           name: gcc-release-build
           path: gcc_release_build.tar.gz
@@ -163,19 +159,20 @@ jobs:
   gcc_unit_tests_and_coverage:
     runs-on: ubuntu-latest
     needs: [gcc_compile]
-    outputs:
-      failed: ${{ steps.gcc_unit_tests_and_coverage.outputs.failed }}
     steps:
       - uses: actions/download-artifact@v4
         with:
           name: workspace
           path: .
 
-      - run: tar -xzf workspace.tar.gz -C .
+      - run: |
+          set -e
+          tar -xzf workspace.tar.gz -C .
 
       - name: Install environment
         run: |
-          source initRepo/.environment || exit 1
+          set -e
+          source initRepo/.environment
           if [ -f .environment ]; then source .environment; fi
           echo "GCC_VERSION=$GCC_VERSION" >> $GITHUB_ENV
           sudo apt-get update
@@ -186,22 +183,24 @@ jobs:
           name: gcc-debug-build
           path: .
 
-      - run: tar -xzf gcc_debug_build.tar.gz -C .
+      - run: |
+          set -e
+          tar -xzf gcc_debug_build.tar.gz -C .
 
       - uses: actions/download-artifact@v4
         with:
           name: gcc-release-build
           path: .
 
-      - run: tar -xzf gcc_release_build.tar.gz -C .
+      - run: |
+          set -e
+          tar -xzf gcc_release_build.tar.gz -C .
 
       - name: Run GCC unit tests
         run: |
+          set -e
           ./initRepo/scripts/build.sh -s -T -d -J --compiler gcc  # skip cmake and build, + debug + run Tests in Junit format output (+ coverage report)
           ./initRepo/scripts/build.sh -s -T -r -J --compiler gcc  # skip cmake and build, + release + run Tests in Junit format output
-          rc=$?
-          echo "failed=$( [ $rc -ne 0 ] && echo true || echo false)" >> $GITHUB_OUTPUT
-          exit $rc
 
       - name: Publish GCC test results
         if: always()
@@ -235,7 +234,6 @@ jobs:
     runs-on: ubuntu-latest
     needs: setup
     outputs:
-      failed: ${{ steps.set_result.outputs.failed }}
       uploaded: ${{ steps.set_result.outputs.uploaded }}
     steps:
       - uses: actions/download-artifact@v4
@@ -243,12 +241,14 @@ jobs:
           name: workspace
           path: .
 
-      - run: tar -xzf workspace.tar.gz -C .
+      - run: |
+          set -e
+          tar -xzf workspace.tar.gz -C .
 
       - name: Install environment
         run: |
           set -e
-          source initRepo/.environment || exit 1
+          source initRepo/.environment
           if [ -f .environment ]; then source .environment; fi
           sudo apt-get install -y clang-${CLANG_VERSION} lld
           if ! command -v ld.lld &>/dev/null; then
@@ -256,7 +256,7 @@ jobs:
           fi
           sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-${CLANG_VERSION} 100 || true
           sudo update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-${CLANG_VERSION} 100 || true
-          source initRepo/scripts/ensureToolVersion.sh || exit 1
+          source initRepo/scripts/ensureToolVersion.sh
           ensure_tool_versioned clang++ "${CLANG_VERSION}"
           ensure_tool_versioned clang "${CLANG_VERSION}"
 
@@ -270,28 +270,23 @@ jobs:
 
       - id: set_result
         run: |
-          source initRepo/.environment || exit 1
+          set -e
+          source initRepo/.environment
           if [ -f .environment ]; then source .environment; fi
           if [ -d "build-clang-${CLANG_VERSION}-debug" ] && [ -d "build-clang-${CLANG_VERSION}-release" ]; then
             tar -czf clang_debug_build.tar.gz build-clang-${CLANG_VERSION}-debug
             tar -czf clang_release_build.tar.gz build-clang-${CLANG_VERSION}-release
-            echo "failed=false" >> $GITHUB_OUTPUT
-            echo "uploaded=true" >> $GITHUB_OUTPUT
           else
-            echo "failed=true" >> $GITHUB_OUTPUT
-            echo "uploaded=false" >> $GITHUB_OUTPUT
             exit 1
           fi
 
-      - if: steps.set_result.outputs.uploaded == 'true'
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
           name: clang-debug-build
           path: clang_debug_build.tar.gz
           retention-days: 1
 
-      - if: steps.set_result.outputs.uploaded == 'true'
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
           name: clang-release-build
           path: clang_release_build.tar.gz
@@ -301,19 +296,20 @@ jobs:
   clang_unit_tests:
     runs-on: ubuntu-latest
     needs: [clang_compile]
-    outputs:
-      failed: ${{ steps.clang_unit_tests.outputs.failed }}
     steps:
       - uses: actions/download-artifact@v4
         with:
           name: workspace
           path: .
 
-      - run: tar -xzf workspace.tar.gz -C .
+      - run: |
+          set -e
+          tar -xzf workspace.tar.gz -C .
 
       - name: Install environment
         run: |
-          source initRepo/.environment || exit 1
+          set -e
+          source initRepo/.environment
           if [ -f .environment ]; then source .environment; fi
           echo "CLANG_VERSION=$CLANG_VERSION" >> $GITHUB_ENV
 
@@ -322,22 +318,23 @@ jobs:
           name: clang-debug-build
           path: .
 
-      - run: tar -xzf clang_debug_build.tar.gz -C .
+      - run: |
+          set -e
+          tar -xzf clang_debug_build.tar.gz -C .
 
       - uses: actions/download-artifact@v4
         with:
           name: clang-release-build
           path: .
 
-      - run: tar -xzf clang_release_build.tar.gz -C .
+      - run: |
+          set -e
+          tar -xzf clang_release_build.tar.gz -C .
 
       - name: Run Clang unit tests
         run: |
           ./initRepo/scripts/build.sh -s -T -d -J --compiler clang
           ./initRepo/scripts/build.sh -s -T -r -J --compiler clang
-          rc=$?
-          echo "failed=$( [ $rc -ne 0 ] && echo true || echo false)" >> $GITHUB_OUTPUT
-          exit $rc
 
       - name: Publish Clang test results
         if: always()
@@ -351,28 +348,29 @@ jobs:
   clang_tidy:
     runs-on: ubuntu-latest
     needs: [clang_compile]
-    continue-on-error: true
-    outputs:
-      failed: ${{ steps.clang_tidy.outputs.failed }}
     steps:
       - uses: actions/download-artifact@v4
         with:
           name: workspace
           path: .
 
-      - run: tar -xzf workspace.tar.gz -C .
+      - run: |
+          set -e
+          tar -xzf workspace.tar.gz -C .
 
       - uses: actions/download-artifact@v4
         with:
           name: clang-debug-build
           path: .
     
-      - run: tar -xzf clang_debug_build.tar.gz -C .
+      - run: |
+          set -e
+          tar -xzf clang_debug_build.tar.gz -C .
 
       - name: Install environment
         run: |
           set -e
-          source initRepo/.environment || exit 1
+          source initRepo/.environment
           if [ -f .environment ]; then source .environment; fi
           sudo apt-get install -y clang-tidy-${CLANG_TIDY_VERSION}
           source initRepo/scripts/ensureToolVersion.sh || exit 1
@@ -380,42 +378,6 @@ jobs:
 
       - name: tidy_result
         run: |
-          set +e
+          set -e
           ./initRepo/scripts/checkClangTidy.sh
-          rc=$?
-          echo "failed=$( [ $rc -ne 0 ] && echo true || echo false)" >> $GITHUB_OUTPUT
-          exit $rc
-
-
-  finalize:
-    runs-on: ubuntu-latest
-    needs: [shellcheck, clang_format, clang_tidy, gcc_compile, clang_compile, clang_unit_tests, gcc_unit_tests_and_coverage]
-    if: always()
-    steps:
-      - run: |
-          echo "Summary of results:" >> $GITHUB_STEP_SUMMARY
-          failed=false
-
-          check() {
-            local name="$1"
-            local status="$2"
-            local label="$3"
-
-            if [ "$status" = "false" ]; then
-              echo " - $label: OK" >> $GITHUB_STEP_SUMMARY
-            else
-              echo " - $label: FAILED" >> $GITHUB_STEP_SUMMARY
-              failed=true
-            fi
-          }
-
-          check shellcheck "${{ needs.shellcheck.outputs.failed }}" "shellcheck"
-          check clang_format "${{ needs.clang_format.outputs.failed }}" "clang-format"
-          check clang_tidy "${{ needs.clang_tidy.outputs.failed }}" "clang-tidy"
-          check gcc_compile "${{ needs.gcc_compile.outputs.failed }}" "gcc builds"
-          check clang_compile "${{ needs.clang_compile.outputs.failed }}" "clang builds"
-          check clang_unit_tests "${{ needs.clang_unit_tests.outputs.failed }}" "clang unit tests"
-          check gcc_unit_tests_and_coverage "${{ needs.gcc_unit_tests_and_coverage.outputs.failed }}" "gcc unit tests"
-
-          if $failed; then exit 1; fi
 
