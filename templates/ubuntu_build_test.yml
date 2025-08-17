@@ -125,12 +125,13 @@ jobs:
 
       - name: Run GCC build
         run: |
-          set +e
+          set -e
           ./initRepo/scripts/build.sh -c -d -t -g --compiler gcc # debug + tests + code coverage -> used by "gcc_unit_tests"
           ./initRepo/scripts/build.sh -c -r -t --compiler gcc    # release + tests -> used by "gcc_unit_tests"
 
       - id: set_result
         run: |
+          set +e
           source initRepo/.environment || exit 1
           if [ -f .environment ]; then source .environment; fi
           if [ -d "build-gcc-${GCC_VERSION}-debug" ] && [ -d "build-gcc-${GCC_VERSION}-release" ]; then
@@ -261,7 +262,7 @@ jobs:
 
       - name: Run Clang builds
         run: |
-          set +e
+          set -e
           ./initRepo/scripts/build.sh -c -d -f --compiler clang # debug + fuzzer
           ./initRepo/scripts/build.sh -d -t --compiler clang    # debug + tests -> used by "clang_unit_tests"
           ./initRepo/scripts/build.sh -c -r -f --compiler clang # release + fuzzer
@@ -366,7 +367,7 @@ jobs:
           name: clang-debug-build
           path: .
     
-      - run: tar -xzf clang_debug_build.tar.gz -C 
+      - run: tar -xzf clang_debug_build.tar.gz -C .
 
       - name: Install environment
         run: |
@@ -377,7 +378,7 @@ jobs:
           source initRepo/scripts/ensureToolVersion.sh || exit 1
           ensure_tool_versioned clang-tidy "${CLANG_TIDY_VERSION}"
 
-      - id: tidy_result
+      - name: tidy_result
         run: |
           set +e
           ./initRepo/scripts/checkClangTidy.sh
@@ -395,13 +396,13 @@ jobs:
           echo "Summary of results:"
           failed=false
 
-          if [ "${{ needs.shellcheck.outputs.failed }}" = "true" ]; then failed=true; echo " - shellcheck: FAILED"; else echo " - shellcheck: OK"; fi
-          if [ "${{ needs.clang_format.outputs.failed }}" = "true" ]; then failed=true; echo " - clang-format: FAILED"; else echo " - clang-format: OK"; fi
-          if [ "${{ needs.clang_tidy.outputs.failed }}" = "true" ]; then failed=true; echo " - clang-tidy: FAILED"; else echo " - clang-tidy: OK"; fi
-          if [ "${{ needs.gcc_compile.outputs.failed }}" = "true" ]; then failed=true; echo " - gcc builds: FAILED"; else echo " - gcc builds: OK"; fi
-          if [ "${{ needs.clang_compile.outputs.failed }}" = "true" ]; then failed=true; echo " - clang builds: FAILED"; else echo " - clang builds: OK"; fi
-          if [ "${{ needs.clang_unit_tests.outputs.failed }}" = "true" ]; then failed=true; echo " - clang unit tests: FAILED"; else echo " - clang unit tests: OK"; fi
-          if [ "${{ needs.gcc_unit_tests_and_coverage.outputs.failed }}" = "true" ]; then failed=true; echo " - gcc unit tests: FAILED"; else echo " - gcc unit tests: OK"; fi
+          if [ "${{ needs.shellcheck.outputs.failed }}" = "false" ]; then echo " - shellcheck: OK"; else failed=true; echo " - shellcheck: FAILED"; fi
+          if [ "${{ needs.clang_format.outputs.failed }}" = "false" ]; then echo " - clang-format: OK"; else failed=true; echo " - clang-format: FAILED"; fi
+          if [ "${{ needs.clang_tidy.outputs.failed }}" = "false" ]; then echo " - clang-tidy: OK"; else failed=true; echo " - clang-tidy: FAILED"; fi
+          if [ "${{ needs.gcc_compile.outputs.failed }}" = "false" ]; then echo " - gcc builds: OK"; else failed=true; echo " - gcc builds: FAILED"; fi
+          if [ "${{ needs.clang_compile.outputs.failed }}" = "false" ]; then echo " - clang builds: OK"; else failed=true; echo " - clang builds: FAILED"; fi
+          if [ "${{ needs.clang_unit_tests.outputs.failed }}" = "false" ]; then echo " - clang unit tests: OK"; else failed=true; echo " - clang unit tests: FAILED"; fi
+          if [ "${{ needs.gcc_unit_tests_and_coverage.outputs.failed }}" = "false" ]; then echo " - gcc unit tests: OK"; else failed=true; echo " - gcc unit tests: FAILED"; fi
 
           if $failed; then exit 1; fi
 
