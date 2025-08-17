@@ -197,11 +197,11 @@ jobs:
 
       - name: Run GCC unit tests
         run: |
-          ./initRepo/scripts/build.sh -s -T -d -J --compiler gcc || TEST_FAILED=true  # skip cmake and build, + debug + run Tests in Junit format output (+ coverage report)
-          ./initRepo/scripts/build.sh -s -T -r -J --compiler gcc || TEST_FAILED=true  # skip cmake and build, + release + run Tests in Junit format output
-          if [ "$TEST_FAILED" = true ]; then
-            echo "failed=$( [ $rc -ne 0 ] && echo true || echo false)" >> $GITHUB_OUTPUT
-          fi
+          ./initRepo/scripts/build.sh -s -T -d -J --compiler gcc  # skip cmake and build, + debug + run Tests in Junit format output (+ coverage report)
+          ./initRepo/scripts/build.sh -s -T -r -J --compiler gcc  # skip cmake and build, + release + run Tests in Junit format output
+          rc=$?
+          echo "failed=$( [ $rc -ne 0 ] && echo true || echo false)" >> $GITHUB_OUTPUT
+          exit $rc
 
       - name: Publish GCC test results
         if: always()
@@ -333,11 +333,11 @@ jobs:
 
       - name: Run Clang unit tests
         run: |
-          ./initRepo/scripts/build.sh -s -T -d -J --compiler clang || TEST_FAILED=true
-          ./initRepo/scripts/build.sh -s -T -r -J --compiler clang || TEST_FAILED=true
-          if [ "$TEST_FAILED" = true ]; then
-            echo "failed=$( [ $rc -ne 0 ] && echo true || echo false)" >> $GITHUB_OUTPUT
-          fi
+          ./initRepo/scripts/build.sh -s -T -d -J --compiler clang
+          ./initRepo/scripts/build.sh -s -T -r -J --compiler clang
+          rc=$?
+          echo "failed=$( [ $rc -ne 0 ] && echo true || echo false)" >> $GITHUB_OUTPUT
+          exit $rc
 
       - name: Publish Clang test results
         if: always()
@@ -393,16 +393,29 @@ jobs:
     if: always()
     steps:
       - run: |
-          echo "Summary of results:"
+          echo "Summary of results:" >> $GITHUB_STEP_SUMMARY
           failed=false
 
-          if [ "${{ needs.shellcheck.outputs.failed }}" = "false" ]; then echo " - shellcheck: OK"; else failed=true; echo " - shellcheck: FAILED"; fi
-          if [ "${{ needs.clang_format.outputs.failed }}" = "false" ]; then echo " - clang-format: OK"; else failed=true; echo " - clang-format: FAILED"; fi
-          if [ "${{ needs.clang_tidy.outputs.failed }}" = "false" ]; then echo " - clang-tidy: OK"; else failed=true; echo " - clang-tidy: FAILED"; fi
-          if [ "${{ needs.gcc_compile.outputs.failed }}" = "false" ]; then echo " - gcc builds: OK"; else failed=true; echo " - gcc builds: FAILED"; fi
-          if [ "${{ needs.clang_compile.outputs.failed }}" = "false" ]; then echo " - clang builds: OK"; else failed=true; echo " - clang builds: FAILED"; fi
-          if [ "${{ needs.clang_unit_tests.outputs.failed }}" = "false" ]; then echo " - clang unit tests: OK"; else failed=true; echo " - clang unit tests: FAILED"; fi
-          if [ "${{ needs.gcc_unit_tests_and_coverage.outputs.failed }}" = "false" ]; then echo " - gcc unit tests: OK"; else failed=true; echo " - gcc unit tests: FAILED"; fi
+          check() {
+            local name="$1"
+            local status="$2"
+            local label="$3"
+
+            if [ "$status" = "false" ]; then
+              echo " - $label: OK" >> $GITHUB_STEP_SUMMARY
+            else
+              echo " - $label: FAILED" >> $GITHUB_STEP_SUMMARY
+              failed=true
+            fi
+          }
+
+          check shellcheck "${{ needs.shellcheck.outputs.failed }}" "shellcheck"
+          check clang_format "${{ needs.clang_format.outputs.failed }}" "clang-format"
+          check clang_tidy "${{ needs.clang_tidy.outputs.failed }}" "clang-tidy"
+          check gcc_compile "${{ needs.gcc_compile.outputs.failed }}" "gcc builds"
+          check clang_compile "${{ needs.clang_compile.outputs.failed }}" "clang builds"
+          check clang_unit_tests "${{ needs.clang_unit_tests.outputs.failed }}" "clang unit tests"
+          check gcc_unit_tests_and_coverage "${{ needs.gcc_unit_tests_and_coverage.outputs.failed }}" "gcc unit tests"
 
           if $failed; then exit 1; fi
 
