@@ -2,6 +2,7 @@
 
 # Default values
 corpus="corpus"
+seeds="seeds"
 jobs=4
 minimize=0
 max_len=""
@@ -88,7 +89,9 @@ mkdir -p "fuzz"
 cd fuzz
 
 mkdir -p "$corpus"
-mkdir -p "seeds"
+mkdir -p "$seeds"
+seeds="$(realpath "$seeds")"
+corpus="$(realpath "$corpus")"
 
 if [[ "$minimize" -eq 1 ]]; then
     echo "Minimizing corpus..."
@@ -117,7 +120,7 @@ cmd=(
   -print_corpus_stats=1
   -create_missing_dirs=1
   -fork="$jobs"
-  -seed_inputs="seeds"
+  -seed_inputs="$seeds"
   -keep_going=1
   -ignore_crashes=1
 )
