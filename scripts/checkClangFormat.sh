@@ -27,6 +27,7 @@ source ./initRepo/scripts/ensureToolVersion.sh
 ensure_tool_versioned clang-format "${CLANG_FORMAT_VERSION}"
 
 for file in $FILES; do
+    echo "clang-format-${CLANG_FORMAT_VERSION} -style=file --dry-run --Werror \"$file\""
     if ! clang-format-${CLANG_FORMAT_VERSION} -style=file --dry-run --Werror "$file"; then
         BAD_FILES+=("$file")
     fi

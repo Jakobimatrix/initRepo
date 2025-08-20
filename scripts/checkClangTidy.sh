@@ -42,6 +42,7 @@ fi
 
 for file in $FILES; do
     # Only check files that have a corresponding compilation database entry
+    echo "clang-tidy-${CLANG_TIDY_VERSION} \"$file\" --quiet --warnings-as-errors='*' --export-fixes=tidy-fixes.yaml -p \"$BUILD_DIR\""
     clang-tidy-${CLANG_TIDY_VERSION} "$file" --quiet --warnings-as-errors='*' --export-fixes=tidy-fixes.yaml -p "$BUILD_DIR" || HAS_ISSUES=1
 done
 

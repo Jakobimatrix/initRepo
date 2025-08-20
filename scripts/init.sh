@@ -21,10 +21,8 @@ find . -maxdepth 1 -type f -name "*.sh" -exec chmod +x {} \;
 
 
 # Source environment variables
-# shellcheck disable=SC1091 # its there trust me
 source "../.environment"
 if [ -f "../../.environment" ]; then
-    # shellcheck disable=SC1091 # its there trust me
     source "../../.environment"
 fi
 

@@ -7,10 +7,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR" || exit 1
 
 # Source environment variables
-# shellcheck disable=SC1091 # its there trust me
 source "../.environment"
 if [ -f "../../.environment" ]; then
-    # shellcheck disable=SC1091 # its there trust me
     source "../../.environment"
 fi
 

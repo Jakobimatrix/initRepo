@@ -373,7 +373,7 @@ jobs:
           source initRepo/.environment
           if [ -f .environment ]; then source .environment; fi
           sudo apt-get install -y clang-tidy-${CLANG_TIDY_VERSION}
-          source initRepo/scripts/ensureToolVersion.sh || exit 1
+          source initRepo/scripts/ensureToolVersion.sh
           ensure_tool_versioned clang-tidy "${CLANG_TIDY_VERSION}"
 
       - name: tidy_result

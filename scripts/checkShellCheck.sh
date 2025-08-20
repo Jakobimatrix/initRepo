@@ -21,7 +21,8 @@ if ! command -v shellcheck >/dev/null 2>&1; then
 fi
 
 for file in $FILES; do
-    shellcheck -x "$file" || HAS_ISSUES=1
+    echo "shellcheck -x --exclude=SC1091 \"$file\""
+    shellcheck -x --exclude=SC1091 "$file" || HAS_ISSUES=1
 done
 
 if [ $HAS_ISSUES -eq 0 ]; then
