@@ -83,7 +83,7 @@ fi
 
 if ! nm "$executable" 2>/dev/null | grep -q "LLVMFuzzerTestOneInput"; then
     echo "Error: This executable does not appear to be a libFuzzer binary. You need to use the release build:  './initRepo/scripts/build.sh --compiler clang -r -f'"
-    echo "If you want to debug the fuzzer (for example because it crashed) run '$executable <path to crash binary>' than attatch to your debugger and press enter."
+    echo "If you want to debug the fuzzer (for example because it crashed) run '$executable <path to crash binary>' then attatch to your debugger and press enter."
     exit 1
 fi
 
