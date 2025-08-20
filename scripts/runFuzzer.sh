@@ -81,6 +81,12 @@ if [[ "$executable" != /* ]]; then
     executable="$(realpath "$executable")"
 fi
 
+if ! nm "$executable" 2>/dev/null | grep -q "LLVMFuzzerTestOneInput"; then
+    echo "Error: This executable does not appear to be a libFuzzer binary. You need to use the release build:  './initRepo/scripts/build.sh --compiler clang -r -f'"
+    echo "If you want to debug the fuzzer (for example because it crashed) run '$executable <path to crash binary>' than attatch to your debugger and press enter.
+    exit 1
+fi
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 cd ../../
@@ -106,6 +112,7 @@ fi
 echo "Running fuzzer:"
 echo "  Executable:       $executable"
 echo "  Corpus directory: $corpus"
+echo "  Seed directory:   $seeds"
 echo "  Jobs:             $jobs"
 echo "  Minimize first:   $minimize"
 if [[ -n "$max_len" ]]; then
