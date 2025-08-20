@@ -4,15 +4,17 @@
 corpus="corpus"
 jobs=4
 minimize=0
+max_len=""
 
 print_help() {
-    echo "Usage: $0 <executable> [-c corpus_dir] [-j jobs] [-h]"
+    echo "Usage: $0 <executable> [-c corpus_dir] [-j jobs] [-m] [--max_len N] [-h]"
     echo ""
     echo "Arguments:"
     echo "  <executable>     Path to the fuzzer executable (required)"
     echo "  -c <corpus_dir>  Directory for corpus input/output (default: ./corpus)"
     echo "  -j <jobs>        Number of parallel jobs (default: 4)"
     echo "  -m               Minimize corpus before fuzzing"
+    echo "  --max_len <N>    Maximum input length for fuzzing"
     echo "  -h               Show this help message"
 }
 
@@ -32,13 +34,17 @@ while [[ $# -gt 0 ]]; do
             jobs="$2"
             shift 2
             ;;
-        -h|--help)
-            print_help
-            exit 0
-            ;;
         -m|--minimize)
             minimize=1
             shift
+            ;;
+        --max_len)
+            max_len="$2"
+            shift 2
+            ;;
+        -h|--help)
+            print_help
+            exit 0
             ;;
         -*)
             echo "Unknown option: $1"
@@ -75,19 +81,19 @@ if [[ "$executable" != /* ]]; then
 fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-cd "$SCRIPT_DIR" # repo/initRepo/scripts/:
+cd "$SCRIPT_DIR"
 cd ../../
 
 mkdir -p "fuzz"
 cd fuzz
 
 mkdir -p "$corpus"
+mkdir -p "seeds"
 
 if [[ "$minimize" -eq 1 ]]; then
     echo "Minimizing corpus..."
     tmp_corpus=$(mktemp -d)
-    "./$executable" "$tmp_corpus" \
-        -merge=1 "$corpus"
+    "$executable" "$tmp_corpus" -merge=1 "$corpus"
     rm -r "$corpus"
     mv "$tmp_corpus" "$corpus"
     echo "Corpus minimized."
@@ -99,14 +105,27 @@ echo "  Executable:       $executable"
 echo "  Corpus directory: $corpus"
 echo "  Jobs:             $jobs"
 echo "  Minimize first:   $minimize"
+if [[ -n "$max_len" ]]; then
+    echo "  Max input length: $max_len"
+fi
 echo ""
 
-"$executable" "$corpus" \
-    -print_final_stats=1 \
-    -print_corpus_stats=1 \
-    -create_missing_dirs=1 \
-    -fork="$jobs" \
-    -seed_inputs="$corpus" \
-    -max_len="$corpus" \
-    -keep_going=1 \
-    -ignore_crashes=1
+# Build command
+cmd=(
+  "$executable" "$corpus"
+  -print_final_stats=1
+  -print_corpus_stats=1
+  -create_missing_dirs=1
+  -fork="$jobs"
+  -seed_inputs="seeds"
+  -keep_going=1
+  -ignore_crashes=1
+)
+
+# Add max_len if specified
+if [[ -n "$max_len" ]]; then
+    cmd+=("-max_len=$max_len")
+fi
+
+# Run fuzzer
+"${cmd[@]}"
