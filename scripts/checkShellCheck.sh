@@ -5,20 +5,20 @@
 
 set -e
 
-# Find all staged and tracked C/C++ files (excluding submodules and build folders)
-FILES=$(git ls-files '*.sh' ':!:build*' ':!:*/build*' ':!:_deps/*' ':!:*/_deps/*')
-
-HAS_ISSUES=0
-
-# Ensure we are in the root repository folder 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(dirname "$(dirname "$SCRIPT_DIR")")"
-cd "${REPO_ROOT}"
-
 if ! command -v shellcheck >/dev/null 2>&1; then
     echo "shellCheck not installed on this system"
     exit 1
 fi
+
+repo_name=$(basename "$(git rev-parse --show-toplevel)")
+
+if [[ "$repo_name" == "initRepo" ]]; then
+    echo "Warming: This script runns inside the subrepository initRepo. Call it from your root repository if you intendet to run it there!"
+fi
+
+# Find all staged and tracked C/C++ files (excluding submodules and build folders)
+FILES=$(git ls-files '*.sh' ':!:build*' ':!:*/build*' ':!:_deps/*' ':!:*/_deps/*')
+HAS_ISSUES=0
 
 for file in $FILES; do
     echo "shellcheck -x --exclude=SC1091 \"$file\""
