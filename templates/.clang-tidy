@@ -25,8 +25,8 @@ FormatStyle:     none
 CheckOptions:
   # min variable length is 3, but I allow these because of math
   - key: readability-identifier-length.IgnoredVariableNames
-    value: "x|y|z|dx|dy|dz|t|i|n|k"
+    value: "x|y|z|dx|dy|dz|t|i|n|k|r|g|b|a|h|s|v"
   - key: readability-identifier-length.IgnoredParameterNames
-    value: "x|y|z|dx|dy|dz|t|i|n|k"
+    value: "x|y|z|dx|dy|dz|t|i|n|k|r|g|b|a|h|s|v"
   - key: modernize-use-trailing-return-type.LambdaStyle
     value: all_except_auto
