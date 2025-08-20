@@ -101,7 +101,7 @@ echo "  Jobs:             $jobs"
 echo "  Minimize first:   $minimize"
 echo ""
 
-"./$executable" "$corpus" \
+"$executable" "$corpus" \
     -print_final_stats=1 \
     -print_corpus_stats=1 \
     -create_missing_dirs=1 \
