@@ -69,6 +69,18 @@ if [[ ! -x "$executable" ]]; then
     exit 1
 fi
 
+# Convert to absolute path if not already
+if [[ "$executable" != /* ]]; then
+    executable="$(realpath "$executable")"
+fi
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR" # repo/initRepo/scripts/:
+cd ../../
+
+mkdir -p "fuzz"
+cd fuzz
+
 mkdir -p "$corpus"
 
 if [[ "$minimize" -eq 1 ]]; then
