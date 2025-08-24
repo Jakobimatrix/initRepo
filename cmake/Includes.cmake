@@ -50,3 +50,28 @@ function(setup_catch2_and_ctest)
         include(CTest)
     endif()
 endfunction()
+
+
+# create a catch2 unit test executable like so: 
+# add_catch_test(${CMAKE_SOURCE_DIR}/path_to_folder_containing_files_with_TEST_CASE lib1, lib2, lib3, ${ENVIRONMENT_SETTINGS})
+function(add_catch_test FOLDER)
+# ARGN will contain all additional arguments passed after FOLDER
+  if (TARGET Catch2::Catch2WithMain)
+    file(GLOB_RECURSE TEST_SOURCES "${FOLDER}/test_*.cpp")
+
+    list(LENGTH TEST_SOURCES NUM_FILES)
+
+    if(NUM_FILES GREATER 0)
+        get_filename_component(BASENAME ${FOLDER} NAME)
+        set(NAME test_${BASENAME})
+
+        message(STATUS "Creating test executable ${NAME} with ${NUM_FILES} files")
+
+        add_executable(${NAME} ${TEST_SOURCES})
+        target_link_libraries(${NAME} PRIVATE Catch2::Catch2WithMain ${ARGN})
+        catch_discover_tests(${NAME})
+    else()
+        message(WARNING "No test_*.cpp files found in folder ${FOLDER}")
+    endif()
+  endif()
+endfunction()
