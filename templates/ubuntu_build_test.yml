@@ -134,7 +134,7 @@ jobs:
                 ./initRepo/scripts/build.sh -r -t --compiler gcc
             fi
             tar -czf gcc_${{ matrix.build_type }}_build.tar.gz build-gcc-${GCC_VERSION}-${{ matrix.build_type }}
-          else [ "${{ matrix.compiler }}" = "clang" ]; then
+          else [ "${{ matrix.compiler }}" = "clang" ]
             ./initRepo/scripts/build.sh --${{ matrix.build_type }} -f --compiler clang 
             ./initRepo/scripts/build.sh --${{ matrix.build_type }} -t --compiler clang
             tar -czf clang_${{ matrix.build_type }}_build.tar.gz build-clang-${CLANG_VERSION}-${{ matrix.build_type }}
