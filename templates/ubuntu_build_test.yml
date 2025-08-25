@@ -160,7 +160,11 @@ jobs:
             ensure_tool_versioned clang "${CLANG_VERSION}"
           fi
           if [ "${{ matrix.compiler }}" = "gcc" ]; then
-            ./initRepo/scripts/build.sh --${{ matrix.build_type }} -t -g --compiler gcc
+            if [ "${{ matrix.build_type }}" = "debug" ]; then
+                ./initRepo/scripts/build.sh -d -t -g --compiler gcc
+            else
+                ./initRepo/scripts/build.sh -r -t --compiler gcc
+            fi
             tar -czf gcc_${{ matrix.build_type }}_build.tar.gz build-gcc-${GCC_VERSION}-${{ matrix.build_type }}
           elif [ "${{ matrix.compiler }}" = "clang" ]; then
             ./initRepo/scripts/build.sh --${{ matrix.build_type }} -t --compiler clang
