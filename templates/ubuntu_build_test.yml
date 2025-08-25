@@ -22,7 +22,15 @@ jobs:
           submodules: recursive
           fetch-depth: 0
     
-      - uses: ./.github/actions/setup-env
+      - name: Cache APT packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            /var/cache/apt
+            /var/lib/apt/lists
+          key: ${{ runner.os }}-apt-${{ hashFiles('initRepo/.environment') }}
+          restore-keys: |
+            ${{ runner.os }}-apt-
 
       - name: Create workspace tar (exclude .git and IDE stuff)
         run: |
@@ -57,7 +65,15 @@ jobs:
           name: workspace
           path: .
           
-      - uses: ./.github/actions/setup-env
+      - name: Cache APT packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            /var/cache/apt
+            /var/lib/apt/lists
+          key: ${{ runner.os }}-apt-${{ hashFiles('initRepo/.environment') }}
+          restore-keys: |
+            ${{ runner.os }}-apt-
 
       - run: |
           set -e
@@ -75,7 +91,15 @@ jobs:
           name: workspace
           path: .
           
-      - uses: ./.github/actions/setup-env
+      - name: Cache APT packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            /var/cache/apt
+            /var/lib/apt/lists
+          key: ${{ runner.os }}-apt-${{ hashFiles('initRepo/.environment') }}
+          restore-keys: |
+            ${{ runner.os }}-apt-
 
       - run: |
           set -e
@@ -101,7 +125,15 @@ jobs:
           name: workspace
           path: .
           
-      - uses: ./.github/actions/setup-env
+      - name: Cache APT packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            /var/cache/apt
+            /var/lib/apt/lists
+          key: ${{ runner.os }}-apt-${{ hashFiles('initRepo/.environment') }}
+          restore-keys: |
+            ${{ runner.os }}-apt-
       
       - run: |
           set -e
@@ -168,7 +200,15 @@ jobs:
           name: gcc-${{ matrix.build_type }}-build
           path: .
           
-      - uses: ./.github/actions/setup-env
+      - name: Cache APT packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            /var/cache/apt
+            /var/lib/apt/lists
+          key: ${{ runner.os }}-apt-${{ hashFiles('initRepo/.environment') }}
+          restore-keys: |
+            ${{ runner.os }}-apt-
 
       - run: |
           set -e
@@ -231,7 +271,15 @@ jobs:
           name: clang-${{ matrix.build_type }}-build
           path: .
           
-      - uses: ./.github/actions/setup-env
+      - name: Cache APT packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            /var/cache/apt
+            /var/lib/apt/lists
+          key: ${{ runner.os }}-apt-${{ hashFiles('initRepo/.environment') }}
+          restore-keys: |
+            ${{ runner.os }}-apt-
 
       - run: |
           set -e
@@ -263,6 +311,16 @@ jobs:
         with:
           name: clang-debug-build
           path: .
+          
+      - name: Cache APT packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            /var/cache/apt
+            /var/lib/apt/lists
+          key: ${{ runner.os }}-apt-${{ hashFiles('initRepo/.environment') }}
+          restore-keys: |
+            ${{ runner.os }}-apt-
           
       - run: |
           set -e
