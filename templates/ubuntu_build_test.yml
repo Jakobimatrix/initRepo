@@ -25,12 +25,11 @@ jobs:
       - name: Cache APT packages
         uses: actions/cache@v4
         with:
-          path: |
-            /var/cache/apt
-            /var/lib/apt/lists
+          path: /var/cache/apt/archives
           key: ${{ runner.os }}-apt-${{ hashFiles('initRepo/.environment') }}
           restore-keys: |
             ${{ runner.os }}-apt-
+
 
       - name: Create workspace tar (exclude .git and IDE stuff)
         run: |
@@ -68,9 +67,7 @@ jobs:
       - name: Cache APT packages
         uses: actions/cache@v4
         with:
-          path: |
-            /var/cache/apt
-            /var/lib/apt/lists
+          path: /var/cache/apt/archives
           key: ${{ runner.os }}-apt-${{ hashFiles('initRepo/.environment') }}
           restore-keys: |
             ${{ runner.os }}-apt-
@@ -94,9 +91,7 @@ jobs:
       - name: Cache APT packages
         uses: actions/cache@v4
         with:
-          path: |
-            /var/cache/apt
-            /var/lib/apt/lists
+          path: /var/cache/apt/archives
           key: ${{ runner.os }}-apt-${{ hashFiles('initRepo/.environment') }}
           restore-keys: |
             ${{ runner.os }}-apt-
@@ -128,9 +123,7 @@ jobs:
       - name: Cache APT packages
         uses: actions/cache@v4
         with:
-          path: |
-            /var/cache/apt
-            /var/lib/apt/lists
+          path: /var/cache/apt/archives
           key: ${{ runner.os }}-apt-${{ hashFiles('initRepo/.environment') }}
           restore-keys: |
             ${{ runner.os }}-apt-
@@ -203,9 +196,7 @@ jobs:
       - name: Cache APT packages
         uses: actions/cache@v4
         with:
-          path: |
-            /var/cache/apt
-            /var/lib/apt/lists
+          path: /var/cache/apt/archives
           key: ${{ runner.os }}-apt-${{ hashFiles('initRepo/.environment') }}
           restore-keys: |
             ${{ runner.os }}-apt-
@@ -274,9 +265,7 @@ jobs:
       - name: Cache APT packages
         uses: actions/cache@v4
         with:
-          path: |
-            /var/cache/apt
-            /var/lib/apt/lists
+          path: /var/cache/apt/archives
           key: ${{ runner.os }}-apt-${{ hashFiles('initRepo/.environment') }}
           restore-keys: |
             ${{ runner.os }}-apt-
@@ -316,9 +305,7 @@ jobs:
       - name: Cache APT packages
         uses: actions/cache@v4
         with:
-          path: |
-            /var/cache/apt
-            /var/lib/apt/lists
+          path: /var/cache/apt/archives
           key: ${{ runner.os }}-apt-${{ hashFiles('initRepo/.environment') }}
           restore-keys: |
             ${{ runner.os }}-apt-
