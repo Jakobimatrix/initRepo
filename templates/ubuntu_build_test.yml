@@ -160,16 +160,11 @@ jobs:
             ensure_tool_versioned clang "${CLANG_VERSION}"
           fi
           if [ "${{ matrix.compiler }}" = "gcc" ]; then
-            if [ "${{ matrix.build_type }}" = "debug" ]; then
-              ./initRepo/scripts/build.sh -d -t -g --compiler gcc
-              tar -czf gcc_debug_build.tar.gz build-gcc-${GCC_VERSION}-debug
-            else
-              ./initRepo/scripts/build.sh -r -t --compiler gcc
-              tar -czf gcc_release_build.tar.gz build-gcc-${GCC_VERSION}-release
-            fi
+            ./initRepo/scripts/build.sh --${{ matrix.build_type }} -t -g --compiler gcc
+            tar -czf gcc_${{ matrix.build_type }}_build.tar.gz build-gcc-${GCC_VERSION}-${{ matrix.build_type }}
           elif [ "${{ matrix.compiler }}" = "clang" ]; then
             ./initRepo/scripts/build.sh --${{ matrix.build_type }} -t --compiler clang
-            tar -czf clang_debug_build.tar.gz build-clang-${CLANG_VERSION}-${{ matrix.build_type }}
+            tar -czf clang_${{ matrix.build_type }}_build.tar.gz build-clang-${CLANG_VERSION}-${{ matrix.build_type }}
           else
             ./initRepo/scripts/build.sh --${{ matrix.build_type }} -f --compiler clang 
           fi
@@ -186,6 +181,7 @@ jobs:
   gcc_unit_tests_and_coverage:
     runs-on: ubuntu-latest
     needs: [build]
+    if: always()
     strategy:
       matrix:
         build_type: [debug, release]
@@ -301,6 +297,7 @@ jobs:
   clang_tidy:
     runs-on: ubuntu-latest
     needs: [build]
+    if: always()
     steps:
       - uses: actions/download-artifact@v4
         with:
