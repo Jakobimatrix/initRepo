@@ -12,7 +12,9 @@ show_help() {
     echo "Options:"
     echo "  -c              Clean build"
     echo "  -d              Debug build"
+    echo "  -debug          Debug build"
     echo "  -r              Release build"
+    echo "  -release        Release build"
     echo "  -o              RelWithDebInfo build"
     echo "  -i              Install after build"
     echo "  --compiler COMP Use specific compiler (e.g. gcc, clang)"
@@ -85,7 +87,9 @@ while [[ $# -gt 0 ]]; do
     case $1 in
         -c) CLEAN=true ;;
         -d) BUILD_TYPE="Debug" ;;
+        --debug) BUILD_TYPE="Debug" ;;
         -r) BUILD_TYPE="Release" ;;
+        --release) BUILD_TYPE="Release" ;;
         -o) BUILD_TYPE="RelWithDebInfo" ;;
         -i) INSTALL=true ;;
         -s) SKIP_BUILD=true ;;
@@ -97,7 +101,10 @@ while [[ $# -gt 0 ]]; do
         -f) ENABLE_FUZZING=ON ;;
         -v) VERBOSE=true ;;
         -l) LIST_COMPILERS=true ;;
-        -h) show_help ;;
+        -h) 
+            show_help
+            exit 1
+            ;;
         -g) ENABLE_COVERAGE=ON ;;
         -T) 
             RUN_TESTS=true 

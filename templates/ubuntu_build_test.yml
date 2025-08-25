@@ -21,6 +21,8 @@ jobs:
         with:
           submodules: recursive
           fetch-depth: 0
+    
+      - uses: ./.github/actions/setup-env
 
       - name: Create workspace tar (exclude .git and IDE stuff)
         run: |
@@ -54,6 +56,8 @@ jobs:
         with:
           name: workspace
           path: .
+          
+      - uses: ./.github/actions/setup-env
 
       - run: |
           set -e
@@ -70,6 +74,8 @@ jobs:
         with:
           name: workspace
           path: .
+          
+      - uses: ./.github/actions/setup-env
 
       - run: |
           set -e
@@ -94,10 +100,12 @@ jobs:
         with:
           name: workspace
           path: .
-      - run: tar -xzf workspace.tar.gz -C .
-
+          
+      - uses: ./.github/actions/setup-env
+      
       - run: |
           set -e
+          tar -xzf workspace.tar.gz -C .
           source initRepo/.environment
           if [ -f .environment ]; then source .environment; fi
           if [ "${{ matrix.compiler }}" = "gcc" ]; then
@@ -121,26 +129,17 @@ jobs:
           fi
           if [ "${{ matrix.compiler }}" = "gcc" ]; then
             if [ "${{ matrix.build_type }}" = "debug" ]; then
-              ./initRepo/scripts/build.sh -d -t -g --compiler gcc # debug + tests + code coverage -> used by "gcc_unit_tests"
+              ./initRepo/scripts/build.sh -d -t -g --compiler gcc
               tar -czf gcc_debug_build.tar.gz build-gcc-${GCC_VERSION}-debug
             else
-              ./initRepo/scripts/build.sh -r -t --compiler gcc    # release + tests -> used by "gcc_unit_tests"
+              ./initRepo/scripts/build.sh -r -t --compiler gcc
               tar -czf gcc_release_build.tar.gz build-gcc-${GCC_VERSION}-release
             fi
           elif [ "${{ matrix.compiler }}" = "clang" ]; then
-            if [ "${{ matrix.build_type }}" = "debug" ]; then
-              ./initRepo/scripts/build.sh -d -t --compiler clang    # debug + tests -> used by "clang_unit_tests"
-              tar -czf clang_debug_build.tar.gz build-clang-${CLANG_VERSION}-debug
-            else
-              ./initRepo/scripts/build.sh -r -t --compiler clang    # release + tests -> used by "clang_unit_tests"
-              tar -czf clang_release_build.tar.gz build-clang-${CLANG_VERSION}-release
-            fi
+            ./initRepo/scripts/build.sh --${{ matrix.build_type }} -t --compiler clang
+            tar -czf clang_debug_build.tar.gz build-clang-${CLANG_VERSION}-${{ matrix.build_type }}
           else
-            if [ "${{ matrix.build_type }}" = "debug" ]; then
-              ./initRepo/scripts/build.sh -d -f --compiler clang # debug + fuzzer
-            else
-              ./initRepo/scripts/build.sh -r -f --compiler clang # release + fuzzer
-            fi
+            ./initRepo/scripts/build.sh --${{ matrix.build_type }} -f --compiler clang 
           fi
 
       - name: Upload build artifact
@@ -168,6 +167,8 @@ jobs:
         with:
           name: gcc-${{ matrix.build_type }}-build
           path: .
+          
+      - uses: ./.github/actions/setup-env
 
       - run: |
           set -e
@@ -179,10 +180,8 @@ jobs:
           if [ "${{ matrix.build_type }}" = "debug" ]; then
             sudo apt-get update
             sudo apt-get install -y gcovr lcov
-            ./initRepo/scripts/build.sh -s -T -d -J --compiler gcc  # skip cmake and build, + debug + run Tests in Junit format output (+ coverage report {from build step befor})
-          else
-            ./initRepo/scripts/build.sh -s -T -r -J --compiler gcc  # skip cmake and build, + release + run Tests in Junit format output
           fi
+          ./initRepo/scripts/build.sh -s -T --${{ matrix.build_type }} -J --compiler gcc  # skip cmake and build + run Tests in Junit format output
 
       - name: Publish GCC test results
         if: always()
@@ -231,6 +230,8 @@ jobs:
         with:
           name: clang-${{ matrix.build_type }}-build
           path: .
+          
+      - uses: ./.github/actions/setup-env
 
       - run: |
           set -e
@@ -239,11 +240,7 @@ jobs:
           source initRepo/.environment
           if [ -f .environment ]; then source .environment; fi
           echo "CLANG_VERSION=$CLANG_VERSION" >> $GITHUB_ENV
-          if [ "${{ matrix.build_type }}" = "debug" ]; then
-            ./initRepo/scripts/build.sh -s -T -d -J --compiler clang
-          else
-            ./initRepo/scripts/build.sh -s -T -r -J --compiler clang
-          fi
+          ./initRepo/scripts/build.sh -s -T --${{ matrix.build_type }} -J --compiler clang
 
       - name: Publish Clang test results
         if: always()
