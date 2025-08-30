@@ -61,6 +61,22 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y shellcheck
           ./initRepo/scripts/checkShellCheck.sh
+
+  doxygenHeader:
+    runs-on: ubuntu-latest
+    needs: setup
+    outputs:
+      failed: ${{ steps.shell_result.outputs.failed }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: workspace
+          path: .
+
+      - run: |
+          set -e
+          tar -xzf workspace.tar.gz -C .
+          ./initRepo/scripts/checkFileHeaders.sh
           
   clang_format:
     runs-on: ubuntu-latest
@@ -88,6 +104,34 @@ jobs:
           source initRepo/scripts/ensureToolVersion.sh
           ensure_tool_versioned clang-format "${CLANG_FORMAT_VERSION}"
           ./initRepo/scripts/checkClangFormat.sh
+
+  doxygen-docs:
+    runs-on: ubuntu-latest
+    needs: setup
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: workspace
+          path: .
+
+      - run: |
+          set -e
+          tar -xzf workspace.tar.gz -C .
+          sudo apt-get update
+          sudo apt-get install -y doxygen graphviz
+          sudo apt-get install -y texlive-latex-base texlive-latex-recommended texlive-latex-extra texlive-fonts-recommended
+
+          # Run Doxygen (expects a Doxyfile in repo root or adjust path)
+          ./initRepo/scripts/createDokumentation.sh
+
+          tar -czf doxygen-docs.tar.gz -C doxygen .
+
+      - name: Upload Doxygen documentation
+        uses: actions/upload-artifact@v4
+        with:
+          name: doxygen-docs
+          path: doxygen-docs.tar.gz
+          retention-days: 1 
 
 
   build:
