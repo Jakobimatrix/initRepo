@@ -135,7 +135,7 @@ jobs:
 
       - name: Doxygen in summary
         run: |
-          echo "## Doxygen >> $GITHUB_STEP_SUMMARY
+          echo "## Doxygen" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "You can download the Doxygen documentation from the workflow artifacts." >> $GITHUB_STEP_SUMMARY
 
