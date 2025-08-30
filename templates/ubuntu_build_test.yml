@@ -124,26 +124,20 @@ jobs:
           # Run Doxygen (expects a Doxyfile in repo root or adjust path)
           ./initRepo/scripts/createDokumentation.sh
 
-          tar -czf doxygen-docs.tar.gz -C doxygen .
+          tar -czf docu_${{ github.event.repository.name }}.tar.gz -C doxygen .
 
       - name: Upload Doxygen documentation
         uses: actions/upload-artifact@v4
         with:
-          name: doxygen-docs
-          path: doxygen-docs.tar.gz
+          name: docu_${{ github.event.repository.name }}
+          path: docu_${{ github.event.repository.name }}.tar.gz
           retention-days: 1 
 
-      - name: Embed dependency graph in summary
+      - name: Doxygen in summary
         run: |
-          echo "## Dependency Graph" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo '<img src="data:image/svg+xml;base64,'$(base64 -w0 doxygen/dependency_tree.svg)'" />' >> $GITHUB_STEP_SUMMARY
-
-          echo "## Documentation" >> $GITHUB_STEP_SUMMARY
+          echo "## Doxygen >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "You can download the Doxygen documentation from the workflow artifacts." >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "- [Doxygen HTML index](./doxygen/html/index.html)" >> $GITHUB_STEP_SUMMARY || true
 
 
   build:
