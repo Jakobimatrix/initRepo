@@ -27,5 +27,7 @@ fi
 cd "$DOXYDIR"
 doxygen "Doxyfile"
 
-cmake --graphviz=graph . -DCMAKE_GRAPHVIZ_OPTIONS=../initRepo/cmake/CMakeGraphVizOptions.cmake
+cd ../
+
+cmake --graphviz=graph . -DCMAKE_GRAPHVIZ_OPTIONS=initRepo/cmake/CMakeGraphVizOptions.cmake
 dot graph -Tsvg -o DEPENDENCY_GRAPH_FILE
