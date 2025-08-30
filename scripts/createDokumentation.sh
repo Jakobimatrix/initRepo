@@ -22,9 +22,10 @@ mkdir -p "$DOXYDIR"
 if [[ ! -f "$DOXYFILE" ]]; then
     echo "Doxyfile not found, copying template..."
     cp "$TEMPLATE" "$DOXYFILE"
+    sed -i "s|<#PROJECT_NAME#>|$(basename "$REPO_ROOT")|" "$DOXYFILE"
 fi
 cd "$DOXYDIR"
 doxygen "Doxyfile"
 
-cmake --graphviz=graph . -DCMAKE_GRAPHVIZ_OPTIONS=initRepo/cmake/CMakeGraphVizOptions.cmake
+cmake --graphviz=graph . -DCMAKE_GRAPHVIZ_OPTIONS=../initRepo/cmake/CMakeGraphVizOptions.cmake
 dot graph -Tsvg -o DEPENDENCY_GRAPH_FILE
