@@ -12,7 +12,6 @@ cd "${REPO_ROOT}"
 
 DOXYDIR="doxygen"
 DOXYFILE="$DOXYDIR/Doxyfile"
-DEPENDENCY_GRAPH_FILE="$DOXYDIR/dependency_tree.svg"
 TEMPLATE="initRepo/templates/Doxyfile"
 
 # Create folder if it doesn't exist
@@ -27,7 +26,5 @@ fi
 cd "$DOXYDIR"
 doxygen "Doxyfile"
 
-cd ../
-
-cmake --graphviz=graph . -DCMAKE_GRAPHVIZ_OPTIONS=initRepo/cmake/CMakeGraphVizOptions.cmake
-dot graph -Tsvg -o DEPENDENCY_GRAPH_FILE
+cmake --graphviz=graph ../ -DCMAKE_GRAPHVIZ_OPTIONS=../initRepo/cmake/CMakeGraphVizOptions.cmake
+dot graph -Tsvg -o dependency_tree.svg
