@@ -1,3 +1,12 @@
+/**
+ * @file test_hello_world.cpp
+ * @brief contains an example unit test suit using catch2 for the library 'library'
+ *
+ * @date 30.08.2025
+ * @author Jakob Wandel
+ * @version 1.0
+ **/
+
 #include <catch2/benchmark/catch_benchmark.hpp>
 #include <catch2/benchmark/catch_chronometer.hpp>
 #include <catch2/catch_test_macros.hpp>

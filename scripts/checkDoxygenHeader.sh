@@ -8,9 +8,7 @@
 #  * @file checkDoxygenHeader.sh
 #  * @brief Validate that a C/C++ file starts with the expected Doxygen header.
 #  *
-#  * @date 30.08.2025
-#  * @author Your Name
-#  * @version 1.0
+#  * @version 1.0 // increment mayor if API or behavior changes (also bug fixes), increment minor if function was added
 #  **/
 
 set -euo pipefail
@@ -86,20 +84,6 @@ check_header() {
         vlog "[OK] @brief found"
     else
         vlog "[FAIL] @brief missing"
-        ok=false
-    fi
-
-    if [[ $header =~ \*+[[:space:]]*@date[[:space:]][0-9]{2}\.[0-9]{2}\.[0-9]{4} ]]; then
-        vlog "[OK] @date found (dd.mm.yyyy)"
-    else
-        vlog "[FAIL] @date missing or wrong format (expected dd.mm.yyyy)"
-        ok=false
-    fi
-
-    if [[ $header =~ \*+[[:space:]]*@author[[:space:]] ]]; then
-        vlog "[OK] @author found"
-    else
-        vlog "[FAIL] @author missing"
         ok=false
     fi
 

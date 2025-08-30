@@ -1,17 +1,8 @@
 #!/bin/bash
 # checkFileHeader.sh
-# Runs over all C/C++ source files in the repo and checks if they have a proper header.
+# Runs over all C/C++ source files in the repo and checks if they have a proper Doxygen header.
 # Returns 0 if no warnings/errors, 1 otherwise.
 
-# a proper header looks like this:
-# /**
-#  * @file <MATCHES_NAME_OF_THE_FILE>
-#  * @brief ...description, can have multiple lines...
-#  *
-#  * @date <dd.mm.jjjj>
-#  * @author <Name of the maintainer>
-#  * @version <VERSION NUMBER>
-#  **/
 
 set -e
 
@@ -32,13 +23,10 @@ FILES=$(git ls-files '*.c' '*.cpp' '*.h' '*.hpp' ':!:build*' ':!:*/build*' ':!:_
 
 BAD_FILES=()
 
-# shellcheck source-path=SCRIPTDIR source=checkDoxygenHeader.sh
-source ./initRepo/scripts/checkDoxygenHeader.sh
-
 
 for file in $FILES; do
-    echo "check \"$file\" for header."
-    if ! checkDoxygenHeader "$file"; then
+    echo "run ./initRepo/scripts/checkDoxygenHeader.sh \"$file\""
+    if ! initRepo/scripts/checkDoxygenHeader.sh "$file"; then
         BAD_FILES+=("$file")
     fi
 done
