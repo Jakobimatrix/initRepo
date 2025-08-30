@@ -1,5 +1,5 @@
 /**
- * @file fuzzer_example.hpp
+ * @file fuzzer_example.cpp
  * @brief contains an nearly minimal example how to fuzz a function.
  *
  * @detail The Fuzzer creates a more or less (less it does some clever things) random binary string and tries to kill your application.

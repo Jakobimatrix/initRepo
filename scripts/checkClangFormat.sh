@@ -5,15 +5,11 @@
 
 set -e
 
-# Find all staged and tracked C/C++ files (excluding submodules and build folders)
-FILES=$(git ls-files '*.c' '*.cpp' '*.h' '*.hpp' ':!:build*' ':!:*/build*' ':!:_deps/*' ':!:*/_deps/*')
-
-BAD_FILES=()
 
 # Ensure we are in the root repository folder 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-cd "$SCRIPT_DIR" # repo/initRepo/scripts/:
-cd ../../
+REPO_ROOT="$(dirname "$(dirname "$SCRIPT_DIR")")"
+cd "${REPO_ROOT}"
 
 # Source environment variables
 # shellcheck source-path=../ 
@@ -21,6 +17,11 @@ source "initRepo/.environment"
 if [ -f ".environment" ]; then
     source ".environment"
 fi
+
+# Find all staged and tracked C/C++ files (excluding submodules and build folders)
+FILES=$(git ls-files '*.c' '*.cpp' '*.h' '*.hpp' ':!:build*' ':!:*/build*' ':!:_deps/*' ':!:*/_deps/*')
+
+BAD_FILES=()
 
 # shellcheck source-path=SCRIPTDIR source=ensureToolVersion.sh
 source ./initRepo/scripts/ensureToolVersion.sh
