@@ -133,6 +133,18 @@ jobs:
           path: doxygen-docs.tar.gz
           retention-days: 1 
 
+      - name: Embed dependency graph in summary
+        run: |
+          echo "## Dependency Graph" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo '<img src="data:image/svg+xml;base64,'$(base64 -w0 doxygen/dependency_tree.svg)'" />' >> $GITHUB_STEP_SUMMARY
+
+          echo "## Documentation" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "You can download the Doxygen documentation from the workflow artifacts." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- [Doxygen HTML index](./doxygen/html/index.html)" >> $GITHUB_STEP_SUMMARY || true
+
 
   build:
     runs-on: ubuntu-latest
