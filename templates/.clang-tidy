@@ -32,3 +32,7 @@ CheckOptions:
     value: "x|y|z|dx|dy|dz|t|i|n|k|r|g|b|a|h|s|v"
   - key: modernize-use-trailing-return-type.LambdaStyle
     value: all_except_auto
+    # allow common 'non-magic' numeric literals: 0, 1, 0.5, 2 and powers of two
+  - key: readability-magic-numbers.IgnoredValues
+    value: '0|1|0.5|2|3|4|5|8|16|32|64|128|256|512|1024|2048|4096|8192'
+
