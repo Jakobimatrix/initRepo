@@ -10,6 +10,8 @@ Checks: |
   misc-*,
   llvm-namespace-comment,
   readability-*,
+  # ---- let me decide if parentheses are necessarry ----
+  -readability-math-missing-parentheses,
   performance-*,
   # ---- disable diagnostics also found by the compiler ----
   -clang-diagnostic-*,
