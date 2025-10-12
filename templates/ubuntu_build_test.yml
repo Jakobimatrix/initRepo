@@ -100,6 +100,7 @@ jobs:
           tar -xzf workspace.tar.gz -C .
           source initRepo/.environment
           if [ -f .environment ]; then source .environment; fi
+          sudo apt-get update
           sudo apt-get install -y clang-format-${CLANG_FORMAT_VERSION}
           source initRepo/scripts/ensureToolVersion.sh
           ensure_tool_versioned clang-format "${CLANG_FORMAT_VERSION}"
@@ -118,6 +119,7 @@ jobs:
           set -e
           tar -xzf workspace.tar.gz -C .
           sudo apt-get update
+          sudo apt-get install -y cmake make
           sudo apt-get install -y doxygen graphviz
           sudo apt-get install -y texlive-latex-base texlive-latex-recommended texlive-latex-extra texlive-fonts-recommended
 
@@ -160,13 +162,12 @@ jobs:
           source initRepo/.environment
           if [ -f .environment ]; then source .environment; fi
    
-          # Install architecture support if needed
           if [ "${{ matrix.arch }}" = "x86" ]; then
             sudo dpkg --add-architecture i386
             sudo apt-get update
             sudo apt-get install -y libc6:i386 libstdc++6:i386
+            sudo apt-get install -y gcc-multilib g++-multilib libc6-dev:i386 libstdc++-13-dev:i386
           fi
-   
    
           if [ "${{ matrix.compiler }}" = "gcc" ]; then
             sudo apt-get update
@@ -187,6 +188,7 @@ jobs:
             ensure_tool_versioned clang++ "${CLANG_VERSION}"
             ensure_tool_versioned clang "${CLANG_VERSION}"
           fi
+          sudo apt-get install -y cmake make
           if [ "${{ matrix.compiler }}" = "gcc" ]; then
             if [ "${{ matrix.build_type }}" = "debug" ]; then
                 ./initRepo/scripts/build.sh -d -t -g --compiler gcc --arch ${{ matrix.arch }}
@@ -235,10 +237,17 @@ jobs:
           source initRepo/.environment
           if [ -f .environment ]; then source .environment; fi
           echo "GCC_VERSION=$GCC_VERSION" >> $GITHUB_ENV
-          if [ "${{ matrix.build_type }}" = "debug" ] && [ "${{ matrix.arch }}" = "x64" ]; then
+          if [ "${{ matrix.arch }}" = "x86" ]; then
+            sudo dpkg --add-architecture i386
             sudo apt-get update
+            sudo apt-get install -y libc6:i386 libstdc++6:i386
+            sudo apt-get install -y gcc-multilib g++-multilib libc6-dev:i386 libstdc++-13-dev:i386
+          fi
+          sudo apt-get update
+          if [ "${{ matrix.build_type }}" = "debug" ] && [ "${{ matrix.arch }}" = "x64" ]; then
             sudo apt-get install -y gcovr lcov
           fi
+          sudo apt-get install -y cmake make
           ./initRepo/scripts/build.sh -s -T --${{ matrix.build_type }} -J --compiler gcc --arch ${{ matrix.arch }}  # skip cmake and build + run Tests in Junit format output
 
       - name: Publish GCC test results
@@ -297,6 +306,14 @@ jobs:
           source initRepo/.environment
           if [ -f .environment ]; then source .environment; fi
           echo "CLANG_VERSION=$CLANG_VERSION" >> $GITHUB_ENV
+          if [ "${{ matrix.arch }}" = "x86" ]; then
+            sudo dpkg --add-architecture i386
+            sudo apt-get update
+            sudo apt-get install -y libc6:i386 libstdc++6:i386
+            sudo apt-get install -y gcc-multilib g++-multilib libc6-dev:i386 libstdc++-13-dev:i386
+          fi
+          sudo apt-get update
+          sudo apt-get install -y cmake make
           ./initRepo/scripts/build.sh -s -T --${{ matrix.build_type }} -J --compiler clang --arch ${{ matrix.arch }}
 
       - name: Publish Clang test results
@@ -329,7 +346,15 @@ jobs:
           tar -xzf clang_debug_build.tar.gz -C .
           source initRepo/.environment
           if [ -f .environment ]; then source .environment; fi
+          if [ "${{ matrix.arch }}" = "x86" ]; then
+            sudo dpkg --add-architecture i386
+            sudo apt-get update
+            sudo apt-get install -y libc6:i386 libstdc++6:i386
+            sudo apt-get install -y gcc-multilib g++-multilib libc6-dev:i386 libstdc++-13-dev:i386
+          fi
+          sudo apt-get update
           sudo apt-get install -y clang-tidy-${CLANG_TIDY_VERSION}
+          sudo apt-get install -y cmake make
           source initRepo/scripts/ensureToolVersion.sh
           ensure_tool_versioned clang-tidy "${CLANG_TIDY_VERSION}"
 

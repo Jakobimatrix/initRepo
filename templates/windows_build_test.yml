@@ -70,7 +70,7 @@ jobs:
       - name: Build
         shell: bash
         run: |
-          source initRepo/.windows_environment
+          source initRepo/.environment
           ./initRepo/scripts/buildWindows.sh --${{ matrix.build_type }} -t --compiler ${{ matrix.compiler }} --arch ${{ matrix.arch }}
           7z a ${{ matrix.compiler }}_${{ matrix.arch }}_${{ matrix.build_type }}_build.zip build-${{ matrix.compiler }}-${{ matrix.arch }}-${{ matrix.build_type }}
 
@@ -119,7 +119,7 @@ jobs:
         run: |
           7z x workspace.zip
           7z x ${{ matrix.compiler }}_${{ matrix.arch }}_${{ matrix.build_type }}_build.zip
-          source initRepo/.windows_environment
+          source initRepo/.environment
           ./initRepo/scripts/buildWindows.sh -s -T -J --${{ matrix.build_type }} --compiler ${{ matrix.compiler }} --arch ${{ matrix.arch }}
 
       - name: Publish test results
