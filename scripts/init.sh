@@ -34,7 +34,8 @@ FORMAT_FILE_T=".clang-tidy"
 GIT_ATTRIBUTES_FILE=".gitattributes"
 GIT_IGNORE_FILE=".gitignore"
 GIT_MODULES_FILE=".gitmodules"
-GITHUB_HOOK_FILE="ubuntu_build_test.yml"
+GITHUB_HOOK_FILE_UBUNTU="ubuntu_build_test.yml"
+GITHUB_HOOK_FILE_WINDOWS="windows_build_test.yml"
 GITHUB_HOOK_FILE_DEST=".github/workflows"
 CMAKE_LISTS_FILE="CMakeLists.txt"
 PROCECT_STRUCUR_FOLDER="src/"
@@ -191,12 +192,13 @@ then
 fi
 
 
-task="Do you want to copy the github CI/CD pipeline script <build and test for ubuntu>?"
+task="Do you want to copy the github CI/CD pipeline script <build and test for ubuntu/windows>?"
 askYesNo
 if [ $answer = 1 ]
 then
   mkdir -p "${REPO}$GITHUB_HOOK_FILE_DEST"
-  copyFileWithPrompt "$TEMPLATE_FILE_PATH$GITHUB_HOOK_FILE" "${REPO}$GITHUB_HOOK_FILE_DEST/$GITHUB_HOOK_FILE"
+  copyFileWithPrompt "$TEMPLATE_FILE_PATH$GITHUB_HOOK_FILE_UBUNTU" "${REPO}$GITHUB_HOOK_FILE_DEST/$GITHUB_HOOK_FILE_UBUNTU"
+  copyFileWithPrompt "$TEMPLATE_FILE_PATH$GITHUB_HOOK_FILE_WINDOWS" "${REPO}$GITHUB_HOOK_FILE_DEST/$GITHUB_HOOK_FILE_WINDOWS"
 fi
 
 task="Do you want to copy the Cmake project?"
