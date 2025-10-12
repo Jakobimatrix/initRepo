@@ -83,9 +83,16 @@ std::vector<ByteType> readFileBinary(const std::filesystem::path& path) {
     throw std::runtime_error("Failed to open file: " + path.string());
   }
 
-  const std::streamsize size = file.tellg();
-  file.seekg(0, std::ios::beg);
+  const std::streampos size = file.tellg();
 
+  if (size < 0) {
+    throw std::runtime_error("Failed to determine file size: " + path.string());
+  }
+  if (static_cast<uintmax_t>(size) > std::numeric_limits<size_t>::max()) {
+    throw std::runtime_error("File too large to fit in memory: " + path.string());
+  }
+
+  file.seekg(0, std::ios::beg);
   std::vector<ByteType> buffer(static_cast<size_t>(size));
   if constexpr (std::is_same<char, ByteType>()) {
     if (!file.read(buffer.data(), size)) {
