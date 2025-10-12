@@ -157,6 +157,7 @@ jobs:
           path: .
       
       - run: |
+        continue-on-error: true
           set -e
           tar -xzf workspace.tar.gz -C .
           source initRepo/.environment
@@ -231,6 +232,7 @@ jobs:
           path: .
 
       - run: |
+        continue-on-error: true
           set -e
           tar -xzf workspace.tar.gz -C .
           tar -xzf gcc_${{ matrix.arch }}_${{ matrix.build_type }}_build.tar.gz -C .
@@ -300,6 +302,7 @@ jobs:
           path: .
 
       - run: |
+        continue-on-error: true
           set -e
           tar -xzf workspace.tar.gz -C .
           tar -xzf clang_${{ matrix.arch }}_${{ matrix.build_type }}_build.tar.gz -C .

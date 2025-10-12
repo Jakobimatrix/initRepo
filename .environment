@@ -76,13 +76,11 @@ if [[ "$ENVIRONMENT" == "Windows-msys" ]]; then
     # Import MSVC environment variables dynamically
     function setup_msvc_env() {
         local arch_bits="$1"
-        local vs_base
-        for edition in Enterprise Professional Community BuildTools; do
-            if [[ -d "C:/Program Files/Microsoft Visual Studio/2022/${edition}/VC/Auxiliary/Build" ]]; then
-                vs_base="C:/Program Files/Microsoft Visual Studio/2022/${edition}/VC/Auxiliary/Build"
-                break
-            fi
-        done
+        local vs_base=$(cmd.exe /C "vswhere.exe -latest -products * -requires Microsoft.Component.MSBuild -property installationPath" | tr -d '\r')
+        if [[ -z "$vs_base" ]]; then
+            echo "Error: Visual Studio 2022 not found via vswhere!"
+            return 1
+        fi
 
         local vs_bat
         if [[ "$arch_bits" == "x86" ]]; then
