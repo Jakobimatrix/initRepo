@@ -99,7 +99,7 @@ std::vector<ByteType> readFileBinary(const std::filesystem::path& path) {
       throw std::runtime_error("Failed to read file: " + path.string());
     }
   } else {
-    if (!file.read(reinterpret_cast<char*>(buffer.data()), size)) {  // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
+    if (!file.read(reinterpret_cast<char*>(buffer.data()), static_cast<size_t>(size))) {  // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
       // reinterpret_cast is required: std::ifstream::read takes char*,
       // and buffer.data() may be uint8_t* / unsigned char*, etc. This cast is safe and idiomatic.
       throw std::runtime_error("Failed to read file: " + path.string());
