@@ -54,7 +54,7 @@ CLANG_TIDY_VERSION=19
 
 # Set paths based on environment
 if [[ "$ENVIRONMENT" == "Windows-msys" ]]; then
-    # MSYS2 paths (using Windows-style paths and .exe)
+    # MSYS2 paths
     MINGW_GCC_BASE="C:/msys64/mingw64/bin"
     MINGW_32_GCC_BASE="C:/msys64/mingw32/bin"
     
@@ -73,28 +73,45 @@ if [[ "$ENVIRONMENT" == "Windows-msys" ]]; then
     CLANG_FORMAT_PATH="${MINGW_GCC_BASE}/clang-format.exe"
     CLANG_TIDY_PATH="${MINGW_GCC_BASE}/clang-tidy.exe"
 
-elif [[ "$ENVIRONMENT" == "Windows-cygwin" ]]; then
-    # Cygwin paths (using Unix-style paths, no .exe)
-    MINGW_GCC_BASE="/usr/bin"
-    MINGW_32_GCC_BASE="/usr/bin"
+    # Import MSVC environment variables dynamically
+    function setup_msvc_env() {
+        local arch_bits="$1"
+        local vs_base
+        for edition in Enterprise Professional Community BuildTools; do
+            if [[ -d "C:/Program Files/Microsoft Visual Studio/2022/${edition}/VC/Auxiliary/Build" ]]; then
+                vs_base="C:/Program Files/Microsoft Visual Studio/2022/${edition}/VC/Auxiliary/Build"
+                break
+            fi
+        done
 
-    # Compiler paths
-    GCC_CPP_PATH="${MINGW_GCC_BASE}/g++"
-    GCC_C_PATH="${MINGW_GCC_BASE}/gcc"
-    GCC_32_CPP_PATH="${MINGW_32_GCC_BASE}/g++"
-    GCC_32_C_PATH="${MINGW_32_GCC_BASE}/gcc"
+        local vs_bat
+        if [[ "$arch_bits" == "x86" ]]; then
+            vs_bat="${vs_base}/vcvars32.bat"
+        else
+            vs_bat="${vs_base}/vcvars64.bat"
+        fi
 
-    CLANG_CPP_PATH="${MINGW_GCC_BASE}/clang++"
-    CLANG_C_PATH="${MINGW_GCC_BASE}/clang"
-    CLANG_32_CPP_PATH="${MINGW_32_GCC_BASE}/clang++"
-    CLANG_32_C_PATH="${MINGW_32_GCC_BASE}/clang"
+        if [[ ! -f "$vs_bat" ]]; then
+            echo "Error: Could not find MSVC environment script: $vs_bat"
+            return 1
+        fi
 
-    # Tool paths
-    CLANG_FORMAT_PATH="${MINGW_GCC_BASE}/clang-format"
-    CLANG_TIDY_PATH="${MINGW_GCC_BASE}/clang-tidy"
+        echo "Loading MSVC environment from $vs_bat"
+        eval "$(
+            cmd.exe /C "\"$vs_bat\" && set" | \
+            grep -E "^(INCLUDE|LIB|LIBPATH|PATH)=" | \
+            sed 's/\r$//' | \
+            awk -F= '{print "export " $1 "=\"" $2 "\""}'
+        )"
+
+        export CC=cl.exe
+        export CXX=cl.exe
+    }
 
 elif [[ "$ENVIRONMENT" == "macOS" ]]; then
-    # macOS paths (using homebrew locations)
+    echo ""
+    echo "!!! THIS ENVIRONMENT IS NOT TESTES !!!"
+    echo ""
     BREW_PREFIX="$(brew --prefix)"
     GCC_CPP_PATH="${BREW_PREFIX}/bin/g++-${GCC_VERSION}"
     GCC_C_PATH="${BREW_PREFIX}/bin/gcc-${GCC_VERSION}"
@@ -104,7 +121,7 @@ elif [[ "$ENVIRONMENT" == "macOS" ]]; then
     CLANG_FORMAT_PATH="${BREW_PREFIX}/bin/clang-format"
     CLANG_TIDY_PATH="${BREW_PREFIX}/bin/clang-tidy"
 else
-    # Linux/WSL paths
+    # Linux/WSL/Windows-cygwin
     GCC_CPP_PATH="/usr/bin/g++-${GCC_VERSION}"
     GCC_C_PATH="/usr/bin/gcc-${GCC_VERSION}"
     CLANG_CPP_PATH="/usr/bin/clang++-${CLANG_VERSION}"
@@ -116,4 +133,5 @@ fi
 
 
 echo "Detected environment: $ENVIRONMENT on $ARCH-$ARCH_BITS"
+
 

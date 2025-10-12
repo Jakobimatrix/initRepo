@@ -178,6 +178,8 @@ if [[ "$ENVIRONMENT" == "Windows-msys" ]]; then
     if [[ "$COMPILER" == "msvc" ]]; then
         COMPILER_NAME="msvc"
         COMPILER_VERSION="${MSVC_VERSION}"
+        # Initialize MSVC environment
+        setup_msvc_env "$TARGET_ARCH_BITS" || exit 1
     elif [[ "$COMPILER" == "g++" ]]; then
         if [[ "$TARGET_ARCH_BITS" == "x86" ]]; then
             COMPILER_PATH="$GCC_32_CPP_PATH"
