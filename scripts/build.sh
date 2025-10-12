@@ -18,6 +18,7 @@ show_help() {
     echo "  -o              RelWithDebInfo build"
     echo "  -i              Install after build"
     echo "  --compiler COMP Use specific compiler (e.g. gcc, clang)"
+    echo "  --arch ARCH     Architecture (x86, x64) [default: $ARCH_BITS]"
     echo "  -h              Show this help message"
     echo "  -t              Build tests"
     echo "  -T              Run Tests after build"
@@ -27,6 +28,7 @@ show_help() {
     echo "  -l              List available compilers"
     echo "  -s              skip cmake and build [to be combined with -T, expects complete build]"
     echo "  -g              enable code coverage (only in combination with -d)"
+    echo "  -n, --ninja     Use Ninja generator if available"
 }
 
 # Source environment variables
@@ -49,6 +51,8 @@ RUN_TESTS=false
 TEST_OUTPUT_JUNIT=false
 SKIP_BUILD=false
 ENABLE_COVERAGE=OFF
+USE_NINJA=false
+TARGET_ARCH_BITS="${ARCH_BITS}"
 
 # Compiler paths from .environment
 CLANG_CPP_PATH="${CLANG_CPP_PATH}"
@@ -97,6 +101,30 @@ while [[ $# -gt 0 ]]; do
             shift
             COMPILER="$1"
             ;;
+        --arch)
+            shift
+            TARGET_ARCH_BITS="$1"
+            if [[ "$TARGET_ARCH_BITS" != "x86" && "$TARGET_ARCH_BITS" != "x64" ]]; then
+                echo "Error: Architecture must be x86 or x64"
+                exit 1
+            fi
+            if [[ "$ARCH_BITS" == "x86" && "$TARGET_ARCH_BITS" == "x64" ]]; then
+                echo "Error: Cannot cross-compile to 64-bit on a 32-bit system"
+                exit 1
+            fi
+            if [[ "$ARCH_BITS" == "x64" && "$TARGET_ARCH_BITS" == "x86" ]]; then
+                if [[ "$ENVIRONMENT" == "Linux" || "$ENVIRONMENT" == "WSL" ]]; then
+                    if ! dpkg --print-foreign-architectures | grep -q i386; then
+                        echo "Error: 32-bit cross-compilation support not installed"
+                        echo "Please install required packages with:"
+                        echo "  sudo dpkg --add-architecture i386"
+                        echo "  sudo apt update"
+                        echo "  sudo apt install libc6:i386 libstdc++6:i386"
+                        exit 1
+                    fi
+                fi
+            fi
+            ;;
         -t) ENABLE_TESTS=ON ;;
         -f) ENABLE_FUZZING=ON ;;
         -v) VERBOSE=true ;;
@@ -111,6 +139,7 @@ while [[ $# -gt 0 ]]; do
             ENABLE_TESTS=ON
             ;;
         -J) TEST_OUTPUT_JUNIT=true ;;
+        -n|--ninja) USE_NINJA=true ;;
          *)
             echo "Unknown option: $1"
             show_help
@@ -140,42 +169,79 @@ if [[ "$COMPILER" == "gcc" ]]; then
     COMPILER="g++"
 elif [[ "$COMPILER" == "clang" ]]; then
     COMPILER="clang++"
+elif [[ "$COMPILER" == "msvc" && "$ENVIRONMENT" == "Windows-msys" ]]; then
+    COMPILER="msvc"
 fi
 
 # set compiler paths
-if [[ "$COMPILER" == "g++" ]]; then
-    COMPILER_PATH="$GCC_CPP_PATH"
-    CC_PATH="$GCC_C_PATH"
-    COMPILER_NAME="gcc"
-    COMPILER_VERSION="${GCC_VERSION}"
-elif [[ "$COMPILER" == "clang++" ]]; then
-    COMPILER_PATH="$CLANG_CPP_PATH"
-    CC_PATH="$CLANG_C_PATH"
-    COMPILER_NAME="clang"
-    COMPILER_VERSION="${CLANG_VERSION}"
+if [[ "$ENVIRONMENT" == "Windows-msys" ]]; then
+    if [[ "$COMPILER" == "msvc" ]]; then
+        COMPILER_NAME="msvc"
+        COMPILER_VERSION="${MSVC_VERSION}"
+    elif [[ "$COMPILER" == "g++" ]]; then
+        if [[ "$TARGET_ARCH_BITS" == "x86" ]]; then
+            COMPILER_PATH="$GCC_32_CPP_PATH"
+            CC_PATH="$GCC_32_C_PATH"
+        else
+            COMPILER_PATH="$GCC_CPP_PATH"
+            CC_PATH="$GCC_C_PATH"
+        fi
+        COMPILER_NAME="gcc"
+        COMPILER_VERSION="${GCC_VERSION}"
+    elif [[ "$COMPILER" == "clang++" ]]; then
+        if [[ "$TARGET_ARCH_BITS" == "x86" ]]; then
+            COMPILER_PATH="$CLANG_32_CPP_PATH"
+            CC_PATH="$CLANG_32_C_PATH"
+        else
+            COMPILER_PATH="$CLANG_CPP_PATH"
+            CC_PATH="$CLANG_C_PATH"
+        fi
+        COMPILER_NAME="clang"
+        COMPILER_VERSION="${CLANG_VERSION}"
+    fi
 else
-    echo "Error: Compiler \"$COMPILER\" is not a valid input."
+    # Unix-like systems (Linux, macOS, WSL)
+    if [[ "$COMPILER" == "g++" ]]; then
+        COMPILER_PATH="$GCC_CPP_PATH"
+        CC_PATH="$GCC_C_PATH"
+        COMPILER_NAME="gcc"
+        COMPILER_VERSION="${GCC_VERSION}"
+    elif [[ "$COMPILER" == "clang++" ]]; then
+        COMPILER_PATH="$CLANG_CPP_PATH"
+        CC_PATH="$CLANG_C_PATH"
+        COMPILER_NAME="clang"
+        COMPILER_VERSION="${CLANG_VERSION}"
+    fi
+fi
+
+if [[ -z "$COMPILER_NAME" ]]; then
+    echo "Error: Compiler \"$COMPILER\" is not valid for environment \"$ENVIRONMENT\""
     exit 1
+fi
+
+# shellcheck source-path=SCRIPTDIR source=ensureToolVersion.sh
+source ./initRepo/scripts/ensureToolVersion.sh
+if [[ "$ENVIRONMENT" == "Windows-msys" ]]; then
+    if [[ "$COMPILER" == "msvc" ]]; then
+        ensure_tool_versioned_msvc "${MSVC_VERSION}" "${TARGET_ARCH_BITS}"
+    else
+        ensure_tool_versioned_mingw "${COMPILER_NAME}" "${COMPILER_VERSION}"
+    fi
+else
+    ensure_tool_versioned "${COMPILER_NAME}" "${COMPILER_VERSION}"
 fi
 
 BUILD_DIR="build-${COMPILER_NAME,,}-${COMPILER_VERSION,,}-${BUILD_TYPE,,}"
 
 if [[ "$SKIP_BUILD" == false ]]; then
 
-    # shellcheck source-path=SCRIPTDIR source=ensureToolVersion.sh
-    source ./initRepo/scripts/ensureToolVersion.sh
-    ensure_tool_versioned g++ "${GCC_VERSION}"
-    ensure_tool_versioned gcc "${GCC_VERSION}"
-    ensure_tool_versioned clang++ "${CLANG_VERSION}"
-    ensure_tool_versioned clang "${CLANG_VERSION}"
-
     if [ ! -f "$COMPILER_PATH" ]; then
-        echo "$COMPILER_PATH not found! Check the paths variables at the begin of this script!"
+        echo "$COMPILER_PATH not found! Check the paths in .environment!"
         list_available_compiler
         exit 1
     fi
     if [ ! -f "$CC_PATH" ]; then
-        echo "$CC_PATH not found! Check the paths variables at the begin of this script!"
+        echo "$CC_PATH not found! Check the paths in .environment!"
         list_available_compiler
         exit 1
     fi
@@ -200,10 +266,33 @@ if [[ "$SKIP_BUILD" == false ]]; then
     # Run CMake
     echo "Using cpp compiler at: $COMPILER_PATH"
     echo "Using c compiler at: $CC_PATH"
+    echo "Using architecture: $ARCH"
     echo "To change compiler versions, set the variables in the .environment!!"
     echo "Configuring with CMake..."
-    echo "Running: cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_CXX_COMPILER=$COMPILER_PATH -DCMAKE_C_COMPILER=$CC_PATH -DBUILD_TESTING=$ENABLE_TESTS -DENABLE_FUZZING=$ENABLE_FUZZING -DENABLE_COVERAGE=$ENABLE_COVERAGE .."
-    cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_CXX_COMPILER=$COMPILER_PATH -DCMAKE_C_COMPILER=$CC_PATH -DBUILD_TESTING=$ENABLE_TESTS -DENABLE_FUZZING=$ENABLE_FUZZING -DENABLE_COVERAGE=$ENABLE_COVERAGE ..
+    CMAKE_ARGS=(-DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_CXX_COMPILER=$COMPILER_PATH -DCMAKE_C_COMPILER=$CC_PATH -DBUILD_TESTING=$ENABLE_TESTS -DENABLE_FUZZING=$ENABLE_FUZZING -DENABLE_COVERAGE=$ENABLE_COVERAGE)
+    
+    # Add architecture flags only if needed
+    if [[ "$TARGET_ARCH_BITS" != "$ARCH_BITS" ]]; then
+        if [[ "$TARGET_ARCH_BITS" == "x86" ]]; then
+            CMAKE_ARGS+=(-DCMAKE_CXX_FLAGS="-m32" -DCMAKE_C_FLAGS="-m32")
+        elif [[ "$TARGET_ARCH_BITS" == "x64" ]]; then
+            CMAKE_ARGS+=(-DCMAKE_CXX_FLAGS="-m64" -DCMAKE_C_FLAGS="-m64")
+        fi
+    fi
+    
+    # Run CMake with proper generator for MSVC
+    if [[ "$COMPILER" == "msvc" ]]; then
+        CMAKE_ARGS+=(-G "${VISUAL_STUDIO_VERSION}" -A "$TARGET_ARCH_BITS")
+    elif [[ "$USE_NINJA" == true ]]; then
+        if ! command -v ninja &>/dev/null; then
+            echo "Warning: Ninja not found, falling back to default generator"
+        else
+            CMAKE_ARGS+=(-G "Ninja")
+        fi
+    fi
+    
+    echo "Running: cmake ${CMAKE_ARGS[*]} .."
+    cmake "${CMAKE_ARGS[@]}" ..
     if [[ "$VERBOSE" == true ]]; then
         echo "Dumping CMake variables:"
         cmake -LAH ..

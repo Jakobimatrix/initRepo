@@ -88,11 +88,11 @@ if ! nm "$executable" 2>/dev/null | grep -q "LLVMFuzzerTestOneInput"; then
 fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-cd "$SCRIPT_DIR"
+cd "$SCRIPT_DIR" || exit 1
 cd ../../
 
 mkdir -p "fuzz"
-cd fuzz
+cd fuzz  || exit 1
 
 mkdir -p "$corpus"
 mkdir -p "$seeds"
@@ -123,13 +123,13 @@ echo ""
 # Build command
 cmd=(
   "$executable" "$corpus"
-  -print_final_stats=1
-  -print_corpus_stats=1
-  -create_missing_dirs=1
-  -fork="$jobs"
-  -seed_inputs="$seeds"
-  -keep_going=1
-  -ignore_crashes=1
+  "-print_final_stats=1"
+  "-print_corpus_stats=1"
+  "-create_missing_dirs=1"
+  "-fork=$jobs"
+  "-seed_inputs=$seeds"
+  "-keep_going=1"
+  "-ignore_crashes=1"
 )
 
 # Add max_len if specified

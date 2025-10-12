@@ -1,0 +1,129 @@
+name: Windows C/C++ CI
+
+permissions:
+  contents: read
+  checks: write
+
+on:
+  push:
+    branches: [ main, dev, master, release ]
+  pull_request:
+    branches: [ main, dev, master, release ]
+
+jobs:
+  setup:
+    runs-on: windows-latest
+    outputs:
+      run_id: ${{ github.run_id }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Create workspace archive
+        shell: bash
+        run: |
+          7z a workspace.zip . -xr!.git -xr!.idea -xr!.vscode -xr!*.log
+          7z a workspace.zip .git
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: workspace
+          path: workspace.zip
+          retention-days: 1
+
+  build:
+    needs: setup
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        compiler: [gcc, clang, msvc]
+        build_type: [debug, release]
+        arch: [x86, x64]
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: workspace
+          path: .
+          
+      - name: Extract workspace
+        shell: bash
+        run: 7z x workspace.zip
+
+      - name: Setup MSYS2
+        if: matrix.compiler != 'msvc'
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: ${{ matrix.arch == 'x86' && 'MINGW32' || 'MINGW64' }}
+          update: true
+          install: >-
+            mingw-w64-${{ matrix.arch == 'x86' && 'i686' || 'x86_64' }}-gcc
+            mingw-w64-${{ matrix.arch == 'x86' && 'i686' || 'x86_64' }}-clang
+            mingw-w64-${{ matrix.arch == 'x86' && 'i686' || 'x86_64' }}-ninja
+            mingw-w64-${{ matrix.arch == 'x86' && 'i686' || 'x86_64' }}-cmake
+
+      - name: Setup MSVC
+        if: matrix.compiler == 'msvc'
+        uses: microsoft/setup-msbuild@v1.3.1
+
+      - name: Build
+        shell: bash
+        run: |
+          source initRepo/.windows_environment
+          ./initRepo/scripts/buildWindows.sh --${{ matrix.build_type }} -t --compiler ${{ matrix.compiler }} --arch ${{ matrix.arch }}
+          7z a ${{ matrix.compiler }}_${{ matrix.arch }}_${{ matrix.build_type }}_build.zip build-${{ matrix.compiler }}-${{ matrix.arch }}-${{ matrix.build_type }}
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.compiler }}-${{ matrix.arch }}-${{ matrix.build_type }}-build
+          path: ${{ matrix.compiler }}_${{ matrix.arch }}_${{ matrix.build_type }}_build.zip
+          retention-days: 1
+
+  test:
+    needs: build
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        compiler: [gcc, clang, msvc]
+        build_type: [debug, release]
+        arch: [x86, x64]
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: workspace
+          path: .
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ matrix.compiler }}-${{ matrix.arch }}-${{ matrix.build_type }}-build
+          path: .
+
+      - name: Setup MSYS2
+        if: matrix.compiler != 'msvc'
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: ${{ matrix.arch == 'x86' && 'MINGW32' || 'MINGW64' }}
+          update: true
+          install: >-
+            mingw-w64-${{ matrix.arch == 'x86' && 'i686' || 'x86_64' }}-gcc
+            mingw-w64-${{ matrix.arch == 'x86' && 'i686' || 'x86_64' }}-clang
+
+      - name: Setup MSVC
+        if: matrix.compiler == 'msvc'
+        uses: microsoft/setup-msbuild@v1.3.1
+
+      - name: Run Tests
+        shell: bash
+        run: |
+          7z x workspace.zip
+          7z x ${{ matrix.compiler }}_${{ matrix.arch }}_${{ matrix.build_type }}_build.zip
+          source initRepo/.windows_environment
+          ./initRepo/scripts/buildWindows.sh -s -T -J --${{ matrix.build_type }} --compiler ${{ matrix.compiler }} --arch ${{ matrix.arch }}
+
+      - name: Publish test results
+        if: always()
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        with:
+          files: build-${{ matrix.compiler }}-${{ matrix.arch }}-${{ matrix.build_type }}/test_results.xml

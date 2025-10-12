@@ -30,7 +30,8 @@ USAGE
 ## @param $1 literal string to escape
 ## @return prints escaped version to stdout
 regex_escape() {
-    # shellcheck disable=SC2001
+    # shellcheck disable=SC2001,SC2016
+    # variables not expanding is intentional + Bash’s substitution can’t handle complex regex escaping safely
     sed 's/[.[\*^$()+?{}|]/\\&/g' <<<"$1"
 }
 

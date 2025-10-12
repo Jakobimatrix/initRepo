@@ -1,25 +1,119 @@
 # .environment
 # This file defines environment variables for compiler versions, paths, and tool versions.
 
-# Compiler versions
+# Detect architecture
+ARCH=$(uname -m 2>/dev/null || echo "unknown")
+case "$ARCH" in
+    x86_64|amd64)
+        ARCH_BITS="x64"
+        ARCH="amd"
+        ;;
+    i386|i486|i586|i686)
+        ARCH_BITS="x86"
+        ARCH="amd"
+        ;;
+    arm64|aarch64)
+        ARCH_BITS="x64"
+        ARCH="arm"
+        ;;
+    armv7l|armv6l)
+        ARCH_BITS="x86"
+        ARCH="arm"
+        ;;
+    *)
+        ARCH_BITS="unknown"
+        ARCH="unknown"
+        ;;
+esac
+
+# Detect environment
+if grep -qi microsoft /proc/version 2>/dev/null; then
+    ENVIRONMENT="WSL"
+elif [[ "$OSTYPE" == "msys" ]]; then
+    ENVIRONMENT="Windows-msys"
+elif [[ "$OSTYPE" == "cygwin" ]]; then
+    ENVIRONMENT="Windows-cygwin"
+elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
+    ENVIRONMENT="Linux"
+elif [[ "$OSTYPE" == "darwin"* ]]; then
+    ENVIRONMENT="macOS"
+else
+    ENVIRONMENT="Unknown"
+fi
+
+# Common compiler versions
 GCC_VERSION=13
 CLANG_VERSION=19
-MSVC_VERSION=""
+MSVC_VERSION="2022"
 
-# Tool versions
+DEFAULT_COMPILER="g++"
+
+# Common tool versions
 CLANG_FORMAT_VERSION=19
 CLANG_TIDY_VERSION=19
 
-# Compiler paths
-GCC_CPP_PATH="/usr/bin/g++-${GCC_VERSION}"
-GCC_C_PATH="/usr/bin/gcc-${GCC_VERSION}"
-CLANG_CPP_PATH="/usr/bin/clang++-${CLANG_VERSION}"
-CLANG_C_PATH="/usr/bin/clang-${CLANG_VERSION}"
+# Set paths based on environment
+if [[ "$ENVIRONMENT" == "Windows-msys" ]]; then
+    # MSYS2 paths (using Windows-style paths and .exe)
+    MINGW_GCC_BASE="C:/msys64/mingw64/bin"
+    MINGW_32_GCC_BASE="C:/msys64/mingw32/bin"
+    
+    # Compiler paths
+    GCC_CPP_PATH="${MINGW_GCC_BASE}/g++.exe"
+    GCC_C_PATH="${MINGW_GCC_BASE}/gcc.exe"
+    GCC_32_CPP_PATH="${MINGW_32_GCC_BASE}/g++.exe"
+    GCC_32_C_PATH="${MINGW_32_GCC_BASE}/gcc.exe"
 
-# defaults
-DEFAULT_COMPILER="g++"
+    CLANG_CPP_PATH="${MINGW_GCC_BASE}/clang++.exe"
+    CLANG_C_PATH="${MINGW_GCC_BASE}/clang.exe"
+    CLANG_32_CPP_PATH="${MINGW_32_GCC_BASE}/clang++.exe"
+    CLANG_32_C_PATH="${MINGW_32_GCC_BASE}/clang.exe"
 
-# Tool paths
-CLANG_FORMAT_PATH="/usr/bin/clang-format-${CLANG_FORMAT_VERSION}"
-CLANG_TIDY_PATH="/usr/bin/clang-tidy-${CLANG_TIDY_VERSION}"
+    # Tool paths
+    CLANG_FORMAT_PATH="${MINGW_GCC_BASE}/clang-format.exe"
+    CLANG_TIDY_PATH="${MINGW_GCC_BASE}/clang-tidy.exe"
+
+elif [[ "$ENVIRONMENT" == "Windows-cygwin" ]]; then
+    # Cygwin paths (using Unix-style paths, no .exe)
+    MINGW_GCC_BASE="/usr/bin"
+    MINGW_32_GCC_BASE="/usr/bin"
+
+    # Compiler paths
+    GCC_CPP_PATH="${MINGW_GCC_BASE}/g++"
+    GCC_C_PATH="${MINGW_GCC_BASE}/gcc"
+    GCC_32_CPP_PATH="${MINGW_32_GCC_BASE}/g++"
+    GCC_32_C_PATH="${MINGW_32_GCC_BASE}/gcc"
+
+    CLANG_CPP_PATH="${MINGW_GCC_BASE}/clang++"
+    CLANG_C_PATH="${MINGW_GCC_BASE}/clang"
+    CLANG_32_CPP_PATH="${MINGW_32_GCC_BASE}/clang++"
+    CLANG_32_C_PATH="${MINGW_32_GCC_BASE}/clang"
+
+    # Tool paths
+    CLANG_FORMAT_PATH="${MINGW_GCC_BASE}/clang-format"
+    CLANG_TIDY_PATH="${MINGW_GCC_BASE}/clang-tidy"
+
+elif [[ "$ENVIRONMENT" == "macOS" ]]; then
+    # macOS paths (using homebrew locations)
+    BREW_PREFIX="$(brew --prefix)"
+    GCC_CPP_PATH="${BREW_PREFIX}/bin/g++-${GCC_VERSION}"
+    GCC_C_PATH="${BREW_PREFIX}/bin/gcc-${GCC_VERSION}"
+    CLANG_CPP_PATH="/usr/bin/clang++"  # macOS uses system clang
+    CLANG_C_PATH="/usr/bin/clang"
+    
+    CLANG_FORMAT_PATH="${BREW_PREFIX}/bin/clang-format"
+    CLANG_TIDY_PATH="${BREW_PREFIX}/bin/clang-tidy"
+else
+    # Linux/WSL paths
+    GCC_CPP_PATH="/usr/bin/g++-${GCC_VERSION}"
+    GCC_C_PATH="/usr/bin/gcc-${GCC_VERSION}"
+    CLANG_CPP_PATH="/usr/bin/clang++-${CLANG_VERSION}"
+    CLANG_C_PATH="/usr/bin/clang-${CLANG_VERSION}"
+
+    CLANG_FORMAT_PATH="/usr/bin/clang-format-${CLANG_FORMAT_VERSION}"
+    CLANG_TIDY_PATH="/usr/bin/clang-tidy-${CLANG_TIDY_VERSION}"
+fi
+
+
+echo "Detected environment: $ENVIRONMENT on $ARCH-$ARCH_BITS"
 
