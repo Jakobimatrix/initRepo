@@ -69,7 +69,6 @@ jobs:
 
       - name: Build
         shell: bash
-        continue-on-error: true 
         run: |
           source initRepo/.environment
           ./initRepo/scripts/build.sh --${{ matrix.build_type }} -t --compiler ${{ matrix.compiler }} --arch ${{ matrix.arch }}
@@ -117,7 +116,6 @@ jobs:
 
       - name: Run Tests
         shell: bash
-        continue-on-error: true
         run: |
           7z x workspace.zip
           7z x ${{ matrix.compiler }}_${{ matrix.arch }}_${{ matrix.build_type }}_build.zip
