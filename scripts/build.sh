@@ -53,6 +53,7 @@ SKIP_BUILD=false
 ENABLE_COVERAGE=OFF
 USE_NINJA=false
 TARGET_ARCH_BITS="${ARCH_BITS}"
+TARGET_ARCH="${ARCH}"
 
 # Compiler paths from .environment
 CLANG_CPP_PATH="${CLANG_CPP_PATH}"
@@ -233,7 +234,8 @@ else
     ensure_tool_versioned "${COMPILER_NAME}" "${COMPILER_VERSION}"
 fi
 
-BUILD_DIR="build-${COMPILER_NAME,,}-${COMPILER_VERSION,,}-${BUILD_TYPE,,}"
+BUILD_DIR="build-${COMPILER_NAME,,}-${COMPILER_VERSION,,}-${BUILD_TYPE,,}-${TARGET_ARCH,,}-${TARGET_ARCH_BITS,,}"
+echo "working direktory: $BUILD_DIR"
 
 if [[ "$SKIP_BUILD" == false ]]; then
 

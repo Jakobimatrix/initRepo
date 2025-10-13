@@ -19,6 +19,10 @@ if [[ "$install_clang" =~ ^[Yy]$ ]]; then
     wget -qO- https://apt.llvm.org/llvm.sh | sudo bash -s -- "$CLANG_VERSION"
     sudo apt install -y clang-"${CLANG_VERSION}" lld-"${CLANG_VERSION}" lldb-"${CLANG_VERSION}"
     clang-"$CLANG_VERSION" --version
+    if [[ "$arch_bits" == "x64" ]]; then
+        sudo dpkg --add-architecture i386
+        sudo apt-get update
+    fi
 else
     echo "Skipping Clang installation."
 fi
@@ -32,6 +36,12 @@ if [[ "$install_gcc" =~ ^[Yy]$ ]]; then
     sudo apt install -y gcc-"${GCC_VERSION}" g++-"${GCC_VERSION}" gdb
     sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-"${GCC_VERSION}" 60 --slave /usr/bin/g++ g++ /usr/bin/g++-"${GCC_VERSION}"
     gcc-"${GCC_VERSION}" --version
+    if [[ "$arch_bits" == "x64" ]]; then
+        sudo dpkg --add-architecture i386
+        sudo apt-get update
+        sudo apt-get install -y libc6:i386 libstdc++6:i386 libc6-dev:i386
+        sudo apt-get install -y libstdc++-${{ env.GCC_VERSION }}-dev:i386 g++-${{ env.GCC_VERSION }}-multilib gcc-${{ env.GCC_VERSION }}-multilib
+    fi
 else
     echo "Skipping GCC installation."
 fi
