@@ -334,13 +334,13 @@ jobs:
 
       - uses: actions/download-artifact@v4
         with:
-          name: clang-x84-debug-build
+          name: clang-x86-debug-build
           path: .  
           
       - run: |
           set -e
           tar -xzf workspace.tar.gz -C .
-          tar -xzf clang-x84-debug-build.tar.gz -C .
+          tar -xzf clang-x86-debug-build.tar.gz -C .
           source initRepo/.environment
           if [ -f .environment ]; then source .environment; fi
           sudo apt-get update

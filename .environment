@@ -76,9 +76,26 @@ if [[ "$ENVIRONMENT" == "Windows-msys" ]]; then
     # Import MSVC environment variables dynamically
     function setup_msvc_env() {
         local arch_bits="$1"
-        local vs_base=$(cmd.exe /C "vswhere.exe -latest -products * -requires Microsoft.Component.MSBuild -property installationPath" | tr -d '\r')
+        local vswhere_path
+        vswhere_path=$(cmd.exe /C "where vswhere.exe" 2>/dev/null | tr -d '\r' || true)
+        if [[ -z "$vswhere_path" || ! -f "$vswhere_path" ]]; then
+            for path in \
+                "C:/Program Files (x86)/Microsoft Visual Studio/Installer/vswhere.exe" \
+                "C:/Program Files/Microsoft Visual Studio/Installer/vswhere.exe"
+            do
+                [[ -f "$path" ]] && vswhere_path="$path" && break
+            done
+        fi
+
+        if [[ -z "$vswhere_path" || ! -f "$vswhere_path" ]]; then
+            echo "Error: vswhere.exe not found!"
+            return 1
+        fi
+
+        local vs_base
+        vs_base=$(cmd.exe /C "\"$vswhere_path\" -latest -products * -requires Microsoft.Component.MSBuild -property installationPath" | tr -d '\r')
         if [[ -z "$vs_base" ]]; then
-            echo "Error: Visual Studio 2022 not found via vswhere!"
+            echo "Error: Visual Studio installation not found via vswhere!"
             return 1
         fi
 
@@ -132,7 +149,7 @@ if [[ "$ENVIRONMENT" == "Windows-msys" ]]; then
 
 elif [[ "$ENVIRONMENT" == "macOS" ]]; then
     echo ""
-    echo "!!! THIS ENVIRONMENT IS NOT TESTES !!!"
+    echo "!!! THIS ENVIRONMENT IS NOT TESTED !!!"
     echo ""
     BREW_PREFIX="$(brew --prefix)"
     GCC_CPP_PATH="${BREW_PREFIX}/bin/g++-${GCC_VERSION}"
