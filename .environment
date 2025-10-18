@@ -163,39 +163,36 @@ if [[ "$ENVIRONMENT" == "Windows-msys" ]]; then
             cmdline="call \"${chosen}\" && set"
         fi
 
-        # Execute under cmd.exe and capture the environment
-        # Use cmd.exe /C so the batch file runs in a Windows cmd context
-        cmd.exe /C "$cmdline" > "$tmpfile" 2>/dev/null || true
+        echo "Using VsDevCmd: $chosen"
+        local env_dump
+        env_dump=$(cmd.exe /V:ON /E:ON /C "\"$chosen\" >nul && set" 2>/dev/null)
 
-        # Basic sanity check: did the batch script produce meaningful env?
-        if ! grep -qE '^Path=' "$tmpfile" 2>/dev/null; then
-            echo "Error: Visual Studio environment script ran but did not populate environment (check $chosen)."
-            rm -f "$tmpfile"
+        if [[ -z "$env_dump" ]]; then
+            echo "Error: Visual Studio environment script ran but did not produce output!"
             return 1
         fi
 
-        # Import important environment variables into the bash session.
-        # We import PATH, INCLUDE, LIB, LIBPATH, VSINSTALLDIR and any other sane vars.
-        while IFS='=' read -r name value; do
-            # filter only sane variable names
-            [[ "$name" =~ ^(PATH|Path|INCLUDE|LIB|LIBPATH|VSINSTALLDIR|VisualStudioVersion|VSCMD_ARG_TGT_ARCH|VSCMD_ARG_HOST_ARCH|VSCMD_DEBUG) ]] || continue
-            # normalize name "Path" -> "PATH" for bash usage
-            if [[ "$name" == "Path" ]]; then name="PATH"; fi
-            # remove trailing CR (shouldn't be necessary but safe)
-            value="${value%$'\r'}"
-            export "$name=$value"
-        done < "$tmpfile"
+        # Convert CRLF to LF and extract relevant environment variables
+        echo "$env_dump" | tr -d '\r' | \
+        grep -E "^(INCLUDE|LIB|LIBPATH|PATH|VSINSTALLDIR|VisualStudioVersion|VSCMD_ARG_TGT_ARCH|VSCMD_ARG_HOST_ARCH)=" | \
+        awk -F= '{print "export " $1 "=\"" $2 "\""}' > /tmp/msvc_env.sh
 
-        # also export CC/CXX so build scripts expect cl.exe
+        if [[ ! -s /tmp/msvc_env.sh ]]; then
+            echo "Error: Visual Studio environment script ran but did not populate environment (check $chosen)."
+            return 1
+        fi
+
+        # Load environment into current bash session
+        source /tmp/msvc_env.sh
+        rm -f /tmp/msvc_env.sh
+
+        # Export compiler tools
         export CC="cl.exe"
         export CXX="cl.exe"
 
-        rm -f "$tmpfile"
-
-        # verify cl.exe can be found
+        # Verify compiler
         if ! command -v cl.exe &>/dev/null; then
             echo "Error: MSVC environment loaded but cl.exe not found in PATH"
-            # optionally print PATH to help debugging
             echo "Current PATH (truncated):"
             echo "${PATH:0:400}"
             return 1
