@@ -166,7 +166,7 @@ jobs:
             sudo dpkg --add-architecture i386
             sudo apt-get update
             sudo apt-get install -y libc6:i386 libstdc++6:i386 libc6-dev:i386
-            sudo apt-get install -y libstdc++-${{ env.GCC_VERSION }}-dev:i386 g++-${{ env.GCC_VERSION }}-multilib gcc-${{ env.GCC_VERSION }}-multilib
+            sudo apt-get install -y libstdc++-${GCC_VERSION}-dev:i386 g++-${GCC_VERSION}-multilib gcc-${GCC_VERSION}-multilib
           fi
    
           if [ "${{ matrix.compiler }}" = "gcc" ]; then
@@ -241,7 +241,7 @@ jobs:
             sudo dpkg --add-architecture i386
             sudo apt-get update
             sudo apt-get install -y libc6:i386 libstdc++6:i386 libc6-dev:i386
-            sudo apt-get install -y libstdc++-${{ env.GCC_VERSION }}-dev:i386 g++-${{ env.GCC_VERSION }}-multilib gcc-${{ env.GCC_VERSION }}-multilib 
+            sudo apt-get install -y libstdc++-${GCC_VERSION}-dev:i386 g++-${GCC_VERSION}-multilib gcc-${GCC_VERSION}-multilib 
           fi
           sudo apt-get update
           if [ "${{ matrix.build_type }}" = "debug" ] && [ "${{ matrix.arch }}" = "x64" ]; then

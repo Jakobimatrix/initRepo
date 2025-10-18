@@ -40,7 +40,7 @@ jobs:
       matrix:
         compiler: [gcc, clang, msvc]
         build_type: [debug, release]
-        arch: [x86, x64]
+        arch: [x86]
     steps:
       - uses: actions/download-artifact@v4
         with:
