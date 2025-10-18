@@ -79,7 +79,7 @@ if [[ "$ENVIRONMENT" == "Windows-msys" ]]; then
         local vswhere_path="" vs_base=""
         local tmpfile
 
-        # find vswhere.exe (try PATH then common installers)
+        # --- find vswhere.exe ---
         vswhere_path=$(cmd.exe /C "where vswhere.exe" 2>/dev/null | tr -d '\r' || true)
         if [[ -z "$vswhere_path" || ! -f "$vswhere_path" ]]; then
             for p in \
@@ -94,44 +94,36 @@ if [[ "$ENVIRONMENT" == "Windows-msys" ]]; then
             return 1
         fi
 
-        # get installation path
+        # --- get installation path ---
         vs_base=$(powershell -NoProfile -Command "& { & \"$vswhere_path\" -latest -products * -requires Microsoft.Component.MSBuild -property installationPath }" | tr -d '\r' | tail -n 1)
-
         if [[ -z "$vs_base" ]]; then
             echo "Error: Visual Studio installation not found via vswhere!"
             return 1
         fi
         echo "Found Visual Studio at: $vs_base"
 
-        # candidate scripts (prefer VsDevCmd)
+        # --- candidate scripts ---
         local vsdev="${vs_base}/Common7/Tools/VsDevCmd.bat"
         local vcvarsall="${vs_base}/VC/Auxiliary/Build/vcvarsall.bat"
         local vcvars32="${vs_base}/VC/Auxiliary/Build/vcvars32.bat"
         local vcvars64="${vs_base}/VC/Auxiliary/Build/vcvars64.bat"
         local chosen=""
 
-        # prefer VsDevCmd with -arch if available
         if [[ -f "$vsdev" ]]; then
             chosen="$vsdev"
             echo "Using VsDevCmd: $chosen"
         elif [[ -f "$vcvarsall" ]]; then
             chosen="$vcvarsall"
             echo "Using vcvarsall: $chosen"
+        elif [[ "$arch_bits" == "x86" && -f "$vcvars32" ]]; then
+            chosen="$vcvars32"
+            echo "Using vcvars32: $chosen"
+        elif [[ "$arch_bits" == "x64" && -f "$vcvars64" ]]; then
+            chosen="$vcvars64"
+            echo "Using vcvars64: $chosen"
         else
-            # fallback to vcvars32/64
-            if [[ "$arch_bits" == "x86" && -f "$vcvars32" ]]; then
-                chosen="$vcvars32"
-                echo "Using vcvars32: $chosen"
-            elif [[ "$arch_bits" == "x64" && -f "$vcvars64" ]]; then
-                chosen="$vcvars64"
-                echo "Using vcvars64: $chosen"
-            else
-                # try a find search as final attempt
-                chosen=$(find "$vs_base" -type f -iname "vcvars*.bat" 2>/dev/null | head -n 1 || true)
-                if [[ -n "$chosen" ]]; then
-                    echo "Found alternative vcvars script: $chosen"
-                fi
-            fi
+            chosen=$(find "$vs_base" -type f -iname "vcvars*.bat" 2>/dev/null | head -n 1 || true)
+            [[ -n "$chosen" ]] && echo "Found alternative vcvars script: $chosen"
         fi
 
         if [[ -z "$chosen" || ! -f "$chosen" ]]; then
@@ -139,69 +131,44 @@ if [[ "$ENVIRONMENT" == "Windows-msys" ]]; then
             return 1
         fi
 
-        # create temp file to capture environment from cmd.exe
+        # --- create temp file ---
         tmpfile=$(mktemp) || tmpfile="/tmp/vsenv.$$"
 
-        # Build the cmd invocation depending on chosen script
-        local cmdline=""
-        if [[ "$(basename "$chosen")" == "VsDevCmd.bat" ]]; then
-            # VsDevCmd takes -arch argument
-            if [[ "$arch_bits" == "x86" ]]; then
-                cmdline="call \"${chosen}\" -arch=IA32 && set"
-            else
-                cmdline="call \"${chosen}\" -arch=AMD64 && set"
-            fi
-        elif [[ "$(basename "$chosen")" == "vcvarsall.bat" ]]; then
-            # vcvarsall expects x86/x64 parameters
-            if [[ "$arch_bits" == "x86" ]]; then
-                cmdline="call \"${chosen}\" x86 && set"
-            else
-                cmdline="call \"${chosen}\" x64 && set"
-            fi
-        else
-            # vcvars32.bat or vcvars64.bat (no extra args)
-            cmdline="call \"${chosen}\" && set"
-        fi
+        # --- run script and dump environment using PowerShell ---
+        powershell -NoProfile -Command "
+            & '${chosen}' -arch=$arch_bits;
+            Get-ChildItem env: | ForEach-Object { \"\$($_.Name)=\$($_.Value)\" }" | tr -d '\r' > "$tmpfile"
 
-        echo "Using VsDevCmd: $chosen"
-        local env_dump
-        env_dump=$(cmd.exe /V:ON /E:ON /C "call \"${chosen}\" -arch=${arch_bits} && set" 2>/dev/null)
-
-
-        if [[ -z "$env_dump" ]]; then
-            echo "Error: Visual Studio environment script ran but did not produce output!"
+        # --- sanity check ---
+        if ! grep -qE '^PATH=' "$tmpfile"; then
+            echo "Error: Visual Studio environment script ran but did not produce output (check $chosen)."
+            rm -f "$tmpfile"
             return 1
         fi
 
-        # Convert CRLF to LF and extract relevant environment variables
-        echo "$env_dump" | tr -d '\r' | \
-        grep -E "^(INCLUDE|LIB|LIBPATH|PATH|VSINSTALLDIR|VisualStudioVersion|VSCMD_ARG_TGT_ARCH|VSCMD_ARG_HOST_ARCH)=" | \
-        awk -F= '{print "export " $1 "=\"" $2 "\""}' > /tmp/msvc_env.sh
+        # --- import environment variables into bash ---
+        while IFS='=' read -r name value; do
+            [[ "$name" =~ ^(PATH|INCLUDE|LIB|LIBPATH|VSINSTALLDIR|VisualStudioVersion|VSCMD_ARG_TGT_ARCH|VSCMD_ARG_HOST_ARCH) ]] || continue
+            export "$name=$value"
+        done < "$tmpfile"
 
-        if [[ ! -s /tmp/msvc_env.sh ]]; then
-            echo "Error: Visual Studio environment script ran but did not populate environment (check $chosen)."
-            return 1
-        fi
-
-        # Load environment into current bash session
-        source /tmp/msvc_env.sh
-        rm -f /tmp/msvc_env.sh
-
-        # Export compiler tools
+        # --- export CC/CXX ---
         export CC="cl.exe"
         export CXX="cl.exe"
 
-        # Verify compiler
+        rm -f "$tmpfile"
+
+        # --- verify cl.exe in PATH ---
         if ! command -v cl.exe &>/dev/null; then
             echo "Error: MSVC environment loaded but cl.exe not found in PATH"
-            echo "Current PATH (truncated):"
-            echo "${PATH:0:400}"
+            echo "Current PATH (truncated): ${PATH:0:400}"
             return 1
         fi
 
         echo "MSVC environment loaded successfully (arch=$arch_bits)."
         return 0
     }
+
 
 
 elif [[ "$ENVIRONMENT" == "macOS" ]]; then

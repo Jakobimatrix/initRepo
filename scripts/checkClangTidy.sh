@@ -21,7 +21,7 @@ fi
 source ./initRepo/scripts/ensureToolVersion.sh
 ensure_tool_versioned clang-tidy "${CLANG_TIDY_VERSION}"
 
-BUILD_DIR="build-clang-${COMPILER_VERSION,,}-debug-${ARCH,,}-${ARCH_BITS,,}"
+BUILD_DIR="build-clang-${CLANG_VERSION,,}-debug-${ARCH,,}-${ARCH_BITS,,}"
 
 if [ ! -f "${BUILD_DIR}/compile_commands.json" ]; then
     echo "Warning: ${BUILD_DIR}/compile_commands.json not found. running CMake."
