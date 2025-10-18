@@ -137,8 +137,11 @@ if [[ "$ENVIRONMENT" == "Windows-msys" ]]; then
         ## --- run script and dump environment using PowerShell ---
         # Use single-quote shell quoting to prevent Bash from interpreting PowerShell variables
         # Inject $chosen and $arch_bits safely by closing/opening single quotes around them.
-        powershell -NoProfile -Command '& { & '"$chosen"' -arch='"$arch_bits"'; Get-ChildItem env: | ForEach-Object { "$($_.Name)=$($_.Value)" } }' | tr -d '\r' > "$tmpfile"
-
+        # Export the chosen script and arch to the environment for the PowerShell process
+        # so we can avoid complex quoting of paths that contain spaces.
+        CHOSEN="$chosen" ARCH_BITS="$arch_bits" \
+        powershell -NoProfile -Command '& { & $env:CHOSEN -arch=$env:ARCH_BITS; Get-ChildItem env: | ForEach-Object { "$($_.Name)=$($_.Value)" } }' | tr -d '\r' > "$tmpfile"
+        
 
         # --- sanity check ---
         if ! grep -qE '^PATH=' "$tmpfile"; then
