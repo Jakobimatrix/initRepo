@@ -195,11 +195,11 @@ jobs:
             else
                 ./initRepo/scripts/build.sh -r -t --compiler gcc --arch ${{ matrix.arch }}
             fi
-            tar -czf gcc_${{ matrix.arch }}_${{ matrix.build_type }}_build.tar.gz build-gcc-${GCC_VERSION}-${{ matrix.build_type }}-${{ matrix.arch }}
+            tar -czf gcc_${{ matrix.arch }}_${{ matrix.build_type }}_build.tar.gz build-gcc-${GCC_VERSION}-${{ matrix.build_type }}-${ARCH}-${{ matrix.arch }}
           else [ "${{ matrix.compiler }}" = "clang" ]
             ./initRepo/scripts/build.sh --${{ matrix.build_type }} -f --compiler clang --arch ${{ matrix.arch }}
             ./initRepo/scripts/build.sh --${{ matrix.build_type }} -t --compiler clang --arch ${{ matrix.arch }}
-            tar -czf clang_${{ matrix.arch }}_${{ matrix.build_type }}_build.tar.gz build-clang-${CLANG_VERSION}-${{ matrix.build_type }}-${{ matrix.arch }}
+            tar -czf clang_${{ matrix.arch }}_${{ matrix.build_type }}_build.tar.gz build-clang-${CLANG_VERSION}-${{ matrix.build_type }}-${ARCH}-${{ matrix.arch }}
           fi
 
       - name: Upload build artifact
@@ -236,6 +236,7 @@ jobs:
           source initRepo/.environment
           if [ -f .environment ]; then source .environment; fi
           echo "GCC_VERSION=$GCC_VERSION" >> $GITHUB_ENV
+          echo "ARCH=$ARCH" >> $GITHUB_ENV
           if [ "${{ matrix.arch }}" = "x86" ]; then
             sudo dpkg --add-architecture i386
             sudo apt-get update
@@ -254,13 +255,13 @@ jobs:
         uses: EnricoMi/publish-unit-test-result-action@v2
         with:
           files: |
-            build-gcc-${{ env.GCC_VERSION }}-${{ matrix.build_type }}-${{ matrix.arch }}/test_results.xml
+            build-gcc-${{ env.GCC_VERSION }}-${{ matrix.build_type }}-${{ env.ARCH }}-${{ matrix.arch }}/test_results.xml
             
       - name: Generate coverage report
         if: matrix.build_type == 'debug' && matrix.arch == 'x64'
         run: |
           gcovr --gcov-executable gcov-${{ env.GCC_VERSION }} \
-              -r . build-gcc-${{ env.GCC_VERSION }}-debug/src \
+              -r . build-gcc-${{ env.GCC_VERSION }}-debug-${{ env.ARCH }}-x64/src \
               --exclude '.*_deps/.*' --gcov-ignore-parse-errors \
               --xml-pretty -o coverage.xml
 
@@ -305,6 +306,7 @@ jobs:
           source initRepo/.environment
           if [ -f .environment ]; then source .environment; fi
           echo "CLANG_VERSION=$CLANG_VERSION" >> $GITHUB_ENV
+          echo "ARCH=$ARCH" >> $GITHUB_ENV
           if [ "${{ matrix.arch }}" = "x86" ]; then
             sudo dpkg --add-architecture i386
             sudo apt-get update
@@ -319,7 +321,7 @@ jobs:
         uses: EnricoMi/publish-unit-test-result-action@v2
         with:
           files: |
-            build-clang-${{ env.CLANG_VERSION }}-${{ matrix.build_type }}-${{ matrix.arch }}/test_results.xml
+            build-clang-${{ env.CLANG_VERSION }}-${{ matrix.build_type }}-${{ env.ARCH }}-${{ matrix.arch }}/test_results.xml
 
 
   clang_tidy:
