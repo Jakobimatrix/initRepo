@@ -135,14 +135,9 @@ if [[ "$ENVIRONMENT" == "Windows-msys" ]]; then
         tmpfile=$(mktemp) || tmpfile="/tmp/vsenv.$$"
 
         ## --- run script and dump environment using PowerShell ---
-        #powershell -NoProfile -Command "
-        #    & '${chosen}' -arch=$arch_bits;
-        #    Get-ChildItem env: | ForEach-Object { \"\$($_.Name)=\$($_.Value)\" }" | tr -d '\r' > "$tmpfile"
-
-        # --- run script and dump environment using PowerShell ---
-        powershell -NoProfile -Command "& { & '${chosen}' -arch=$arch_bits; Get-ChildItem env: | ForEach-Object { \"`$($_.Name)=`$($_.Value)\" } }" | tr -d '\r' > "$tmpfile"
-
-
+        # Use single-quote shell quoting to prevent Bash from interpreting PowerShell variables
+        # Inject $chosen and $arch_bits safely by closing/opening single quotes around them.
+        powershell -NoProfile -Command '& { & '"$chosen"' -arch='"$arch_bits"'; Get-ChildItem env: | ForEach-Object { "$($_.Name)=$($_.Value)" } }' | tr -d '\r' > "$tmpfile"
 
 
         # --- sanity check ---
