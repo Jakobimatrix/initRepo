@@ -19,6 +19,7 @@
  * @version 1.0
  **/
 
+// NOLINTBEGIN (misc-include-cleaner) Due to the compiler switch we might need different includes
 #include <concepts>
 #include <cstdint>
 #include <cstdio>
@@ -29,6 +30,9 @@
 #include <stdexcept>
 #include <type_traits>
 #include <vector>
+
+// NOLINTEND (misc-include-cleaner)
+
 
 // Concept must be outside the anonymous namespace for C++20
 
