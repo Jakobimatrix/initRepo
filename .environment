@@ -140,7 +140,7 @@ if [[ "$ENVIRONMENT" == "Windows-msys" ]]; then
         #    Get-ChildItem env: | ForEach-Object { \"\$($_.Name)=\$($_.Value)\" }" | tr -d '\r' > "$tmpfile"
 
         # --- run script and dump environment using PowerShell ---
-        powershell -NoProfile -Command "& { & '${chosen}' -arch=$arch_bits; Get-ChildItem env: | ForEach-Object { '$($_.Name)=$($_.Value)' } }" | tr -d '\r' > "$tmpfile"
+        powershell -NoProfile -Command "& { & '${chosen}' -arch=$arch_bits; Get-ChildItem env: | ForEach-Object { \"`$($_.Name)=`$($_.Value)\" } }" | tr -d '\r' > "$tmpfile"
 
 
 
