@@ -195,11 +195,11 @@ jobs:
             else
                 ./initRepo/scripts/build.sh -r -t --compiler gcc --arch ${{ matrix.arch }}
             fi
-            tar -czf gcc_${{ matrix.arch }}_${{ matrix.build_type }}_build.tar.gz build-gcc-${GCC_VERSION}-${{ matrix.build_type }}-${ARCH}-${{ matrix.arch }}
+            tar -czf gcc_${{ matrix.arch }}_${{ matrix.build_type }}_build.tar.gz build-gcc-${GCC_VERSION}-${{ matrix.build_type }}-${{ matrix.arch }}
           else [ "${{ matrix.compiler }}" = "clang" ]
             ./initRepo/scripts/build.sh --${{ matrix.build_type }} -f --compiler clang --arch ${{ matrix.arch }}
             ./initRepo/scripts/build.sh --${{ matrix.build_type }} -t --compiler clang --arch ${{ matrix.arch }}
-            tar -czf clang_${{ matrix.arch }}_${{ matrix.build_type }}_build.tar.gz build-clang-${CLANG_VERSION}-${{ matrix.build_type }}-${ARCH}-${{ matrix.arch }}
+            tar -czf clang_${{ matrix.arch }}_${{ matrix.build_type }}_build.tar.gz build-clang-${CLANG_VERSION}-${{ matrix.build_type }}-${{ matrix.arch }}
           fi
 
       - name: Upload build artifact
@@ -254,7 +254,7 @@ jobs:
         uses: EnricoMi/publish-unit-test-result-action@v2
         with:
           files: |
-            build-gcc-${{ env.GCC_VERSION }}-${{ matrix.build_type }}-${ARCH}-${{ matrix.arch }}/test_results.xml
+            build-gcc-${{ env.GCC_VERSION }}-${{ matrix.build_type }}-${{ matrix.arch }}/test_results.xml
             
       - name: Generate coverage report
         if: matrix.build_type == 'debug' && matrix.arch == 'x64'
@@ -319,7 +319,7 @@ jobs:
         uses: EnricoMi/publish-unit-test-result-action@v2
         with:
           files: |
-            build-clang-${{ env.CLANG_VERSION }}-${{ matrix.build_type }}-${ARCH}-${{ matrix.arch }}/test_results.xml
+            build-clang-${{ env.CLANG_VERSION }}-${{ matrix.build_type }}-${{ matrix.arch }}/test_results.xml
 
 
   clang_tidy:
@@ -340,7 +340,7 @@ jobs:
       - run: |
           set -e
           tar -xzf workspace.tar.gz -C .
-          tar -xzf clang-x86-debug-build.tar.gz -C .
+          tar -xzf clang_x86_debug_build.tar.gz -C .
           source initRepo/.environment
           if [ -f .environment ]; then source .environment; fi
           sudo apt-get update
