@@ -84,13 +84,37 @@ if [[ "$ENVIRONMENT" == "Windows-msys" ]]; then
 
         local vs_bat
         if [[ "$arch_bits" == "x86" ]]; then
-            vs_bat="${vs_base}/vcvars32.bat"
+            vs_bat=$(find "$vs_base" -type f -iname "vcvars32.bat" 2>/dev/null | head -n 1)
         else
-            vs_bat="${vs_base}/vcvars64.bat"
+            vs_bat=$(find "$vs_base" -type f -iname "vcvars64.bat" 2>/dev/null | head -n 1)
         fi
 
-        if [[ ! -f "$vs_bat" ]]; then
-            echo "Error: Could not find MSVC environment script: $vs_bat"
+        # If not found, try known fallback paths
+        if [[ -z "$vs_bat" || ! -f "$vs_bat" ]]; then
+            if [[ "$arch_bits" == "x86" ]]; then
+                for path in \
+                    "$vs_base/VC/Auxiliary/Build/vcvars32.bat" \
+                    "C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Auxiliary/Build/vcvars32.bat" \
+                    "C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Auxiliary/Build/vcvars32.bat" \
+                    "C:/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/VC/Auxiliary/Build/vcvars32.bat"
+                do
+                    [[ -f "$path" ]] && vs_bat="$path" && break
+                done
+            else
+                for path in \
+                    "$vs_base/VC/Auxiliary/Build/vcvars64.bat" \
+                    "C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Auxiliary/Build/vcvars64.bat" \
+                    "C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Auxiliary/Build/vcvars64.bat" \
+                    "C:/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/VC/Auxiliary/Build/vcvars64.bat"
+                do
+                    [[ -f "$path" ]] && vs_bat="$path" && break
+                done
+            fi
+        fi
+
+        # Still not found? Fail with clear error
+        if [[ -z "$vs_bat" || ! -f "$vs_bat" ]]; then
+            echo "Error: Could not find vcvars script for architecture $arch_bits"
             return 1
         fi
 
