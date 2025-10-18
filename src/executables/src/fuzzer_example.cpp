@@ -31,9 +31,6 @@
 #include <type_traits>
 #include <vector>
 
-// NOLINTEND (misc-include-cleaner)
-
-
 // Concept must be outside the anonymous namespace for C++20
 
 template <typename ByteType>
@@ -164,3 +161,5 @@ int main(int argc, char* argv[]) {
 
 
 #endif
+
+// NOLINTEND (misc-include-cleaner)

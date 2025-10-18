@@ -25,7 +25,7 @@ BUILD_DIR="build-clang-${CLANG_VERSION,,}-debug-${ARCH,,}-${ARCH_BITS,,}"
 
 if [ ! -f "${BUILD_DIR}/compile_commands.json" ]; then
     echo "Warning: ${BUILD_DIR}/compile_commands.json not found. running CMake."
-    ./initRepo/scripts/build.sh -d -t --compiler clang
+    ./initRepo/scripts/build.sh -d -t --compiler clang -f
 fi
 
 if [ ! -f "${BUILD_DIR}/compile_commands.json" ]; then
