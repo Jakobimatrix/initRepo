@@ -165,7 +165,8 @@ if [[ "$ENVIRONMENT" == "Windows-msys" ]]; then
 
         echo "Using VsDevCmd: $chosen"
         local env_dump
-        env_dump=$(cmd.exe /V:ON /E:ON /C "\"$chosen\" >nul && set" 2>/dev/null)
+        env_dump=$(cmd.exe /V:ON /E:ON /C "call \"${chosen}\" -arch=${arch_bits} && set" 2>/dev/null)
+
 
         if [[ -z "$env_dump" ]]; then
             echo "Error: Visual Studio environment script ran but did not produce output!"
