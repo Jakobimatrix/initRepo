@@ -211,11 +211,25 @@ if [[ "$ENVIRONMENT" == "Windows-msys" ]]; then
         echo "[DEBUG] Starting MSVC environment setup via CMD for architecture: $arch_bits"
         
         # Find VS installation using vswhere
-        vs_base=$(runCmd "\"$(cygpath -w "$(command -v vswhere.exe)")\"" -latest -products '*' -requires Microsoft.Component.MSBuild -property installationPath | tr -d '\r' | tail -n 1)
+        echo "[DEBUG] Running vswhere to find VS installation..."
+        local vswhere_out
+        vswhere_out=$(runCmd "\"$(cygpath -w "$(command -v vswhere.exe)")\"" -latest -products '*' -requires Microsoft.Component.MSBuild -property installationPath)
+        echo "[DEBUG] Raw vswhere output:"
+        echo "$vswhere_out"
+        
+        # Clean up the output - remove debug lines and convert to clean path
+        vs_base=$(echo "$vswhere_out" | grep -v '^\[DEBUG\]' | grep -v '^Microsoft Windows' | grep -v '^(c)' | tr -d '\r' | tail -n 1)
+        echo "[DEBUG] Extracted VS path: $vs_base"
+        
         if [[ -z "$vs_base" ]]; then
             echo "Error: Could not find Visual Studio installation"
             return 1
         fi
+        
+        # Clean up the path and convert to proper format
+        vs_base="${vs_base//\"/}"  # Remove any quotes
+        vs_base="${vs_base//\\/\/}"  # Convert backslashes to forward slashes
+        echo "[DEBUG] Cleaned VS path: $vs_base"
         
         # Create temporary file for environment capture
         tmpfile=$(makeTempFile ".bat")
@@ -250,8 +264,18 @@ BATCH
         # Execute batch file and capture output
         local envfile
         envfile=$(makeTempFile ".env")
-        runCmd "$(cygpath -w "$tmpfile")" > "$envfile"
+        echo "[DEBUG] Running batch file: $(cygpath -w "$tmpfile")"
+        runCmd "$(cygpath -w "$tmpfile")" > "$envfile" 2>&1
         result=$?
+        
+        if [[ $result -ne 0 ]]; then
+            echo "[ERROR] Batch file execution failed with code $result"
+            echo "[DEBUG] Batch file output:"
+            cat "$envfile"
+            deleteFile "$tmpfile"
+            deleteFile "$envfile"
+            return 1
+        fi
         
         echo "[DEBUG] Environment setup exit code: $result"
         echo "[DEBUG] Raw environment output:"
@@ -357,27 +381,49 @@ BATCH
         echo "Found Visual Studio at: $vs_base"
 
         # --- candidate scripts ---
+        # Strip quotes from vs_base if present
+        vs_base="${vs_base//\"/}"
+        echo "[DEBUG] Checking VS scripts in: $vs_base"
+        
         local vsdev="${vs_base}/Common7/Tools/VsDevCmd.bat"
         local vcvarsall="${vs_base}/VC/Auxiliary/Build/vcvarsall.bat"
         local vcvars32="${vs_base}/VC/Auxiliary/Build/vcvars32.bat"
         local vcvars64="${vs_base}/VC/Auxiliary/Build/vcvars64.bat"
         local chosen=""
 
-        if [[ -f "$vsdev" ]]; then
+        # Convert paths to Windows format for existence checks
+        local win_vsdev=$(convertPath "$vsdev")
+        local win_vcvarsall=$(convertPath "$vcvarsall")
+        local win_vcvars32=$(convertPath "$vcvars32")
+        local win_vcvars64=$(convertPath "$vcvars64")
+        
+        echo "[DEBUG] Checking script existence:"
+        echo "[DEBUG] VsDevCmd: $win_vsdev"
+        echo "[DEBUG] vcvarsall: $win_vcvarsall"
+        echo "[DEBUG] vcvars32: $win_vcvars32"
+        echo "[DEBUG] vcvars64: $win_vcvars64"
+
+        # Use cmd.exe to check file existence since -f may not work reliably with Windows paths
+        if cmd.exe /c "if exist ${win_vsdev} (exit 0) else (exit 1)" 2>/dev/null; then
             chosen="$vsdev"
             echo "Using VsDevCmd: $chosen"
-        elif [[ -f "$vcvarsall" ]]; then
+        elif cmd.exe /c "if exist ${win_vcvarsall} (exit 0) else (exit 1)" 2>/dev/null; then
             chosen="$vcvarsall"
             echo "Using vcvarsall: $chosen"
-        elif [[ "$arch_bits" == "x86" && -f "$vcvars32" ]]; then
+        elif [[ "$arch_bits" == "x86" ]] && cmd.exe /c "if exist ${win_vcvars32} (exit 0) else (exit 1)" 2>/dev/null; then
             chosen="$vcvars32"
             echo "Using vcvars32: $chosen"
-        elif [[ "$arch_bits" == "x64" && -f "$vcvars64" ]]; then
+        elif [[ "$arch_bits" == "x64" ]] && cmd.exe /c "if exist ${win_vcvars64} (exit 0) else (exit 1)" 2>/dev/null; then
             chosen="$vcvars64"
             echo "Using vcvars64: $chosen"
         else
-            chosen=$(find "$vs_base" -type f -iname "vcvars*.bat" 2>/dev/null | head -n 1 || true)
-            [[ -n "$chosen" ]] && echo "Found alternative vcvars script: $chosen"
+            # Use dir command to find any vcvars*.bat file
+            local found
+            found=$(cmd.exe /c "dir /b /s ${vs_base//\//\\}\\vcvars*.bat" 2>/dev/null | head -n 1)
+            if [[ -n "$found" ]]; then
+                chosen="${found//\\//}"
+                echo "Found alternative vcvars script: $chosen"
+            fi
         fi
 
         if [[ -z "$chosen" || ! -f "$chosen" ]]; then
