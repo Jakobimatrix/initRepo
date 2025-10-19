@@ -134,42 +134,63 @@ if [[ "$ENVIRONMENT" == "Windows-msys" ]]; then
         # --- create temp file ---
         tmpfile=$(mktemp) || tmpfile="/tmp/vsenv.$$"
 
-        ## --- run script and dump environment using PowerShell ---
-        CHOSEN="$chosen" ARCH_BITS="$arch_bits" \
-        powershell -NoProfile -Command '& { & $env:CHOSEN -arch=$env:ARCH_BITS; Get-ChildItem env: | ForEach-Object { "$($_.Name)=$($_.Value)" } }' | tr -d '\r' > "$tmpfile"
-        
+        ## --- run script and dump environment using a temporary PowerShell script ---
+        # Write a small .ps1 file so we avoid inline quoting issues and ensure the arch
+        # argument is passed as a literal (x86/x64) to the vcvars/VsDevCmd script.
+        ps1file=$(mktemp --suffix=.ps1 || echo /tmp/vsenv.$$'.ps1')
+        cat > "$ps1file" <<'PS1'
+param(
+    [string]$chosen,
+    [string]$arch
+)
+& $chosen -arch $arch
+Get-ChildItem env: | ForEach-Object { "$($_.Name)=$($_.Value)" }
+PS1
+        echo "---- ps1file ----"
+        cat "$ps1file"
+        echo "---------------------------------------------"
+
+        # Run the PowerShell script with expanded bash variables (so arch is literal)
+        # Capture both stdout and stderr into the tmpfile for richer diagnostics.
+        powershell -NoProfile -File "$(cygpath -w "$ps1file")" -chosen "$(cygpath -w "$chosen")" -arch "$arch_bits" 2>&1 | tr -d '\r' > "$tmpfile"
 
         # --- sanity check ---
         if ! grep -qE '^PATH=' "$tmpfile"; then
             echo "Error: Visual Studio environment script ran but did not produce output (check $chosen)."
-            command rm -f "$tmpfile" 2>/dev/null || del /f /q "$(cygpath -w "$tmpfile")" 2>/dev/null
+            # show partial output for debugging
+            echo "---- raw vsenv output ----"
+            cat "$tmpfile"
+            echo "---------------------------------------------"
+            rm -f "$ps1file" 2>/dev/null || (del /f /q "$(cygpath -w "$ps1file")" 2>/dev/null || true)
+            rm -f "$tmpfile" 2>/dev/null || (del /f /q "$(cygpath -w "$tmpfile")" 2>/dev/null || true)
             return 1
         fi
 
-        cat "$tmpfile"
-        
-        ## --- import environment variables into bash ---
-        #while IFS='=' read -r name value; do
-        #    [[ "$name" =~ ^(PATH|INCLUDE|LIB|LIBPATH|VSINSTALLDIR|VisualStudioVersion|VSCMD_ARG_TGT_ARCH|VSCMD_ARG_HOST_ARCH) ]] || continue
-        #    export "$name=$value"
-        #done < "$tmpfile"
-        
-
-        # Import vars into Bash
+        # --- import a safe whitelist of environment variables into bash ---
         while IFS='=' read -r name value; do
-            [[ -n "$name" ]] && export "$name=$value"
+            case "$name" in
+                PATH|INCLUDE|LIB|LIBPATH|VSINSTALLDIR|VisualStudioVersion|VSCMD_ARG_TGT_ARCH|VSCMD_ARG_HOST_ARCH)
+                    export "$name=$value"
+                    ;;
+                *)
+                    # ignore other vars to avoid trying to export banner text or invalid identifiers
+                    ;;
+            esac
         done < "$tmpfile"
 
         # --- export CC/CXX ---
         export CC="cl.exe"
         export CXX="cl.exe"
 
-        command rm -f "$tmpfile" 2>/dev/null || del /f /q "$(cygpath -w "$tmpfile")" 2>/dev/null
+        rm -f "$ps1file" 2>/dev/null || (del /f /q "$(cygpath -w "$ps1file")" 2>/dev/null || true)
+        rm -f "$tmpfile" 2>/dev/null || (del /f /q "$(cygpath -w "$tmpfile")" 2>/dev/null || true)
 
         # --- verify cl.exe in PATH ---
         if ! command -v cl.exe &>/dev/null; then
             echo "Error: MSVC environment loaded but cl.exe not found in PATH"
-            echo "Current PATH (truncated): ${PATH:0:1000}"
+            echo "------------- PATH --------------------------"
+            echo "C${PATH}"
+            echo "---------------------------------------------"
             return 1
         fi
 
