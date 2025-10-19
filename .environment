@@ -133,16 +133,117 @@ if [[ "$ENVIRONMENT" == "Windows-msys" ]]; then
     # @param $@ Command and arguments.
     #
     runPowerShell() {
+        echo "[DEBUG] Running PowerShell command with args: $*"
+        local result=0
         if command -v powershell.exe >/dev/null 2>&1; then
+            echo "[DEBUG] Using powershell.exe"
             powershell.exe "$@"
+            result=$?
         elif command -v powershell >/dev/null 2>&1; then
+            echo "[DEBUG] Using powershell"
             powershell "$@"
+            result=$?
         elif command -v pwsh >/dev/null 2>&1; then
+            echo "[DEBUG] Using pwsh"
             pwsh "$@"
+            result=$?
         else
             echo "Error: No PowerShell executable found." >&2
             return 1
         fi
+        echo "[DEBUG] PowerShell command exit code: $result"
+        return $result
+    }
+
+    ##
+    # @brief Run cmd.exe commands safely across environments.
+    # @param $@ Command and arguments.
+    #
+    runCmd() {
+        echo "[DEBUG] Running CMD command with args: $*"
+        local result=0
+        if command -v cmd.exe >/dev/null 2>&1; then
+            echo "[DEBUG] Using cmd.exe"
+            # /D disables AutoRun, /C executes command and terminates
+            cmd.exe /D /C "$@"
+            result=$?
+        else
+            echo "Error: cmd.exe not found." >&2
+            return 1
+        fi
+        echo "[DEBUG] CMD command exit code: $result"
+        return $result
+    }
+
+    ##
+    # @brief Alternative VS environment setup using cmd.exe
+    # @param $1 Architecture ("x86" or "x64")
+    #
+    setup_msvc_env_cmd() {
+        local arch_bits="$1"
+        local vs_base tmpfile result=0
+        
+        echo "[DEBUG] Starting MSVC environment setup via CMD for architecture: $arch_bits"
+        
+        # Find VS installation using vswhere
+        vs_base=$(runCmd "\"$(cygpath -w "$(command -v vswhere.exe)")\"" -latest -products '*' -requires Microsoft.Component.MSBuild -property installationPath | tr -d '\r' | tail -n 1)
+        if [[ -z "$vs_base" ]]; then
+            echo "Error: Could not find Visual Studio installation"
+            return 1
+        fi
+        
+        # Create temporary file for environment capture
+        tmpfile=$(makeTempFile ".bat")
+        
+        # Create a batch file that will:
+        # 1. Call VsDevCmd.bat
+        # 2. Echo environment variables we care about
+        cat > "$tmpfile" <<BATCH
+@echo off
+call "${vs_base}\\Common7\\Tools\\VsDevCmd.bat" -arch=$arch_bits
+echo PATH=%PATH%
+echo INCLUDE=%INCLUDE%
+echo LIB=%LIB%
+echo LIBPATH=%LIBPATH%
+BATCH
+        
+        echo "[DEBUG] Created temporary batch file: $tmpfile"
+        echo "[DEBUG] Batch file contents:"
+        cat "$tmpfile"
+        
+        # Execute batch file and capture output
+        local envfile
+        envfile=$(makeTempFile ".env")
+        runCmd "$(cygpath -w "$tmpfile")" > "$envfile"
+        result=$?
+        
+        echo "[DEBUG] Environment setup exit code: $result"
+        echo "[DEBUG] Raw environment output:"
+        cat "$envfile"
+        
+        # Parse and export environment variables
+        while IFS='=' read -r name value; do
+            case "$name" in
+                PATH|INCLUDE|LIB|LIBPATH)
+                    export "$name=$value"
+                    echo "[DEBUG] Exported $name"
+                    ;;
+            esac
+        done < "$envfile"
+        
+        # Cleanup
+        deleteFile "$tmpfile"
+        deleteFile "$envfile"
+        
+        # Verify setup
+        if ! command -v cl.exe &>/dev/null; then
+            echo "Error: cl.exe not found in PATH after CMD-based setup"
+            echo "[DEBUG] Current PATH: $PATH"
+            return 1
+        fi
+        
+        echo "MSVC environment loaded successfully via CMD (arch=$arch_bits)"
+        return 0
     }
 
     # Call this as: setup_msvc_env "<x86|x64>"
@@ -151,7 +252,11 @@ if [[ "$ENVIRONMENT" == "Windows-msys" ]]; then
         local vswhere_path="" vs_base=""
         local tmpfile
 
+        echo "[DEBUG] Starting MSVC environment setup for architecture: $arch_bits"
+        echo "[DEBUG] Current PATH: $PATH"
+        
         # --- find vswhere.exe ---
+        echo "[DEBUG] Searching for vswhere.exe..."
         vswhere_path=$(cmd.exe /C "where vswhere.exe" 2>/dev/null | tr -d '\r' || true)
         if [[ -z "$vswhere_path" || ! -f "$vswhere_path" ]]; then
             for p in \
@@ -167,7 +272,11 @@ if [[ "$ENVIRONMENT" == "Windows-msys" ]]; then
         fi
 
         # --- get installation path ---
+        echo "[DEBUG] Running vswhere from: $vswhere_path"
+        echo "[DEBUG] vswhere command: & { & \"$vswhere_path\" -latest -products * -requires Microsoft.Component.MSBuild -property installationPath }"
         vs_base=$(runPowerShell -NoProfile -Command "& { & \"$vswhere_path\" -latest -products * -requires Microsoft.Component.MSBuild -property installationPath }" | tr -d '\r' | tail -n 1)
+        echo "[DEBUG] Raw vswhere output before tail:"
+        runPowerShell -NoProfile -Command "& { & \"$vswhere_path\" -latest -products * -requires Microsoft.Component.MSBuild -property installationPath }" | tr -d '\r'
         if [[ -z "$vs_base" ]]; then
             echo "Error: Visual Studio installation not found via vswhere!"
             return 1
