@@ -5,16 +5,7 @@
 ARCH=$(uname -m 2>/dev/null || echo "unknown")
 case "$ARCH" in
     x86_64|amd64)
-        ARCH        # Clean up the output - take the last non-empty line
-        vs_base=$(echo "$vswhere_out" | while read -r line; do
-            [[ -n "$line" ]] && echo "$line"
-        done | tail -1)
-        echo "[DEBUG] Extracted VS path: $vs_base"
-        
-        if [[ -z "$vs_base" ]]; then
-            echo "Error: Could not find Visual Studio installation"
-            return 1
-        }64"
+        ARCH_BITS="x64"
         ARCH="amd"
         ;;
     i386|i486|i586|i686)
