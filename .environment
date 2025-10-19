@@ -73,6 +73,78 @@ if [[ "$ENVIRONMENT" == "Windows-msys" ]]; then
     CLANG_FORMAT_PATH="${MINGW_GCC_BASE}/clang-format.exe"
     CLANG_TIDY_PATH="${MINGW_GCC_BASE}/clang-tidy.exe"
 
+
+    ##
+    # @brief Delete a file safely across platforms.
+    # @param $1 The file path to delete.
+    #
+    # Handles MSYS2, Cygwin, Git-Bash, and POSIX environments.
+    #
+    deleteFile() {
+        local file="$1"
+        if [[ -z "$file" || ! -e "$file" ]]; then
+            return 0
+        fi
+
+        if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" ]]; then
+            # Convert to Windows path for native deletion
+            local winpath
+            winpath=$(cygpath -w "$file" 2>/dev/null)
+            if [[ -n "$winpath" ]]; then
+                del /f /q "$winpath" >/dev/null 2>&1 || true
+                return
+            fi
+        fi
+
+        # Fallback for Linux, macOS, WSL, etc.
+        rm -f "$file" >/dev/null 2>&1 || true
+    }
+
+    ##
+    # @brief Create a temporary file safely across environments.
+    # @param $1 Optional suffix (e.g. ".ps1")
+    # @return The temp file path (echoed)
+    #
+    makeTempFile() {
+        local suffix="${1:-}"
+        local tmp
+
+        if command -v mktemp >/dev/null 2>&1; then
+            if [[ -n "$suffix" ]]; then
+                tmp=$(mktemp 2>/dev/null || echo "/tmp/tmp.$$") || tmp="/tmp/tmp.$$"
+                mv "$tmp" "${tmp}${suffix}" 2>/dev/null && tmp="${tmp}${suffix}"
+            else
+                tmp=$(mktemp 2>/dev/null || echo "/tmp/tmp.$$")
+            fi
+        else
+            tmp="/tmp/tmp.$$${suffix}"
+        fi
+
+        # Normalize to POSIX path (avoid C:\...) for bash tools
+        if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" ]]; then
+            tmp=$(cygpath -u "$tmp" 2>/dev/null || echo "$tmp")
+        fi
+
+        echo "$tmp"
+    }
+
+    ##
+    # @brief Run PowerShell or pwsh depending on platform.
+    # @param $@ Command and arguments.
+    #
+    runPowerShell() {
+        if command -v powershell.exe >/dev/null 2>&1; then
+            powershell.exe "$@"
+        elif command -v powershell >/dev/null 2>&1; then
+            powershell "$@"
+        elif command -v pwsh >/dev/null 2>&1; then
+            pwsh "$@"
+        else
+            echo "Error: No PowerShell executable found." >&2
+            return 1
+        fi
+    }
+
     # Call this as: setup_msvc_env "<x86|x64>"
     function setup_msvc_env() {
         local arch_bits="$1"   # expected "x86" or "x64"
@@ -95,7 +167,7 @@ if [[ "$ENVIRONMENT" == "Windows-msys" ]]; then
         fi
 
         # --- get installation path ---
-        vs_base=$(powershell -NoProfile -Command "& { & \"$vswhere_path\" -latest -products * -requires Microsoft.Component.MSBuild -property installationPath }" | tr -d '\r' | tail -n 1)
+        vs_base=$(runPowerShell -NoProfile -Command "& { & \"$vswhere_path\" -latest -products * -requires Microsoft.Component.MSBuild -property installationPath }" | tr -d '\r' | tail -n 1)
         if [[ -z "$vs_base" ]]; then
             echo "Error: Visual Studio installation not found via vswhere!"
             return 1
@@ -132,12 +204,12 @@ if [[ "$ENVIRONMENT" == "Windows-msys" ]]; then
         fi
 
         # --- create temp file ---
-        tmpfile=$(mktemp) || tmpfile="/tmp/vsenv.$$"
+        tmpfile=$(makeTempFile)
 
         ## --- run script and dump environment using a temporary PowerShell script ---
         # Write a small .ps1 file so we avoid inline quoting issues and ensure the arch
         # argument is passed as a literal (x86/x64) to the vcvars/VsDevCmd script.
-        ps1file=$(mktemp --suffix=.ps1 || echo /tmp/vsenv.$$'.ps1')
+        ps1file=$(makeTempFile ".ps1")
         cat > "$ps1file" <<'PS1'
 param(
     [string]$chosen,
@@ -152,17 +224,25 @@ PS1
 
         # Run the PowerShell script with expanded bash variables (so arch is literal)
         # Capture both stdout and stderr into the tmpfile for richer diagnostics.
-        powershell -NoProfile -File "$(cygpath -w "$ps1file")" -chosen "$(cygpath -w "$chosen")" -arch "$arch_bits" 2>&1 | tr -d '\r' > "$tmpfile"
+        #powershell -NoProfile -File "$(cygpath -w "$ps1file")" -chosen "$(cygpath -w "$chosen")" -arch "$arch_bits" 2>&1 | tr -d '\r' > "$tmpfile"
+
+        # Run the PowerShell script using -File (pass the PS1 path directly). Capture both stdout and stderr.
+        runPowerShell -NoProfile -File "$ps1file" -chosen "$chosen" -arch "$arch_bits" 2>&1 | tr -d '\r' > "$tmpfile" || true
+
 
         # --- sanity check ---
-        if ! grep -qE '^PATH=' "$tmpfile"; then
+        if [[ ! -s "$tmpfile" ]] || ! grep -qE '^PATH=' "$tmpfile"; then
             echo "Error: Visual Studio environment script ran but did not produce output (check $chosen)."
             # show partial output for debugging
             echo "---- raw vsenv output ----"
-            cat "$tmpfile"
+            if [[ -f "$tmpfile" ]]; then
+                cat "$tmpfile"
+            else
+                echo "(no tmpfile created)"
+            fi
             echo "---------------------------------------------"
-            rm -f "$ps1file" 2>/dev/null || (del /f /q "$(cygpath -w "$ps1file")" 2>/dev/null || true)
-            rm -f "$tmpfile" 2>/dev/null || (del /f /q "$(cygpath -w "$tmpfile")" 2>/dev/null || true)
+            deleteFile "$ps1file"
+            deleteFile "$tmpfile"
             return 1
         fi
 
@@ -182,8 +262,8 @@ PS1
         export CC="cl.exe"
         export CXX="cl.exe"
 
-        rm -f "$ps1file" 2>/dev/null || (del /f /q "$(cygpath -w "$ps1file")" 2>/dev/null || true)
-        rm -f "$tmpfile" 2>/dev/null || (del /f /q "$(cygpath -w "$tmpfile")" 2>/dev/null || true)
+        deleteFile "$ps1file"
+        deleteFile "$tmpfile"
 
         # --- verify cl.exe in PATH ---
         if ! command -v cl.exe &>/dev/null; then
