@@ -156,6 +156,31 @@ if [[ "$ENVIRONMENT" == "Windows-msys" ]]; then
     }
 
     ##
+    # @brief Convert path to Windows format and ensure proper quoting
+    # @param $1 The path to convert
+    # @return The converted path
+    #
+    convertPath() {
+        local path="$1"
+        # First, convert to Windows path if cygpath is available
+        if command -v cygpath >/dev/null 2>&1; then
+            path=$(cygpath -w "$path" 2>/dev/null || echo "$path")
+        else
+            # Manual conversion if cygpath not available
+            path="${path//\//\\}"  # Replace forward slashes with backslashes
+            # Add drive letter if missing
+            if [[ "$path" =~ ^\\[^\\] ]]; then
+                path="C:$path"
+            fi
+        fi
+        # Ensure proper quoting if path contains spaces
+        if [[ "$path" == *" "* ]]; then
+            path="\"$path\""
+        fi
+        echo "$path"
+    }
+
+    ##
     # @brief Run cmd.exe commands safely across environments.
     # @param $@ Command and arguments.
     #
@@ -198,9 +223,20 @@ if [[ "$ENVIRONMENT" == "Windows-msys" ]]; then
         # Create a batch file that will:
         # 1. Call VsDevCmd.bat
         # 2. Echo environment variables we care about
+        local vs_cmd_path
+        vs_cmd_path=$(convertPath "${vs_base}/Common7/Tools/VsDevCmd.bat")
+        echo "[DEBUG] VS Command path: $vs_cmd_path"
+        
         cat > "$tmpfile" <<BATCH
 @echo off
-call "${vs_base}\\Common7\\Tools\\VsDevCmd.bat" -arch=$arch_bits
+echo [BATCH] Setting up Visual Studio environment...
+echo [BATCH] Using: $vs_cmd_path
+call $vs_cmd_path -arch=$arch_bits -no_logo
+if errorlevel 1 (
+    echo [BATCH] Error: VsDevCmd.bat failed
+    exit /b 1
+)
+echo [BATCH] Environment setup complete, dumping variables:
 echo PATH=%PATH%
 echo INCLUDE=%INCLUDE%
 echo LIB=%LIB%
@@ -222,14 +258,42 @@ BATCH
         cat "$envfile"
         
         # Parse and export environment variables
+        echo "[DEBUG] Processing environment variables..."
         while IFS='=' read -r name value; do
             case "$name" in
                 PATH|INCLUDE|LIB|LIBPATH)
-                    export "$name=$value"
-                    echo "[DEBUG] Exported $name"
+                    if [[ "$name" == "PATH" ]]; then
+                        # Ensure paths are in MSYS format and properly separated
+                        local newpath=""
+                        # Split the Windows PATH on semicolons
+                        IFS=';' read -ra paths <<< "$value"
+                        for p in "${paths[@]}"; do
+                            # Skip empty paths
+                            [[ -z "$p" ]] && continue
+                            # Convert each path to MSYS format
+                            if [[ "$p" == *"Visual Studio"* || "$p" == *"Microsoft"* ]]; then
+                                local mpath="/$(echo "$p" | sed 's/://' | sed 's/\\/\//g')"
+                                [[ -n "$newpath" ]] && newpath="$newpath:"
+                                newpath="$newpath$mpath"
+                            fi
+                        done
+                        # Prepend VS paths to existing PATH
+                        export PATH="$newpath:$PATH"
+                        echo "[DEBUG] Modified PATH with VS paths"
+                    else
+                        export "$name=$value"
+                        echo "[DEBUG] Exported $name=$value"
+                    fi
+                    ;;
+                *)
+                    echo "[DEBUG] Skipping variable: $name"
                     ;;
             esac
         done < "$envfile"
+        
+        echo "[DEBUG] Environment variables processed"
+        echo "[DEBUG] Final PATH entries:"
+        echo "$PATH" | tr ':' '\n' | grep -i "visual studio"
         
         # Cleanup
         deleteFile "$tmpfile"
@@ -273,14 +337,23 @@ BATCH
 
         # --- get installation path ---
         echo "[DEBUG] Running vswhere from: $vswhere_path"
-        echo "[DEBUG] vswhere command: & { & \"$vswhere_path\" -latest -products * -requires Microsoft.Component.MSBuild -property installationPath }"
-        vs_base=$(runPowerShell -NoProfile -Command "& { & \"$vswhere_path\" -latest -products * -requires Microsoft.Component.MSBuild -property installationPath }" | tr -d '\r' | tail -n 1)
-        echo "[DEBUG] Raw vswhere output before tail:"
-        runPowerShell -NoProfile -Command "& { & \"$vswhere_path\" -latest -products * -requires Microsoft.Component.MSBuild -property installationPath }" | tr -d '\r'
+        # Capture vswhere output in a variable first
+        local vswhere_out
+        vswhere_out=$(runPowerShell -NoProfile -Command "& { & \"$vswhere_path\" -latest -products * -requires Microsoft.Component.MSBuild -property installationPath }" 2>&1)
+        echo "[DEBUG] Raw vswhere output:"
+        echo "$vswhere_out"
+        
+        # Extract the actual path, removing any debug output
+        vs_base=$(echo "$vswhere_out" | grep -v '^\[DEBUG\]' | tr -d '\r' | tail -n 1)
+        echo "[DEBUG] Extracted VS path: $vs_base"
+        
         if [[ -z "$vs_base" ]]; then
             echo "Error: Visual Studio installation not found via vswhere!"
             return 1
         fi
+        
+        # Convert to proper path format
+        vs_base=$(convertPath "$vs_base")
         echo "Found Visual Studio at: $vs_base"
 
         # --- candidate scripts ---
