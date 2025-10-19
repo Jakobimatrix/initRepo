@@ -324,7 +324,40 @@ param(
     [string]$chosen,
     [string]$arch
 )
-& $chosen -arch $arch
+
+Write-Host "[PS] Starting Visual Studio environment setup..."
+Write-Host "[PS] Using script: $chosen"
+Write-Host "[PS] Architecture: $arch"
+
+# Try to call the script with explicit architecture
+try {
+    $processInfo = New-Object System.Diagnostics.ProcessStartInfo
+    $processInfo.FileName = "cmd.exe"
+    $processInfo.Arguments = "/c `"'$chosen' -arch $arch`""
+    $processInfo.RedirectStandardOutput = $true
+    $processInfo.RedirectStandardError = $true
+    $processInfo.UseShellExecute = $false
+    
+    Write-Host "[PS] Executing VS environment script..."
+    $process = [System.Diagnostics.Process]::Start($processInfo)
+    $process.WaitForExit()
+    
+    $output = $process.StandardOutput.ReadToEnd()
+    $error = $process.StandardError.ReadToEnd()
+    
+    Write-Host "[PS] Script output:"
+    Write-Host $output
+    if ($error) {
+        Write-Host "[PS] Script errors:"
+        Write-Host $error
+    }
+    
+    Write-Host "[PS] Script exit code: " + $process.ExitCode
+} catch {
+    Write-Host "[PS] Error executing VS script: $_"
+}
+
+Write-Host "[PS] Current environment variables:"
 Get-ChildItem env: | ForEach-Object { "$($_.Name)=$($_.Value)" }
 PS1
         echo "---- ps1file ----"
@@ -335,9 +368,24 @@ PS1
         # Capture both stdout and stderr into the tmpfile for richer diagnostics.
         #powershell -NoProfile -File "$(cygpath -w "$ps1file")" -chosen "$(cygpath -w "$chosen")" -arch "$arch_bits" 2>&1 | tr -d '\r' > "$tmpfile"
 
-        # Run the PowerShell script using -File (pass the PS1 path directly). Capture both stdout and stderr.
-        runPowerShell -NoProfile -File "$ps1file" -chosen "$chosen" -arch "$arch_bits" 2>&1 | tr -d '\r' > "$tmpfile" || true
+        echo "[DEBUG] Running PowerShell script with:"
+        echo "[DEBUG] ps1file: $(cygpath -w "$ps1file")"
+        echo "[DEBUG] chosen: $(cygpath -w "$chosen")"
+        echo "[DEBUG] arch_bits: $arch_bits"
 
+        # Run the PowerShell script using -File (pass the PS1 path directly). Capture both stdout and stderr.
+        echo "[DEBUG] PowerShell command about to execute..."
+        runPowerShell -NoProfile -File "$ps1file" -chosen "$chosen" -arch "$arch_bits" 2>&1 | tee >(cat >&2) | tr -d '\r' > "$tmpfile" || true
+        
+        echo "[DEBUG] PowerShell execution completed"
+        echo "[DEBUG] Checking tmpfile contents..."
+        if [[ -f "$tmpfile" ]]; then
+            echo "[DEBUG] tmpfile exists and has size: $(wc -c < "$tmpfile") bytes"
+            echo "[DEBUG] First few lines of tmpfile:"
+            head -n 5 "$tmpfile"
+        else
+            echo "[DEBUG] tmpfile does not exist!"
+        fi
 
         # --- sanity check ---
         if [[ ! -s "$tmpfile" ]] || ! grep -qE '^PATH=' "$tmpfile"; then
@@ -356,16 +404,35 @@ PS1
         fi
 
         # --- import a safe whitelist of environment variables into bash ---
+        echo "[DEBUG] Processing environment variables from tmpfile..."
+        
+        # First, let's see what we're working with
+        echo "[DEBUG] Environment variables found in tmpfile:"
+        grep -E '^(PATH|INCLUDE|LIB|LIBPATH|VSINSTALLDIR|VisualStudioVersion|VSCMD_ARG_TGT_ARCH|VSCMD_ARG_HOST_ARCH)=' "$tmpfile" || echo "No matching variables found!"
+        
         while IFS='=' read -r name value; do
             case "$name" in
                 PATH|INCLUDE|LIB|LIBPATH|VSINSTALLDIR|VisualStudioVersion|VSCMD_ARG_TGT_ARCH|VSCMD_ARG_HOST_ARCH)
+                    echo "[DEBUG] Processing $name"
+                    if [[ "$name" == "PATH" ]]; then
+                        # Ensure Windows path separators and prepend VS paths
+                        value="${value//\\/\/}"  # Replace backslashes with forward slashes
+                        if [[ "$value" != *"Common7/IDE"* ]]; then
+                            value="$(dirname "$chosen")/Common7/IDE:$value"
+                        fi
+                        echo "[DEBUG] Modified PATH value: $value"
+                    fi
                     export "$name=$value"
+                    echo "[DEBUG] Exported $name"
                     ;;
                 *)
-                    # ignore other vars to avoid trying to export banner text or invalid identifiers
+                    echo "[DEBUG] Skipping variable: $name"
                     ;;
             esac
         done < "$tmpfile"
+        
+        echo "[DEBUG] Environment variables processed"
+        echo "[DEBUG] Final PATH: $PATH"
 
         # --- export CC/CXX ---
         export CC="cl.exe"
