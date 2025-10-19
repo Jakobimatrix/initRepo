@@ -135,10 +135,6 @@ if [[ "$ENVIRONMENT" == "Windows-msys" ]]; then
         tmpfile=$(mktemp) || tmpfile="/tmp/vsenv.$$"
 
         ## --- run script and dump environment using PowerShell ---
-        # Use single-quote shell quoting to prevent Bash from interpreting PowerShell variables
-        # Inject $chosen and $arch_bits safely by closing/opening single quotes around them.
-        # Export the chosen script and arch to the environment for the PowerShell process
-        # so we can avoid complex quoting of paths that contain spaces.
         CHOSEN="$chosen" ARCH_BITS="$arch_bits" \
         powershell -NoProfile -Command '& { & $env:CHOSEN -arch=$env:ARCH_BITS; Get-ChildItem env: | ForEach-Object { "$($_.Name)=$($_.Value)" } }' | tr -d '\r' > "$tmpfile"
         
@@ -146,26 +142,34 @@ if [[ "$ENVIRONMENT" == "Windows-msys" ]]; then
         # --- sanity check ---
         if ! grep -qE '^PATH=' "$tmpfile"; then
             echo "Error: Visual Studio environment script ran but did not produce output (check $chosen)."
-            rm -f "$tmpfile"
+            command rm -f "$tmpfile" 2>/dev/null || del /f /q "$(cygpath -w "$tmpfile")" 2>/dev/null
             return 1
         fi
 
-        # --- import environment variables into bash ---
+        cat "$tmpfile"
+        
+        ## --- import environment variables into bash ---
+        #while IFS='=' read -r name value; do
+        #    [[ "$name" =~ ^(PATH|INCLUDE|LIB|LIBPATH|VSINSTALLDIR|VisualStudioVersion|VSCMD_ARG_TGT_ARCH|VSCMD_ARG_HOST_ARCH) ]] || continue
+        #    export "$name=$value"
+        #done < "$tmpfile"
+        
+
+        # Import vars into Bash
         while IFS='=' read -r name value; do
-            [[ "$name" =~ ^(PATH|INCLUDE|LIB|LIBPATH|VSINSTALLDIR|VisualStudioVersion|VSCMD_ARG_TGT_ARCH|VSCMD_ARG_HOST_ARCH) ]] || continue
-            export "$name=$value"
+            [[ -n "$name" ]] && export "$name=$value"
         done < "$tmpfile"
 
         # --- export CC/CXX ---
         export CC="cl.exe"
         export CXX="cl.exe"
 
-        rm -f "$tmpfile"
+        command rm -f "$tmpfile" 2>/dev/null || del /f /q "$(cygpath -w "$tmpfile")" 2>/dev/null
 
         # --- verify cl.exe in PATH ---
         if ! command -v cl.exe &>/dev/null; then
             echo "Error: MSVC environment loaded but cl.exe not found in PATH"
-            echo "Current PATH (truncated): ${PATH:0:400}"
+            echo "Current PATH (truncated): ${PATH:0:1000}"
             return 1
         fi
 
