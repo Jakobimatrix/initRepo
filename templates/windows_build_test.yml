@@ -72,7 +72,7 @@ jobs:
         shell: bash
         run: |
           source initRepo/.environment
-          ./initRepo/scripts/build.sh --${{ matrix.build_type }} -t --compiler ${{ matrix.compiler }} --arch ${{ matrix.arch }}
+          ./initRepo/scripts/build.sh --${{ matrix.build_type }} -t --ninja --compiler ${{ matrix.compiler }} --arch ${{ matrix.arch }}
           7z a ${{ matrix.compiler }}_${{ matrix.arch }}_${{ matrix.build_type }}_build.zip build-${{ matrix.compiler }}-${{ matrix.arch }}-${{ matrix.build_type }}
 
       - name: Upload build artifact

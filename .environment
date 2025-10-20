@@ -54,13 +54,8 @@ CLANG_TIDY_VERSION=19
 # Set paths based on environment
 if [[ "$ENVIRONMENT" == "Windows-msys" ]]; then
     # MSYS2 paths
-    MINGW_GCC_BASE="C:/msys64/mingw64/bin"
-    MINGW_32_GCC_BASE="C:/msys64/mingw32/bin"
-
-    if [[ "$$ARCH_BITS" == "x86"]]; then
-        MINGW_GCC_BASE="C:/msys32/mingw64/bin"
-        MINGW_32_GCC_BASE="C:/msys32/mingw32/bin"
-    fi
+    MINGW_GCC_BASE="/mingw64/bin"
+    MINGW_32_GCC_BASE="/mingw32/bin"
     
     # Compiler paths
     GCC_CPP_PATH="${MINGW_GCC_BASE}/g++.exe"
@@ -89,6 +84,9 @@ else
 fi
 
 
-echo "Detected environment: $ENVIRONMENT on $ARCH-$ARCH_BITS"
+echo "Detected environment: ${ENVIRONMENT} on ${ARCH}-${ARCH_BITS}"
 
 
+export ARCH ARCH_BITS ENVIRONMENT GCC_VERSION CLANG_VERSION \
+       GCC_CPP_PATH GCC_C_PATH CLANG_CPP_PATH CLANG_C_PATH \
+       CLANG_FORMAT_PATH CLANG_TIDY_PATH
