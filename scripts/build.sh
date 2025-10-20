@@ -177,10 +177,20 @@ fi
 # set compiler paths
 if [[ "$ENVIRONMENT" == "Windows-msys" ]]; then
     if [[ "$COMPILER" == "msvc" ]]; then
+        source "initRepo/.environment_windows"
+        if [ -f ".environment_windows" ]; then
+            source ".environment_windows"
+        fi
+        if [[ "$TARGET_ARCH_BITS" == "x86" ]]; then
+            COMPILER_PATH="$MSVC_32_CPP_PATH"
+            CC_PATH="$MSVC_32_C_PATH"
+        else
+            COMPILER_PATH="$MSVC_CPP_PATH"
+            CC_PATH="$MSVC_C_PATH"
+        fi
         COMPILER_NAME="msvc"
         COMPILER_VERSION="${MSVC_VERSION}"
-        # Initialize MSVC environment
-        setup_msvc_env "$TARGET_ARCH_BITS" || setup_msvc_env_cmd "$TARGET_ARCH_BITS"  || exit 1
+
     elif [[ "$COMPILER" == "g++" ]]; then
         if [[ "$TARGET_ARCH_BITS" == "x86" ]]; then
             COMPILER_PATH="$GCC_32_CPP_PATH"
@@ -225,9 +235,7 @@ fi
 # shellcheck source-path=SCRIPTDIR source=ensureToolVersion.sh
 source ./initRepo/scripts/ensureToolVersion.sh
 if [[ "$ENVIRONMENT" == "Windows-msys" ]]; then
-    if [[ "$COMPILER" == "msvc" ]]; then
-        ensure_tool_versioned_msvc "${MSVC_VERSION}" "${TARGET_ARCH_BITS}"
-    else
+    if [[ ! "$COMPILER" == "msvc" ]]; then
         ensure_tool_versioned_mingw "${COMPILER_NAME}" "${COMPILER_VERSION}"
     fi
 else
@@ -270,7 +278,8 @@ if [[ "$SKIP_BUILD" == false ]]; then
     # Run CMake
     echo "Using cpp compiler at: $COMPILER_PATH"
     echo "Using c compiler at: $CC_PATH"
-    echo "Using architecture: $ARCH"
+    echo "compiling from: $ENVIRONMENT: $ARCH-$ARCH_BITS"
+    echo "compiling for: $ENVIRONMENT: $ARCH-$TARGET_ARCH_BITS"
     echo "To change compiler versions, set the variables in the .environment!!"
     echo "Configuring with CMake..."
     CMAKE_ARGS=(-DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_CXX_COMPILER=$COMPILER_PATH -DCMAKE_C_COMPILER=$CC_PATH -DBUILD_TESTING=$ENABLE_TESTS -DENABLE_FUZZING=$ENABLE_FUZZING -DENABLE_COVERAGE=$ENABLE_COVERAGE)
@@ -283,15 +292,22 @@ if [[ "$SKIP_BUILD" == false ]]; then
             CMAKE_ARGS+=(-DCMAKE_CXX_FLAGS="-m64" -DCMAKE_C_FLAGS="-m64")
         fi
     fi
-    
-    # Run CMake with proper generator for MSVC
-    if [[ "$COMPILER" == "msvc" ]]; then
-        CMAKE_ARGS+=(-G "${VISUAL_STUDIO_VERSION}" -A "$TARGET_ARCH_BITS")
-    elif [[ "$USE_NINJA" == true ]]; then
+
+    # Use ninja if requested and found
+    if [[ "$USE_NINJA" == true ]]; then
         if ! command -v ninja &>/dev/null; then
             echo "Warning: Ninja not found, falling back to default generator"
+            USE_NINJA=false
         else
             CMAKE_ARGS+=(-G "Ninja")
+        fi
+    fi
+    
+    # Run CMake with proper generator for MSVC if ninja is not requested + set architecture flags
+    if [[ "$COMPILER" == "msvc"]]; then
+        CMAKE_ARGS+=(-A "$TARGET_ARCH_BITS")
+        if [[ "$USE_NINJA" == false ]]; then
+            CMAKE_ARGS+=(-G "${VISUAL_STUDIO_VERSION}")
         fi
     fi
     

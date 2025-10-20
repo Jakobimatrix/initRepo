@@ -37,6 +37,7 @@ jobs:
     needs: setup
     runs-on: windows-latest
     strategy:
+      fail-fast: false
       matrix:
         compiler: [gcc, clang, msvc]
         build_type: [debug, release]
@@ -85,6 +86,7 @@ jobs:
     needs: build
     runs-on: windows-latest
     strategy:
+      fail-fast: false
       matrix:
         compiler: [gcc, clang, msvc]
         build_type: [debug, release]
