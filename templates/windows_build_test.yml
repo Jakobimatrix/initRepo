@@ -69,19 +69,21 @@ jobs:
 
       - name: Build for the cool compilers
         if: matrix.compiler != 'msvc'
-        shell: bash
+        shell: msys2 {0}
         run: |
           source initRepo/.environment
-          ./initRepo/scripts/build.sh --${{ matrix.build_type }} -t --compiler ${{ matrix.compiler }} --arch ${{ matrix.arch }}
+          ./initRepo/scripts/build.sh --${{ matrix.build_type }} -t --compiler ${{ matrix.compiler }} --arch ${{ matrix.arch }} --ninja
           7z a ${{ matrix.compiler }}_${{ matrix.arch }}_${{ matrix.build_type }}_build.zip build-${{ matrix.compiler }}-${{ matrix.arch }}-${{ matrix.build_type }}
 
       - name: Build for the lame msvc compiler
         if: matrix.compiler == 'msvc'
         shell: cmd
         run: |
-              call initRepo\scripts\build.cmd --%{{ matrix.build_type }} -t --arch %{{ matrix.arch }}%
-              7z a msvc_%{{ matrix.arch }}_%{{ matrix.build_type }}_build.zip build-msvc-%{{ matrix.arch }}-%{{ matrix.build_type }}
-
+          call initRepo\scripts\build.cmd --%BUILD_TYPE% -t --arch %ARCH%
+          7z a msvc_%ARCH%_%BUILD_TYPE%_build.zip build-msvc-%ARCH%-%BUILD_TYPE%
+        env:
+          BUILD_TYPE: ${{ matrix.build_type }}
+          ARCH: ${{ matrix.arch }}
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
