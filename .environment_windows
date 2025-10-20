@@ -1,13 +1,84 @@
 # .environment_windows
 # Sets the needed variables for the .build.sh script
 
-# Ensure we are in the root folder of the repository:
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(dirname "$(dirname "$SCRIPT_DIR")")"
-cd "${REPO_ROOT}"
 
-# shellcheck source-path=SCRIPTDIR source=windowsEnvironmentHelper.sh
-source "source initRepo/scripts/windowsEnvironmentHelper.sh"
+##
+# @brief Convert path to Windows format and ensure proper quoting
+# @param $1 The path to convert
+# @return The converted path
+#
+convertPath() {
+    local path="$1"
+    # First, convert to Windows path if cygpath is available
+    if command -v cygpath >/dev/null 2>&1; then
+        path=$(cygpath -w "$path" 2>/dev/null || echo "$path")
+    else
+        # Manual conversion if cygpath not available
+        path="${path//\//\\}"  # Replace forward slashes with backslashes
+        # Add drive letter if missing
+        if [[ "$path" =~ ^\\[^\\] ]]; then
+            path="C:$path"
+        fi
+    fi
+    # Ensure proper quoting if path contains spaces
+    if [[ "$path" == *" "* ]]; then
+        path="\"$path\""
+    fi
+    echo "$path"
+}
+
+##
+# @brief Search for visual studio path
+function vswhere() {
+    local vswhere_path="" vs_base=""
+
+    # --- find vswhere.exe ---
+    echo "[DEBUG] Searching for vswhere.exe..."
+    # First check chocolatey location (common in CI)
+    if [[ -f "/c/ProgramData/Chocolatey/bin/vswhere.exe" ]]; then
+        vswhere_path="/c/ProgramData/Chocolatey/bin/vswhere.exe"
+    else
+        # Try common locations
+        for p in \
+            "C:/Program Files (x86)/Microsoft Visual Studio/Installer/vswhere.exe" \
+            "C:/Program Files/Microsoft Visual Studio/Installer/vswhere.exe" \
+            "$(command -v vswhere.exe 2>/dev/null)"
+        do
+            [[ -f "$p" ]] && vswhere_path="$p" && break
+        done
+    fi
+    
+    if [[ -z "$vswhere_path" || ! -f "$vswhere_path" ]]; then
+        echo "Error: vswhere.exe not found on PATH or in common locations."
+        return 1
+    fi
+
+    # --- get installation path ---
+    echo "[DEBUG] Running vswhere from: $vswhere_path"
+    # Run vswhere directly to avoid PowerShell complexities
+    local vswhere_out
+    vswhere_out=$("$vswhere_path" -latest -products '*' -requires Microsoft.Component.MSBuild -property installationPath)
+    echo "[DEBUG] Raw vswhere output:"
+    echo "$vswhere_out"
+    
+    # Take the last non-empty line as the VS path
+    vs_base=$(echo "$vswhere_out" | while read -r line; do
+        [[ -n "$line" ]] && echo "$line"
+    done | tail -1)
+    echo "[DEBUG] Extracted VS path: $vs_base"
+    
+    if [[ -z "$vs_base" ]]; then
+        echo "Error: Visual Studio installation not found via vswhere!"
+        return 1
+    fi
+    
+    # Convert to proper path format
+    vs_base=$(convertPath "$vs_base")
+    echo "Found Visual Studio at: $vs_base"
+
+    VS_PATH="$vs_base"
+}
+
 vswhere
 _vs_rc=$?
 if [ "$_vs_rc" -ne 1 ] && [ -n "${VS_PATH:-}" ]; then

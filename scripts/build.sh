@@ -305,7 +305,7 @@ if [[ "$SKIP_BUILD" == false ]]; then
     fi
     
     # Run CMake with proper generator for MSVC if ninja is not requested + set architecture flags
-    if [[ "$COMPILER" == "msvc"]]; then
+    if [[ "$COMPILER" == "msvc" ]]; then
         CMAKE_ARGS+=(-A "$TARGET_ARCH_BITS")
         if [[ "$USE_NINJA" == false ]]; then
             CMAKE_ARGS+=(-G "${VISUAL_STUDIO_VERSION}")
