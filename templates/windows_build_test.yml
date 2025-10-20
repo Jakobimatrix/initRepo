@@ -52,20 +52,50 @@ jobs:
         shell: bash
         run: 7z x workspace.zip
 
+      - name: Load environment variables
+        shell: bash
+        run: |
+          source initRepo/.environment
+          echo "GCC_VERSION=$GCC_VERSION" >> $GITHUB_ENV
+          echo "CLANG_VERSION=$CLANG_VERSION" >> $GITHUB_ENV
+
       - name: Setup MSYS2
-        if: matrix.compiler != 'msvc'
         uses: msys2/setup-msys2@v2
         with:
           msystem: ${{ matrix.arch == 'x86' && 'MINGW32' || 'MINGW64' }}
           update: true
           install: >-
-            mingw-w64-${{ matrix.arch == 'x86' && 'i686' || 'x86_64' }}-gcc
-            mingw-w64-${{ matrix.arch == 'x86' && 'i686' || 'x86_64' }}-clang
+            base-devel
+            git
             mingw-w64-${{ matrix.arch == 'x86' && 'i686' || 'x86_64' }}-cmake
+            mingw-w64-${{ matrix.arch == 'x86' && 'i686' || 'x86_64' }}-ninja
 
-      - name: Setup MSVC
-        if: matrix.compiler == 'msvc'
-        uses: microsoft/setup-msbuild@v1.3.1
+      - name: Install specific GCC and Clang versions
+        shell: msys2 {0}
+        run: |
+          echo "Installing GCC $GCC_VERSION and Clang $CLANG_VERSION"
+
+          # Base URL for MSYS2 archive (use official repo)
+          BASE_URL="https://repo.msys2.org/mingw"
+          ARCH_PREFIX="${{ matrix.arch == 'x86' && 'i686' || 'x86_64' }}"
+
+          # Download and install GCC
+          GCC_PKG="mingw-w64-${ARCH_PREFIX}-gcc-${GCC_VERSION}.0.0-1-any.pkg.tar.zst"
+          curl -LO "$BASE_URL/${ARCH_PREFIX}/${GCC_PKG}" || echo "! Requested GCC version not found, falling back to latest"
+          if [ -f "$GCC_PKG" ]; then
+              pacman -U --noconfirm "$GCC_PKG"
+          else
+              pacman -S --noconfirm mingw-w64-${ARCH_PREFIX}-gcc
+          fi
+
+          # Download and install Clang
+          CLANG_PKG="mingw-w64-${ARCH_PREFIX}-clang-${CLANG_VERSION}.1.0-1-any.pkg.tar.zst"
+          curl -LO "$BASE_URL/${ARCH_PREFIX}/${CLANG_PKG}" || echo "! Requested Clang version not found, falling back to latest"
+          if [ -f "$CLANG_PKG" ]; then
+              pacman -U --noconfirm "$CLANG_PKG"
+          else
+              pacman -S --noconfirm mingw-w64-${ARCH_PREFIX}-clang
+          fi
 
       - name: Build for the cool compilers
         if: matrix.compiler != 'msvc'
@@ -75,11 +105,19 @@ jobs:
           ./initRepo/scripts/build.sh --${{ matrix.build_type }} -t --compiler ${{ matrix.compiler }} --arch ${{ matrix.arch }} --ninja
           7z a ${{ matrix.compiler }}_${{ matrix.arch }}_${{ matrix.build_type }}_build.zip build-${{ matrix.compiler }}-${{ matrix.arch }}-${{ matrix.build_type }}
 
-      - name: Build for the lame msvc compiler
+      - name: Setup MSVC
+        if: matrix.compiler == 'msvc'
+        uses: microsoft/setup-msbuild@v1.3.1
+
+      - name: Build for MSVC
         if: matrix.compiler == 'msvc'
         shell: cmd
         run: |
-          call initRepo\scripts\build.cmd --%BUILD_TYPE% -t --arch %ARCH%
+          rem map BUILD_TYPE to correct flag
+          if "%BUILD_TYPE%"=="debug" set FLAG=-d
+          if "%BUILD_TYPE%"=="release" set FLAG=-r
+
+          call initRepo\scripts\build.cmd %FLAG% -t --arch %ARCH%
           7z a msvc_%ARCH%_%BUILD_TYPE%_build.zip build-msvc-%ARCH%-%BUILD_TYPE%
         env:
           BUILD_TYPE: ${{ matrix.build_type }}

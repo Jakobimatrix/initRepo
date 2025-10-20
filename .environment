@@ -29,10 +29,15 @@ esac
 # Detect environment
 if grep -qi microsoft /proc/version 2>/dev/null; then
     ENVIRONMENT="WSL"
-elif [[ "$OSTYPE" == "msys" ]]; then
+elif [[ -n "$MSYSTEM" ]]; then
+    # MSYS2 sets MSYSTEM (MINGW64, MINGW32, MSYS, etc.)
     ENVIRONMENT="Windows-msys"
-elif [[ "$OSTYPE" == "cygwin" ]]; then
-    ENVIRONMENT="Windows-cygwin"
+elif [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" ]]; then
+    if [[ -n "$MSYS" || -n "$MSYS2_PATH" ]]; then
+        ENVIRONMENT="Windows-msys"
+    else
+        ENVIRONMENT="Windows-cygwin"
+    fi
 elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
     ENVIRONMENT="Linux"
 elif [[ "$OSTYPE" == "darwin"* ]]; then
@@ -41,18 +46,14 @@ else
     ENVIRONMENT="Unknown"
 fi
 
-# Common compiler versions
-GCC_VERSION=13
-CLANG_VERSION=19
 
 DEFAULT_COMPILER="g++"
 
-# Common tool versions
-CLANG_FORMAT_VERSION=19
-CLANG_TIDY_VERSION=19
-
 # Set paths based on environment
 if [[ "$ENVIRONMENT" == "Windows-msys" ]]; then
+    GCC_VERSION=13
+    CLANG_VERSION=19
+
     # MSYS2 paths
     MINGW_GCC_BASE="/mingw64/bin"
     MINGW_32_GCC_BASE="/mingw32/bin"
@@ -73,6 +74,12 @@ if [[ "$ENVIRONMENT" == "Windows-msys" ]]; then
     CLANG_TIDY_PATH="${MINGW_GCC_BASE}/clang-tidy.exe"
 
 else
+    GCC_VERSION=13
+    CLANG_VERSION=19
+
+    CLANG_FORMAT_VERSION=19
+    CLANG_TIDY_VERSION=19
+
     # Linux/WSL/Windows-cygwin
     GCC_CPP_PATH="/usr/bin/g++-${GCC_VERSION}"
     GCC_C_PATH="/usr/bin/gcc-${GCC_VERSION}"

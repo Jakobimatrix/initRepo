@@ -192,7 +192,11 @@ if [[ "$ENVIRONMENT" == "Windows-msys" ]]; then
             CC_PATH="$GCC_C_PATH"
         fi
         COMPILER_NAME="gcc"
-        COMPILER_VERSION="${GCC_VERSION}"
+        COMPILER_VERSION=$(gcc -dumpfullversion -dumpversion)
+        if [[ "$COMPILER_VERSION" != "$GCC_VERSION" ]]; then
+            echo ".environment defines gcc version to be ${GCC_VERSION}, but installed version is ${COMPILER_VERSION}"
+        fi
+
     elif [[ "$COMPILER" == "clang++" ]]; then
         if [[ "$TARGET_ARCH_BITS" == "x86" ]]; then
             COMPILER_PATH="$CLANG_32_CPP_PATH"
@@ -202,7 +206,10 @@ if [[ "$ENVIRONMENT" == "Windows-msys" ]]; then
             CC_PATH="$CLANG_C_PATH"
         fi
         COMPILER_NAME="clang"
-        COMPILER_VERSION="${CLANG_VERSION}"
+        COMPILER_VERSION=$(clang -dumpfullversion -dumpversion)
+        if [[ "$COMPILER_VERSION" != "$CLANG_VERSION" ]]; then
+            echo ".environment defines clang version to be ${CLANG_VERSION}, but installed version is ${COMPILER_VERSION}"
+        fi 
     fi
 else
     # Unix-like systems (Linux, macOS, WSL)
@@ -263,7 +270,7 @@ if [[ "$SKIP_BUILD" == false ]]; then
     cd "$BUILD_DIR"
 
     # Run CMake
-    echo "Using cpp compiler at: $COMPILER_PATH"
+    echo "Using cpp compiler at: $COMPILER_PATH" 
     echo "Using c compiler at: $CC_PATH"
     echo "compiling from: $ENVIRONMENT: $ARCH-$ARCH_BITS"
     echo "compiling for: $ENVIRONMENT: $ARCH-$TARGET_ARCH_BITS"

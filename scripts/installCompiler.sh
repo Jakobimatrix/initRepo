@@ -12,36 +12,72 @@ if [ -f "../../.environment" ]; then
     source "../../.environment"
 fi
 
-# shellcheck disable=SC2162 # read -r does not work here
-read -p "Do you want to install Clang ${CLANG_VERSION}? [y/N] " install_clang
-if [[ "$install_clang" =~ ^[Yy]$ ]]; then
-    echo "Installing Clang ${CLANG_VERSION}..."
-    wget -qO- https://apt.llvm.org/llvm.sh | sudo bash -s -- "$CLANG_VERSION"
-    sudo apt install -y clang-"${CLANG_VERSION}" lld-"${CLANG_VERSION}" lldb-"${CLANG_VERSION}"
-    clang-"$CLANG_VERSION" --version
-    if [[ "$arch_bits" == "x64" ]]; then
-        sudo dpkg --add-architecture i386
-        sudo apt-get update
-    fi
-else
-    echo "Skipping Clang installation."
-fi
+if [[ "$ENVIRONMENT" == "Linux" ]]; then
 
-# shellcheck disable=SC2162 # read -r does not work here
-read -p "Do you want to install GCC ${GCC_VERSION}? [y/N] " install_gcc
-if [[ "$install_gcc" =~ ^[Yy]$ ]]; then
-    echo "Adding GCC PPA and installing GCC ${GCC_VERSION}..."
-    sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
-    sudo apt update
-    sudo apt install -y gcc-"${GCC_VERSION}" g++-"${GCC_VERSION}" gdb
-    sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-"${GCC_VERSION}" 60 --slave /usr/bin/g++ g++ /usr/bin/g++-"${GCC_VERSION}"
-    gcc-"${GCC_VERSION}" --version
-    if [[ "$arch_bits" == "x64" ]]; then
-        sudo dpkg --add-architecture i386
-        sudo apt-get update
-        sudo apt-get install -y libc6:i386 libstdc++6:i386 libc6-dev:i386
-        sudo apt-get install -y libstdc++-${{ env.GCC_VERSION }}-dev:i386 g++-${{ env.GCC_VERSION }}-multilib gcc-${{ env.GCC_VERSION }}-multilib
+    # shellcheck disable=SC2162 # read -r does not work here
+    read -p "Do you want to install Clang ${CLANG_VERSION}? [y/N] " install_clang
+    if [[ "$install_clang" =~ ^[Yy]$ ]]; then
+        echo "Installing Clang ${CLANG_VERSION}..."
+        wget -qO- https://apt.llvm.org/llvm.sh | sudo bash -s -- "$CLANG_VERSION"
+        sudo apt install -y clang-"${CLANG_VERSION}" lld-"${CLANG_VERSION}" lldb-"${CLANG_VERSION}"
+        clang-"$CLANG_VERSION" --version
+        if [[ "$arch_bits" == "x64" ]]; then
+            sudo dpkg --add-architecture i386
+            sudo apt-get update
+        fi
+    else
+        echo "Skipping Clang installation."
     fi
-else
-    echo "Skipping GCC installation."
+
+    # shellcheck disable=SC2162 # read -r does not work here
+    read -p "Do you want to install GCC ${GCC_VERSION}? [y/N] " install_gcc
+    if [[ "$install_gcc" =~ ^[Yy]$ ]]; then
+        echo "Adding GCC PPA and installing GCC ${GCC_VERSION}..."
+        sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+        sudo apt update
+        sudo apt install -y gcc-"${GCC_VERSION}" g++-"${GCC_VERSION}" gdb
+        sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-"${GCC_VERSION}" 60 --slave /usr/bin/g++ g++ /usr/bin/g++-"${GCC_VERSION}"
+        gcc-"${GCC_VERSION}" --version
+        if [[ "$arch_bits" == "x64" ]]; then
+            sudo dpkg --add-architecture i386
+            sudo apt-get update
+            sudo apt-get install -y libc6:i386 libstdc++6:i386 libc6-dev:i386
+            sudo apt-get install -y libstdc++-${{ env.GCC_VERSION }}-dev:i386 g++-${{ env.GCC_VERSION }}-multilib gcc-${{ env.GCC_VERSION }}-multilib
+        fi
+    else
+        echo "Skipping GCC installation."
+    fi
+
+elif [[ "$ENVIRONMENT" == "Windows-msys" ]]; then
+    echo "Detected MSYS2 environment. Using pacman to install compilers."
+    echo "Architecture: $ARCH_PREFIX"
+
+    read -p "Do you want to install Clang ${CLANG_VERSION}? [y/N] " install_clang
+    if [[ "$install_clang" =~ ^[Yy]$ ]]; then
+        echo "Installing Clang ${CLANG_VERSION}..."
+        PKG_NAME="mingw-w64-${ARCH_PREFIX}-clang"
+        # Try to find specific version (if available)
+        if pacman -Si "$PKG_NAME" | grep -q "$CLANG_VERSION"; then
+            pacman -S --noconfirm "$PKG_NAME"
+        else
+            echo "! Requested clang ${CLANG_VERSION} not found!"
+        fi
+        clang --version || true
+    else
+        echo "Skipping Clang installation."
+    fi
+
+    read -p "Do you want to install GCC ${GCC_VERSION}? [y/N] " install_gcc
+    if [[ "$install_gcc" =~ ^[Yy]$ ]]; then
+        echo "Installing GCC ${GCC_VERSION}..."
+        PKG_NAME="mingw-w64-${ARCH_PREFIX}-gcc"
+        if pacman -Si "$PKG_NAME" | grep -q "$GCC_VERSION"; then
+            pacman -S --noconfirm "$PKG_NAME"
+        else
+            echo "! Requested GCC ${GCC_VERSION} not found!"
+        fi
+        gcc --version || true
+    else
+        echo "Skipping GCC installation."
+    fi
 fi
