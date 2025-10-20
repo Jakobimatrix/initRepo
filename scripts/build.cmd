@@ -44,8 +44,11 @@ rem --- Parse args ---
 if "%~1"=="" goto parsed
 if "%~1"=="-c" set CLEAN=1
 if "%~1"=="-d" set BUILD_TYPE=Debug
+if "%~1"=="--debug" set BUILD_TYPE=Debug
 if "%~1"=="-r" set BUILD_TYPE=Release
+if "%~1"=="--release" set BUILD_TYPE=Release
 if "%~1"=="-o" set BUILD_TYPE=RelWithDebInfo
+if "%~1"=="--relwithdebinfo" set BUILD_TYPE=RelWithDebInfo
 if "%~1"=="-i" set INSTALL=1
 if "%~1"=="-t" set ENABLE_TESTS=ON
 if "%~1"=="-T" (
@@ -145,6 +148,7 @@ if /i not "%GENERATOR%"=="Ninja" (
     set "CMAKE_ARGS=%CMAKE_ARGS% -A %TARGET_ARCH_BITS%"
 )
 
+echo working direktory: %BUILD_DIR%
 echo Running: cmake %CMAKE_ARGS% ..
 cmake %CMAKE_ARGS% ..
 

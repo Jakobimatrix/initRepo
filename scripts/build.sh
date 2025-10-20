@@ -10,25 +10,26 @@ cd "${REPO_ROOT}"
 show_help() {
     echo "Usage: ./build.sh [options]"
     echo "Options:"
-    echo "  -c              Clean build"
-    echo "  -d              Debug build"
-    echo "  -debug          Debug build"
-    echo "  -r              Release build"
-    echo "  -release        Release build"
-    echo "  -o              RelWithDebInfo build"
-    echo "  -i              Install after build"
-    echo "  --compiler COMP Use specific compiler (e.g. gcc, clang)"
-    echo "  --arch ARCH     Architecture (x86, x64) [default: $ARCH_BITS]"
-    echo "  -h              Show this help message"
-    echo "  -t              Build tests"
-    echo "  -T              Run Tests after build"
-    echo "  -J              Test output returns junit"
-    echo "  -f              Enable fuzzing"
-    echo "  -v              Verbode: dump CMake variables"
-    echo "  -l              List available compilers"
-    echo "  -s              skip cmake and build [to be combined with -T, expects complete build]"
-    echo "  -g              enable code coverage (only in combination with -d)"
-    echo "  -n, --ninja     Use Ninja generator if available"
+    echo "  -c               Clean build"
+    echo "  -d               Debug build"
+    echo "  --debug          Debug build"
+    echo "  -r               Release build"
+    echo "  --release        Release build"
+    echo "  -o               RelWithDebInfo build"
+    echo "  --relwithdebinfo RelWithDebInfo build"
+    echo "  -i               Install after build"
+    echo "  --compiler COMP  Use specific compiler (e.g. gcc, clang)"
+    echo "  --arch ARCH      Architecture (x86, x64) [default: $ARCH_BITS]"
+    echo "  -h               Show this help message"
+    echo "  -t               Build tests"
+    echo "  -T               Run Tests after build"
+    echo "  -J               Test output returns junit"
+    echo "  -f               Enable fuzzing"
+    echo "  -v               Verbode: dump CMake variables"
+    echo "  -l               List available compilers"
+    echo "  -s               skip cmake and build [to be combined with -T, expects complete build]"
+    echo "  -g               enable code coverage (only in combination with -d)"
+    echo "  -n, --ninja      Use Ninja generator if available"
 }
 
 # Source environment variables
@@ -119,7 +120,7 @@ while [[ $# -gt 0 ]]; do
                 exit 1
             fi
             if [[ "$ARCH_BITS" == "x64" && "$TARGET_ARCH_BITS" == "x86" ]]; then
-                if [[ ! "$ENVIRONMENT" == "Windows-msys" ]]; then
+                if [[ "$ENVIRONMENT" == "Linux" ]]; then
                     if ! dpkg --print-foreign-architectures | grep -q i386; then
                         echo "Error: 32-bit cross-compilation support not installed"
                         echo "Please install required packages with:"
@@ -216,6 +217,9 @@ else
         COMPILER_NAME="clang"
         COMPILER_VERSION="${CLANG_VERSION}"
     fi
+    # shellcheck source-path=SCRIPTDIR source=ensureToolVersion.sh
+    source ./initRepo/scripts/ensureToolVersion.sh
+    ensure_tool_versioned "${COMPILER_NAME}" "${COMPILER_VERSION}"
 fi
 
 if [[ -z "$COMPILER_NAME" ]]; then
@@ -223,11 +227,6 @@ if [[ -z "$COMPILER_NAME" ]]; then
     exit 1
 fi
 
-# shellcheck source-path=SCRIPTDIR source=ensureToolVersion.sh
-source ./initRepo/scripts/ensureToolVersion.sh
-if [[ ! "$ENVIRONMENT" == "Windows-msys" ]]; then
-    ensure_tool_versioned "${COMPILER_NAME}" "${COMPILER_VERSION}"
-fi
 
 BUILD_DIR="build-${COMPILER_NAME,,}-${COMPILER_VERSION,,}-${BUILD_TYPE,,}-${TARGET_ARCH,,}-${TARGET_ARCH_BITS,,}"
 echo "working direktory: $BUILD_DIR"
