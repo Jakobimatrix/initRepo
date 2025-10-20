@@ -186,13 +186,15 @@ if [[ "$ENVIRONMENT" == "Windows-msys" ]]; then
         if [ -f ".environment_windows" ]; then
             source ".environment_windows"
         fi
-        if [[ "$TARGET_ARCH_BITS" == "x86" ]]; then
-            COMPILER_PATH="$MSVC_32_CPP_PATH"
-            CC_PATH="$MSVC_32_C_PATH"
-        else
-            COMPILER_PATH="$MSVC_CPP_PATH"
-            CC_PATH="$MSVC_C_PATH"
-        fi
+        #if [[ "$TARGET_ARCH_BITS" == "x86" ]]; then
+        #    COMPILER_PATH="$MSVC_32_CPP_PATH"
+        #    CC_PATH="$MSVC_32_C_PATH"
+        #else
+        #    COMPILER_PATH="$MSVC_CPP_PATH"
+        #    CC_PATH="$MSVC_C_PATH"
+        #fi
+        COMPILER_PATH="cl"
+        CC_PATH="cl"
         COMPILER_NAME="msvc"
         COMPILER_VERSION="${MSVC_VERSION}"
 
@@ -248,24 +250,25 @@ echo "working direktory: $BUILD_DIR"
 
 if [[ "$SKIP_BUILD" == false ]]; then
 
-    if [ ! -f "$COMPILER_PATH" ]; then
-        echo "$COMPILER_PATH not found! Check the paths in .environment!"
-        list_available_compiler
-        exit 1
+    # validate paths only on linux, on windows we let ninja find the paths
+    if [[ ! "$ENVIRONMENT" == "Windows-msys" ]]; then
+        if [ ! -f "$COMPILER_PATH" ]; then
+            echo "$COMPILER_PATH not found! Check the paths in .environment!"
+            list_available_compiler
+            exit 1
+        fi
+        if [ ! -f "$CC_PATH" ]; then
+            echo "$CC_PATH not found! Check the paths in .environment!"
+            list_available_compiler
+            exit 1
+        fi
     fi
-    if [ ! -f "$CC_PATH" ]; then
-        echo "$CC_PATH not found! Check the paths in .environment!"
-        list_available_compiler
-        exit 1
-    fi
-
 
     # Validate fuzzer option
     if [[ "$ENABLE_FUZZING" == "ON" && "$COMPILER" != "clang++" ]]; then
         echo "Error: Fuzzing (-f) is only supported with the clang compiler."
         exit 1
     fi
-
 
     # Clean build directory if requested
     if [[ "$CLEAN" == true ]]; then

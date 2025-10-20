@@ -102,61 +102,49 @@ else
     return 1 2>/dev/null || exit 1
 fi
 
-# Find the latest toolset version (folder with numbers and dots containing a bin folder)
-MSVC_TOOLS_PATH="$VS_PATH/VC/Tools/MSVC"
-if [ ! -d "$MSVC_TOOLS_PATH" ]; then
-    echo "Error: MSVC tools path not found at $MSVC_TOOLS_PATH" >&2
-    return 1 2>/dev/null || exit 1
-fi
-
-# Find latest version directory (containing only numbers and dots)
-latest_version=""
-latest_version_num=0
-for dir in "$MSVC_TOOLS_PATH"/*; do
-    if [ -d "$dir/bin" ] && [[ $(basename "$dir") =~ ^[0-9.]+$ ]]; then
-        # Convert version string to comparable number by removing dots
-        ver_num=$(echo "$(basename "$dir")" | tr -d '.')
-        if [ "$ver_num" -gt "$latest_version_num" ]; then
-            latest_version="$(basename "$dir")"
-            latest_version_num=$ver_num
-        fi
+if [[ "1" == "2" ]]; then
+    # Find the latest toolset version (folder with numbers and dots containing a bin folder)
+    MSVC_TOOLS_PATH="$VS_PATH/VC/Tools/MSVC"
+    if [ ! -d "$MSVC_TOOLS_PATH" ]; then
+        echo "Error: MSVC tools path not found at $MSVC_TOOLS_PATH" >&2
+        return 1 2>/dev/null || exit 1
     fi
-done
 
-if [ -z "$latest_version" ]; then
-    echo "Error: No valid MSVC toolset version found in $MSVC_TOOLS_PATH" >&2
-    return 1 2>/dev/null || exit 1
+    # Find latest version directory (containing only numbers and dots)
+    latest_version=""
+    latest_version_num=0
+    for dir in "$MSVC_TOOLS_PATH"/*; do
+        if [ -d "$dir/bin" ] && [[ $(basename "$dir") =~ ^[0-9.]+$ ]]; then
+            # Convert version string to comparable number by removing dots
+            ver_num=$(echo "$(basename "$dir")" | tr -d '.')
+            if [ "$ver_num" -gt "$latest_version_num" ]; then
+                latest_version="$(basename "$dir")"
+                latest_version_num=$ver_num
+            fi
+        fi
+    done
+
+    if [ -z "$latest_version" ]; then
+        echo "Error: No valid MSVC toolset version found in $MSVC_TOOLS_PATH" >&2
+        return 1 2>/dev/null || exit 1
+    fi
+
+    MSVC_BASE="$MSVC_TOOLS_PATH/$latest_version/bin"
+
+    # Detect host architecture
+    if [ -d "$MSVC_BASE/Hostx64" ]; then
+        HOST_ARCH="Hostx64"
+    elif [ -d "$MSVC_BASE/Hostx86" ]; then
+        HOST_ARCH="Hostx86"
+    else
+        echo "Error: Neither Hostx64 nor Hostx86 directory found in $MSVC_BASE" >&2
+        return 1 2>/dev/null || exit 1
+    fi
+
+    # Set all paths to cl.exe in their respective architecture folders
+    #MSVC_32_CPP_PATH="$MSVC_BASE/$HOST_ARCH/x86/cl.exe"
+    #MSVC_32_C_PATH="$MSVC_BASE/$HOST_ARCH/x86/cl.exe"
+    #MSVC_CPP_PATH="$MSVC_BASE/$HOST_ARCH/x64/cl.exe"
+    #MSVC_C_PATH="$MSVC_BASE/$HOST_ARCH/x64/cl.exe"
 fi
-
-MSVC_BASE="$MSVC_TOOLS_PATH/$latest_version/bin"
-
-# Detect host architecture
-if [ -d "$MSVC_BASE/Hostx64" ]; then
-    HOST_ARCH="Hostx64"
-elif [ -d "$MSVC_BASE/Hostx86" ]; then
-    HOST_ARCH="Hostx86"
-else
-    echo "Error: Neither Hostx64 nor Hostx86 directory found in $MSVC_BASE" >&2
-    return 1 2>/dev/null || exit 1
-fi
-
-# Set all paths to cl.exe in their respective architecture folders
-#MSVC_32_CPP_PATH="$MSVC_BASE/$HOST_ARCH/x86/cl.exe"
-#MSVC_32_C_PATH="$MSVC_BASE/$HOST_ARCH/x86/cl.exe"
-#MSVC_CPP_PATH="$MSVC_BASE/$HOST_ARCH/x64/cl.exe"
-#MSVC_C_PATH="$MSVC_BASE/$HOST_ARCH/x64/cl.exe"
-
-MSVC_32_CPP_PATH="cl"
-MSVC_32_C_PATH="cl"
-MSVC_CPP_PATH="cl"
-MSVC_C_PATH="cl"
-
-echo "Detected environment for msvc v ${MSVC_VERSION}: ${ENVIRONMENT} on ${ARCH}-${ARCH_BITS}, compiler: ${MSVC_BASE}/${HOST_ARCH}/[x64/x86]/cl.exe"
-
-
-
-
-
-
-
 
