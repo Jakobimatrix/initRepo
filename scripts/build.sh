@@ -175,30 +175,14 @@ if [[ "$COMPILER" == "gcc" ]]; then
     COMPILER="g++"
 elif [[ "$COMPILER" == "clang" ]]; then
     COMPILER="clang++"
-elif [[ "$COMPILER" == "msvc" && "$ENVIRONMENT" == "Windows-msys" ]]; then
-    COMPILER="msvc"
+elif [[ "$COMPILER" == "msvc" ]]; then
+    echo "Error: to build for windows, you must use the build.bat script"
+    exit 1
 fi
 
 # set compiler paths
 if [[ "$ENVIRONMENT" == "Windows-msys" ]]; then
-    if [[ "$COMPILER" == "msvc" ]]; then
-        source "initRepo/.environment_windows"
-        if [ -f ".environment_windows" ]; then
-            source ".environment_windows"
-        fi
-        #if [[ "$TARGET_ARCH_BITS" == "x86" ]]; then
-        #    COMPILER_PATH="$MSVC_32_CPP_PATH"
-        #    CC_PATH="$MSVC_32_C_PATH"
-        #else
-        #    COMPILER_PATH="$MSVC_CPP_PATH"
-        #    CC_PATH="$MSVC_C_PATH"
-        #fi
-        COMPILER_PATH="cl"
-        CC_PATH="cl"
-        COMPILER_NAME="msvc"
-        COMPILER_VERSION="${MSVC_VERSION}"
-
-    elif [[ "$COMPILER" == "g++" ]]; then
+    if [[ "$COMPILER" == "g++" ]]; then
         if [[ "$TARGET_ARCH_BITS" == "x86" ]]; then
             COMPILER_PATH="$GCC_32_CPP_PATH"
             CC_PATH="$GCC_32_C_PATH"
@@ -288,6 +272,16 @@ if [[ "$SKIP_BUILD" == false ]]; then
     echo "Configuring with CMake..."
     CMAKE_ARGS=(-DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_CXX_COMPILER=$COMPILER_PATH -DCMAKE_C_COMPILER=$CC_PATH -DBUILD_TESTING=$ENABLE_TESTS -DENABLE_FUZZING=$ENABLE_FUZZING -DENABLE_COVERAGE=$ENABLE_COVERAGE)
     
+    # Use ninja if requested and found
+    if [[ "$USE_NINJA" == true ]]; then
+        if ! command -v ninja &>/dev/null; then
+            echo "Warning: Ninja not found, falling back to default generator"
+            USE_NINJA=false
+        else
+            CMAKE_ARGS+=(-G "Ninja")
+        fi
+    fi    
+
     # Add architecture flags only if needed
     if [[ "$TARGET_ARCH_BITS" != "$ARCH_BITS" ]]; then
         if [[ "$TARGET_ARCH_BITS" == "x86" ]]; then
@@ -297,23 +291,6 @@ if [[ "$SKIP_BUILD" == false ]]; then
         fi
     fi
 
-    # Use ninja if requested and found
-    if [[ "$USE_NINJA" == true ]]; then
-        if ! command -v ninja &>/dev/null; then
-            echo "Warning: Ninja not found, falling back to default generator"
-            USE_NINJA=false
-        else
-            CMAKE_ARGS+=(-G "Ninja")
-        fi
-    fi
-    
-    # Run CMake with proper generator for MSVC if ninja is not requested + set architecture flags
-    if [[ "$COMPILER" == "msvc" ]]; then
-        CMAKE_ARGS+=(-A "$TARGET_ARCH_BITS")
-        if [[ "$USE_NINJA" == false ]]; then
-            CMAKE_ARGS+=(-G "${VISUAL_STUDIO_VERSION}")
-        fi
-    fi
     
     echo "Running: cmake ${CMAKE_ARGS[*]} .."
     cmake "${CMAKE_ARGS[@]}" ..

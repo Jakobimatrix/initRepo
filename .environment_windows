@@ -94,9 +94,11 @@ fi
 if [[ "$VS_PATH" =~ "2022" ]]; then
     MSVC_VERSION="17.0"
     VISUAL_STUDIO_VERSION="2022"
+    CMAKE_GENERATOR_VS="Visual Studio 17 2022"
 elif [[ "$VS_PATH" =~ "2019" ]]; then
     MSVC_VERSION="16.0"
     VISUAL_STUDIO_VERSION="2019"
+    CMAKE_GENERATOR_VS="Visual Studio 16 2019"
 else
     echo "Unsupported Visual Studio version in path: $VS_PATH" >&2
     return 1 2>/dev/null || exit 1
