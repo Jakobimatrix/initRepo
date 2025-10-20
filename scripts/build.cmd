@@ -18,8 +18,8 @@ set ENABLE_TESTS=OFF
 set RUN_TESTS=0
 set TEST_OUTPUT_JUNIT=0
 set USE_NINJA=0
-set TARGET_ARCH_BITS=%ARCH%
-if "%TARGET_ARCH_BITS%"=="" set TARGET_ARCH_BITS=x64
+set TARGET_ARCH=x64
+set TARGET_ARCH_BITS=x64
 set SKIP_BUILD=0
 set VERBOSE=0
 
@@ -39,10 +39,22 @@ if "%ARG:~0,2%"=="--" (
     ) else if "%ARG%"=="--arch" (
         shift
         if "%~1"=="" (
-            echo ERROR: --arch requires a value ^(x86 or x64^)
+            echo ERROR: --arch requires a value ^(x86 or Win32 or x64^)
             goto help
         )
-        set TARGET_ARCH_BITS=%~1
+        if "%~1"=="x86" (
+            set TARGET_ARCH=Win32
+            set TARGET_ARCH_BITS=x86
+        ) else if "%~1"=="Win32" (
+            set TARGET_ARCH=Win32
+            set TARGET_ARCH_BITS=x86
+        ) else if "%~1"=="x64" (
+            set TARGET_ARCH=x64
+            set TARGET_ARCH_BITS=x64
+        ) else (
+            echo ERROR: Invalid architecture %~1. Must be x86 or Win32 or x64
+            goto help
+        )
     ) else (
         echo ERROR: Unknown argument %ARG%
         goto help
@@ -110,7 +122,7 @@ if not defined VS_DEV_CMD (
     exit /b 9
 )
 
-call %VS_DEV_CMD% -arch=%TARGET_ARCH_BITS% >nul
+call %VS_DEV_CMD:"=% -arch=%TARGET_ARCH% >nul
 echo Using Visual Studio from: %VS_PATH%
 
 rem --- Determine generator automatically ---
@@ -146,7 +158,10 @@ if "%GENERATOR%"=="" (
     )
 )
 
-set "BUILD_DIR=build-msvc-%BUILD_TYPE%-%TARGET_ARCH_BITS%"
+rem Convert to lowercase using powershell
+for /f %%i in ('powershell -command "$env:BUILD_TYPE.ToLower()"') do set BUILD_TYPE_LOWER=%%i
+
+set "BUILD_DIR=build-msvc-%BUILD_TYPE_LOWER%-%TARGET_ARCH_BITS%"
 if "%CLEAN%"=="1" (
     echo Cleaning build directory: %BUILD_DIR%
     if exist "%BUILD_DIR%" rmdir /s /q "%BUILD_DIR%"
@@ -156,11 +171,11 @@ if not exist "%BUILD_DIR%" mkdir "%BUILD_DIR%"
 cd "%BUILD_DIR%"
 
 rem --- Configure CMake args depending on selected generator ---
-set "CMAKE_ARGS=-DCMAKE_BUILD_TYPE=%BUILD_TYPE% -DBUILD_TESTING=%ENABLE_TESTS% -G \"%GENERATOR%\""
+set CMAKE_ARGS=-DCMAKE_BUILD_TYPE=%BUILD_TYPE% -DBUILD_TESTING=%ENABLE_TESTS% -G "%GENERATOR%"
 
 rem For Visual Studio generators supply -A; for Ninja (when used with MSVC) do NOT pass -A
 if /i not "%GENERATOR%"=="Ninja" (
-    set "CMAKE_ARGS=%CMAKE_ARGS:"=% -A %TARGET_ARCH_BITS%"
+    set CMAKE_ARGS=%CMAKE_ARGS% -A %TARGET_ARCH%
 )
 
 echo working direktory: %BUILD_DIR%

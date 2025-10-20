@@ -48,12 +48,14 @@ jobs:
         with:
           name: workspace
           path: .
-          
+
       - name: Extract workspace
         shell: bash
         run: 7z x workspace.zip
 
-      - name: Setup MSYS2
+      # ---------------- MSYS2 setup ----------------
+      - name: Setup MSYS2 for GCC/Clang
+        if: matrix.compiler != 'msvc'
         uses: msys2/setup-msys2@v2
         with:
           msystem: ${{ matrix.arch == 'x86' && 'MINGW32' || 'MINGW64' }}
@@ -67,7 +69,8 @@ jobs:
             mingw-w64-${{ matrix.arch == 'x86' && 'i686' || 'x86_64' }}-clang
             mingw-w64-${{ matrix.arch == 'x86' && 'i686' || 'x86_64' }}-ninja
 
-      - name: Build for the cool compilers
+      # ---------------- Build step ----------------
+      - name: Build for GCC/Clang
         if: matrix.compiler != 'msvc'
         shell: msys2 {0}
         run: |
@@ -75,6 +78,7 @@ jobs:
           ./initRepo/scripts/build.sh --${{ matrix.build_type }} -t --compiler ${{ matrix.compiler }} --arch ${{ matrix.arch }} --ninja
           7za a ${{ matrix.compiler }}_${{ matrix.build_type }}_${{ matrix.arch }}_build.zip build-${{ matrix.compiler }}-${{ matrix.build_type }}-${{ matrix.arch }}
 
+      # ---------------- MSVC build ----------------
       - name: Setup MSVC
         if: matrix.compiler == 'msvc'
         uses: microsoft/setup-msbuild@v1.3.1
@@ -83,39 +87,18 @@ jobs:
         if: matrix.compiler == 'msvc'
         shell: cmd
         run: |
-          rem map BUILD_TYPE to correct flag
+          rem Map BUILD_TYPE to flag
           if "%BUILD_TYPE%"=="debug" set FLAG=-d
           if "%BUILD_TYPE%"=="release" set FLAG=-r
 
-          echo Current directory:
-          cd
-          echo Directory contents:
-          dir
-          echo Checking if build script exists:
-          if exist initRepo\scripts\build.cmd (
-              echo Build script found
-          ) else (
-              echo Build script NOT found
-              exit /b 1
-          )
-
-          echo Running build script with flags...
+          echo Running build script...
           echo Build type flag: %FLAG%
           echo Architecture: %ARCH%
-          
-          rem Enable command echoing to see what's happening
+          echo call initRepo\scripts\build.cmd %FLAG% -t --arch %ARCH%
           echo on
-          
           call initRepo\scripts\build.cmd %FLAG% -t --arch %ARCH%
           set BUILD_ERROR=%errorlevel%
-          
-          echo Build script exited with code: %BUILD_ERROR%
-          if %BUILD_ERROR% neq 0 (
-              type initRepo\scripts\build.cmd
-              echo Full command that was executed:
-              echo call initRepo\scripts\build.cmd %FLAG% -t --arch %ARCH%
-              exit /b %BUILD_ERROR%
-          )
+          if %BUILD_ERROR% neq 0 exit /b %BUILD_ERROR%
           
           7z a msvc_%BUILD_TYPE%_%ARCH%_build.zip build-msvc-%BUILD_TYPE%-%ARCH%
         env:
@@ -155,22 +138,40 @@ jobs:
         uses: msys2/setup-msys2@v2
         with:
           msystem: ${{ matrix.arch == 'x86' && 'MINGW32' || 'MINGW64' }}
-          update: true
+          update: false
           install: >-
+            base-devel
+            git
+            p7zip
+            mingw-w64-${{ matrix.arch == 'x86' && 'i686' || 'x86_64' }}-cmake
             mingw-w64-${{ matrix.arch == 'x86' && 'i686' || 'x86_64' }}-gcc
             mingw-w64-${{ matrix.arch == 'x86' && 'i686' || 'x86_64' }}-clang
+            mingw-w64-${{ matrix.arch == 'x86' && 'i686' || 'x86_64' }}-ninja
 
       - name: Setup MSVC
         if: matrix.compiler == 'msvc'
         uses: microsoft/setup-msbuild@v1.3.1
 
       - name: Run Tests
-        shell: bash
+        if: matrix.compiler != 'msvc'
+        shell: msys2 {0}
+        run: |
+          7za x workspace.zip
+          7za x ${{ matrix.compiler }}_${{ matrix.build_type }}_${{ matrix.arch }}_build.zip
+          source initRepo/.environment
+          ./initRepo/scripts/build.sh -s -T -J --${{ matrix.build_type }} --compiler ${{ matrix.compiler }} --arch ${{ matrix.arch }}
+
+      - name: Run Tests
+        if: matrix.compiler == 'msvc'
+        shell: cmd
         run: |
           7z x workspace.zip
           7z x ${{ matrix.compiler }}_${{ matrix.build_type }}_${{ matrix.arch }}_build.zip
           source initRepo/.environment
           ./initRepo/scripts/build.sh -s -T -J --${{ matrix.build_type }} --compiler ${{ matrix.compiler }} --arch ${{ matrix.arch }}
+        env:
+          BUILD_TYPE: ${{ matrix.build_type }}
+          ARCH: ${{ matrix.arch }}
 
       - name: Publish test results
         if: always()
