@@ -193,10 +193,6 @@ if [[ "$ENVIRONMENT" == "Windows-msys" ]]; then
         fi
         COMPILER_NAME="gcc"
         COMPILER_VERSION=$(gcc -dumpfullversion -dumpversion)
-        if [[ "$COMPILER_VERSION" != "$GCC_VERSION" ]]; then
-            echo ".environment defines gcc version to be ${GCC_VERSION}, but installed version is ${COMPILER_VERSION}"
-        fi
-
     elif [[ "$COMPILER" == "clang++" ]]; then
         if [[ "$TARGET_ARCH_BITS" == "x86" ]]; then
             COMPILER_PATH="$CLANG_32_CPP_PATH"
@@ -207,9 +203,6 @@ if [[ "$ENVIRONMENT" == "Windows-msys" ]]; then
         fi
         COMPILER_NAME="clang"
         COMPILER_VERSION=$(clang -dumpfullversion -dumpversion)
-        if [[ "$COMPILER_VERSION" != "$CLANG_VERSION" ]]; then
-            echo ".environment defines clang version to be ${CLANG_VERSION}, but installed version is ${COMPILER_VERSION}"
-        fi 
     fi
 else
     # Unix-like systems (Linux, macOS, WSL)
@@ -234,14 +227,17 @@ if [[ -z "$COMPILER_NAME" ]]; then
     exit 1
 fi
 
-
-BUILD_DIR="build-${COMPILER_NAME,,}-${COMPILER_VERSION,,}-${BUILD_TYPE,,}-${TARGET_ARCH,,}-${TARGET_ARCH_BITS,,}"
+if [[ "$ENVIRONMENT" == "Linux" ]]; then
+    BUILD_DIR="build-${COMPILER_NAME,,}-${COMPILER_VERSION,,}-${BUILD_TYPE,,}-${TARGET_ARCH,,}-${TARGET_ARCH_BITS,,}"
+else
+    BUILD_DIR="build-${COMPILER_NAME,,}-${BUILD_TYPE,,}-${TARGET_ARCH_BITS,,}"
+fi
 echo "working direktory: $BUILD_DIR"
 
 if [[ "$SKIP_BUILD" == false ]]; then
 
     # validate paths only on linux, on windows we let ninja find the paths
-    if [[ ! "$ENVIRONMENT" == "Windows-msys" ]]; then
+    if [[ "$ENVIRONMENT" == "Linux" ]]; then
         if [ ! -f "$COMPILER_PATH" ]; then
             echo "$COMPILER_PATH not found! Check the paths in .environment!"
             list_available_compiler
@@ -270,11 +266,10 @@ if [[ "$SKIP_BUILD" == false ]]; then
     cd "$BUILD_DIR"
 
     # Run CMake
-    echo "Using cpp compiler at: $COMPILER_PATH" 
+    echo "Using cpp compiler at: $COMPILER_PATH version $COMPILER_VERSION" 
     echo "Using c compiler at: $CC_PATH"
     echo "compiling from: $ENVIRONMENT: $ARCH-$ARCH_BITS"
     echo "compiling for: $ENVIRONMENT: $ARCH-$TARGET_ARCH_BITS"
-    echo "To change compiler versions, set the variables in the .environment!!"
     echo "Configuring with CMake..."
     CMAKE_ARGS=(-DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_CXX_COMPILER=$COMPILER_PATH -DCMAKE_C_COMPILER=$CC_PATH -DBUILD_TESTING=$ENABLE_TESTS -DENABLE_FUZZING=$ENABLE_FUZZING -DENABLE_COVERAGE=$ENABLE_COVERAGE)
     

@@ -46,14 +46,13 @@ else
     ENVIRONMENT="Unknown"
 fi
 
+echo "Detected environment: ${ENVIRONMENT} on ${ARCH}-${ARCH_BITS}"
+
 
 DEFAULT_COMPILER="g++"
 
 # Set paths based on environment
 if [[ "$ENVIRONMENT" == "Windows-msys" ]]; then
-    GCC_VERSION=13
-    CLANG_VERSION=19
-
     # MSYS2 paths
     MINGW_GCC_BASE="/mingw64/bin"
     MINGW_32_GCC_BASE="/mingw32/bin"
@@ -88,12 +87,10 @@ else
 
     CLANG_FORMAT_PATH="/usr/bin/clang-format-${CLANG_FORMAT_VERSION}"
     CLANG_TIDY_PATH="/usr/bin/clang-tidy-${CLANG_TIDY_VERSION}"
+
+    export GCC_VERSION CLANG_VERSION 
 fi
 
-
-echo "Detected environment: ${ENVIRONMENT} on ${ARCH}-${ARCH_BITS}"
-
-
-export ARCH ARCH_BITS ENVIRONMENT GCC_VERSION CLANG_VERSION \
+export ARCH ARCH_BITS ENVIRONMENT \
        GCC_CPP_PATH GCC_C_PATH CLANG_CPP_PATH CLANG_C_PATH \
        CLANG_FORMAT_PATH CLANG_TIDY_PATH
