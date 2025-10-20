@@ -63,6 +63,11 @@ GCC_C_PATH="${GCC_C_PATH}"
 
 
 list_available_compiler() {
+    if [[ "$ENVIRONMENT" == "Windows-msys" ]]; then
+        echo "This option is not available on windows"
+        return
+    fi
+
     for base in gcc g++ clang clang++; do
         echo ""
         echo "=== $base ==="
@@ -114,7 +119,7 @@ while [[ $# -gt 0 ]]; do
                 exit 1
             fi
             if [[ "$ARCH_BITS" == "x64" && "$TARGET_ARCH_BITS" == "x86" ]]; then
-                if [[ "$ENVIRONMENT" == "Linux" || "$ENVIRONMENT" == "WSL" ]]; then
+                if [[ ! "$ENVIRONMENT" == "Windows-msys" ]]; then
                     if ! dpkg --print-foreign-architectures | grep -q i386; then
                         echo "Error: 32-bit cross-compilation support not installed"
                         echo "Please install required packages with:"
@@ -234,11 +239,7 @@ fi
 
 # shellcheck source-path=SCRIPTDIR source=ensureToolVersion.sh
 source ./initRepo/scripts/ensureToolVersion.sh
-if [[ "$ENVIRONMENT" == "Windows-msys" ]]; then
-    if [[ ! "$COMPILER" == "msvc" ]]; then
-        ensure_tool_versioned_mingw "${COMPILER_NAME}" "${COMPILER_VERSION}"
-    fi
-else
+if [[ ! "$ENVIRONMENT" == "Windows-msys" ]]; then
     ensure_tool_versioned "${COMPILER_NAME}" "${COMPILER_VERSION}"
 fi
 

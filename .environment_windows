@@ -1,8 +1,13 @@
 # .environment_windows
 # Sets the needed variables for the .build.sh script
 
+# Ensure we are in the root folder of the repository:
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(dirname "$(dirname "$SCRIPT_DIR")")"
+cd "${REPO_ROOT}"
 
-source "windowsEnvironmentHelper.sh"
+# shellcheck source-path=SCRIPTDIR source=windowsEnvironmentHelper.sh
+source "source initRepo/scripts/windowsEnvironmentHelper.sh"
 vswhere
 _vs_rc=$?
 if [ "$_vs_rc" -ne 1 ] && [ -n "${VS_PATH:-}" ]; then
@@ -69,6 +74,9 @@ MSVC_32_CPP_PATH="$MSVC_BASE/$HOST_ARCH/x86/cl.exe"
 MSVC_32_C_PATH="$MSVC_BASE/$HOST_ARCH/x86/cl.exe"
 MSVC_CPP_PATH="$MSVC_BASE/$HOST_ARCH/x64/cl.exe"
 MSVC_C_PATH="$MSVC_BASE/$HOST_ARCH/x64/cl.exe"
+
+echo "Detected environment for msvc v $MSVC_VERSION: $ENVIRONMENT on $ARCH-$ARCH_BITS, compiler: $MSVC_CPP_PATH"
+
 
 
 

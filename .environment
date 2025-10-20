@@ -56,6 +56,11 @@ if [[ "$ENVIRONMENT" == "Windows-msys" ]]; then
     # MSYS2 paths
     MINGW_GCC_BASE="C:/msys64/mingw64/bin"
     MINGW_32_GCC_BASE="C:/msys64/mingw32/bin"
+
+    if [[ "$$ARCH_BITS" == "x86"]]; then
+        MINGW_GCC_BASE="C:/msys32/mingw64/bin"
+        MINGW_32_GCC_BASE="C:/msys32/mingw32/bin"
+    fi
     
     # Compiler paths
     GCC_CPP_PATH="${MINGW_GCC_BASE}/g++.exe"
@@ -72,18 +77,6 @@ if [[ "$ENVIRONMENT" == "Windows-msys" ]]; then
     CLANG_FORMAT_PATH="${MINGW_GCC_BASE}/clang-format.exe"
     CLANG_TIDY_PATH="${MINGW_GCC_BASE}/clang-tidy.exe"
 
-elif [[ "$ENVIRONMENT" == "macOS" ]]; then
-    echo ""
-    echo "!!! THIS ENVIRONMENT IS NOT TESTED !!!"
-    echo ""
-    BREW_PREFIX="$(brew --prefix)"
-    GCC_CPP_PATH="${BREW_PREFIX}/bin/g++-${GCC_VERSION}"
-    GCC_C_PATH="${BREW_PREFIX}/bin/gcc-${GCC_VERSION}"
-    CLANG_CPP_PATH="/usr/bin/clang++"  # macOS uses system clang
-    CLANG_C_PATH="/usr/bin/clang"
-    
-    CLANG_FORMAT_PATH="${BREW_PREFIX}/bin/clang-format"
-    CLANG_TIDY_PATH="${BREW_PREFIX}/bin/clang-tidy"
 else
     # Linux/WSL/Windows-cygwin
     GCC_CPP_PATH="/usr/bin/g++-${GCC_VERSION}"
