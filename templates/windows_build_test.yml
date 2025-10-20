@@ -174,9 +174,8 @@ jobs:
 
       - name: Publish test results
         if: always()
-        uses: dorny/test-reporter@v1
+        uses: EnricoMi/publish-unit-test-result-action/composite@v2
         with:
-          name: Test Results (${{ matrix.compiler }}/${{ matrix.build_type }}/${{ matrix.arch }})
-          path: build-${{ matrix.compiler }}-${{ matrix.build_type }}-${{ matrix.arch }}/test_results.xml
-          reporter: jest-junit
-          fail-on-error: true
+          files: build-${{ matrix.compiler }}-${{ matrix.build_type }}-${{ matrix.arch }}/test_results.xml
+          check_name: Test Results (${{ matrix.compiler }}/${{ matrix.build_type }}/${{ matrix.arch }})
+          github_token: ${{ secrets.GITHUB_TOKEN }}

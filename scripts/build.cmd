@@ -1,3 +1,4 @@
+@echo off
 setlocal enabledelayedexpansion
 rem ============================================================================
 rem  Minimal Windows build script (MSVC only)
@@ -159,7 +160,7 @@ set "CMAKE_ARGS=-DCMAKE_BUILD_TYPE=%BUILD_TYPE% -DBUILD_TESTING=%ENABLE_TESTS% -
 
 rem For Visual Studio generators supply -A; for Ninja (when used with MSVC) do NOT pass -A
 if /i not "%GENERATOR%"=="Ninja" (
-    set "CMAKE_ARGS=%CMAKE_ARGS% -A %TARGET_ARCH_BITS%"
+    set "CMAKE_ARGS=%CMAKE_ARGS:"=% -A %TARGET_ARCH_BITS%"
 )
 
 echo working direktory: %BUILD_DIR%
