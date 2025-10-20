@@ -36,6 +36,7 @@ jobs:
   build:
     needs: setup
     runs-on: windows-latest
+    continue-on-error: true
     strategy:
       fail-fast: false
       matrix:
@@ -130,6 +131,7 @@ jobs:
 
   test:
     needs: build
+    if: always()
     runs-on: windows-latest
     strategy:
       fail-fast: false

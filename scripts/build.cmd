@@ -23,7 +23,7 @@ set SKIP_BUILD=0
 set VERBOSE=0
 
 rem --- Help ---
-if "%~1"=="" (
+if [%1]==[] (
     echo Usage: build.bat [options]
     echo Options:
     echo   -c              Clean build
@@ -56,12 +56,12 @@ if "%ARG:~0,2%"=="--" (
         shift
         if "%~1"=="" (
             echo ERROR: --arch requires a value ^(x86 or x64^)
-            exit /b 1
+            exit /b 2
         )
         set TARGET_ARCH_BITS=%~1
     ) else (
         echo ERROR: Unknown argument %ARG%
-        exit /b 1
+        exit /b 3
     )
 ) else if "%ARG:~0,1%"=="-" (
     rem Handle short arguments
@@ -86,11 +86,11 @@ if "%ARG:~0,2%"=="--" (
         set VERBOSE=1
     ) else (
         echo ERROR: Unknown argument %ARG%
-        exit /b 1
+        exit /b 4
     )
 ) else (
     echo ERROR: Unexpected argument %ARG%
-    exit /b 1
+    exit /b 5
 )
 shift
 goto parse
@@ -98,21 +98,21 @@ goto parse
 
 if "%BUILD_TYPE%"=="" (
     echo Error: must specify -d, -r, or -o
-    exit /b 1
+    exit /b 6
 )
 
 rem --- Detect Visual Studio installation ---
 set "VSWHERE=%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe"
 if not exist "%VSWHERE%" (
     echo ERROR: vswhere not found!
-    exit /b 1
+    exit /b 7
 )
 
 for /f "usebackq tokens=*" %%v in (`"%VSWHERE%" -latest -requires Microsoft.Component.MSBuild -property installationPath`) do set VS_PATH=%%v
 
 if not defined VS_PATH (
     echo ERROR: Visual Studio not found!
-    exit /b 1
+    exit /b 8
 )
 
 rem --- Detect version (e.g. 2022, 2019) ---
@@ -123,7 +123,7 @@ for %%a in ("%VS_PATH%") do (
 )
 if not defined VS_DEV_CMD (
     echo ERROR: Could not find VsDevCmd.bat!
-    exit /b 1
+    exit /b 9
 )
 
 call %VS_DEV_CMD% -arch=%TARGET_ARCH_BITS% >nul
@@ -185,7 +185,7 @@ cmake %CMAKE_ARGS% ..
 
 if errorlevel 1 (
     echo ERROR: CMake configuration failed!
-    exit /b 1
+    exit /b 10
 )
 
 if "%VERBOSE%"=="1" (
@@ -199,7 +199,7 @@ if "%GENERATOR%"=="Ninja" (
 ) else (
     cmake --build . --config %BUILD_TYPE%
 )
-if errorlevel 1 exit /b 1
+if errorlevel 1 exit /b 11
 
 rem --- Run tests ---
 if "%RUN_TESTS%"=="1" (
@@ -209,7 +209,7 @@ if "%RUN_TESTS%"=="1" (
     ) else (
         ctest --output-on-failure
     )
-    if errorlevel 1 exit /b 1
+    if errorlevel 1 exit /b 12
 )
 
 rem --- Install if requested ---
