@@ -97,10 +97,20 @@ jobs:
               exit /b 1
           )
 
+          echo Running build script with: %FLAG% -t --arch %ARCH%
+          
+          rem Enable command echoing to see what's happening
+          echo on
+          
           call initRepo\scripts\build.cmd %FLAG% -t --arch %ARCH%
-          if errorlevel 1 (
-              echo Build script failed with error code %errorlevel%
-              exit /b %errorlevel%
+          set BUILD_ERROR=%errorlevel%
+          
+          echo Build script exited with code: %BUILD_ERROR%
+          if %BUILD_ERROR% neq 0 (
+              type initRepo\scripts\build.cmd
+              echo Full command that was executed:
+              echo call initRepo\scripts\build.cmd %FLAG% -t --arch %ARCH%
+              exit /b %BUILD_ERROR%
           )
           
           7z a msvc_%ARCH%_%BUILD_TYPE%_build.zip build-msvc-%BUILD_TYPE%-%ARCH%

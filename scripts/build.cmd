@@ -1,4 +1,3 @@
-@echo off
 setlocal enabledelayedexpansion
 rem ============================================================================
 rem  Minimal Windows build script (MSVC only)
