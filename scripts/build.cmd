@@ -22,23 +22,6 @@ if "%TARGET_ARCH_BITS%"=="" set TARGET_ARCH_BITS=x64
 set SKIP_BUILD=0
 set VERBOSE=0
 
-rem --- Help ---
-if [%1]==[] (
-    echo Usage: build.bat [options]
-    echo Options:
-    echo   -c              Clean build
-    echo   -d              Debug build
-    echo   -r              Release build
-    echo   -o              RelWithDebInfo build
-    echo   -t              Enable tests
-    echo   -T              Run tests
-    echo   -i              Install after build
-    echo   -n              Use Ninja generator if available
-    echo   --arch ARCH     Target architecture (x86 or x64)
-    echo   -v              Verbose (dump CMake vars)
-    exit /b 1
-)
-
 rem --- Parse args ---
 :parse
 if "%~1"=="" goto parsed
@@ -56,12 +39,12 @@ if "%ARG:~0,2%"=="--" (
         shift
         if "%~1"=="" (
             echo ERROR: --arch requires a value ^(x86 or x64^)
-            exit /b 2
+            goto help
         )
         set TARGET_ARCH_BITS=%~1
     ) else (
         echo ERROR: Unknown argument %ARG%
-        exit /b 3
+        goto help
     )
 ) else if "%ARG:~0,1%"=="-" (
     rem Handle short arguments
@@ -86,11 +69,11 @@ if "%ARG:~0,2%"=="--" (
         set VERBOSE=1
     ) else (
         echo ERROR: Unknown argument %ARG%
-        exit /b 4
+        goto help
     )
 ) else (
     echo ERROR: Unexpected argument %ARG%
-    exit /b 5
+    goto help
 )
 shift
 goto parse
@@ -219,3 +202,19 @@ if "%INSTALL%"=="1" (
 
 echo Build completed successfully.
 exit /b 0
+
+:help
+rem --- Help ---
+echo Usage: build.bat [options]
+echo Options:
+echo   -c              Clean build
+echo   -d              Debug build
+echo   -r              Release build
+echo   -o              RelWithDebInfo build
+echo   -t              Enable tests
+echo   -T              Run tests
+echo   -i              Install after build
+echo   -n              Use Ninja generator if available
+echo   --arch ARCH     Target architecture (x86 or x64)
+echo   -v              Verbose (dump CMake vars)
+exit /b 1
