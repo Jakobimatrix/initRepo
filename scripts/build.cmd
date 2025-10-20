@@ -17,7 +17,8 @@ set ENABLE_TESTS=OFF
 set RUN_TESTS=0
 set TEST_OUTPUT_JUNIT=0
 set USE_NINJA=0
-set TARGET_ARCH_BITS=x64
+set TARGET_ARCH_BITS=%ARCH%
+if "%TARGET_ARCH_BITS%"=="" set TARGET_ARCH_BITS=x64
 set SKIP_BUILD=0
 set VERBOSE=0
 
@@ -41,24 +42,55 @@ if "%~1"=="" (
 rem --- Parse args ---
 :parse
 if "%~1"=="" goto parsed
-if "%~1"=="-c" set CLEAN=1
-if "%~1"=="-d" set BUILD_TYPE=Debug
-if "%~1"=="--debug" set BUILD_TYPE=Debug
-if "%~1"=="-r" set BUILD_TYPE=Release
-if "%~1"=="--release" set BUILD_TYPE=Release
-if "%~1"=="-o" set BUILD_TYPE=RelWithDebInfo
-if "%~1"=="--relwithdebinfo" set BUILD_TYPE=RelWithDebInfo
-if "%~1"=="-i" set INSTALL=1
-if "%~1"=="-t" set ENABLE_TESTS=ON
-if "%~1"=="-T" (
-    set RUN_TESTS=1
-    set ENABLE_TESTS=ON
-)
-if "%~1"=="-n" set USE_NINJA=1
-if "%~1"=="-v" set VERBOSE=1
-if "%~1"=="--arch" (
-    shift
-    set TARGET_ARCH_BITS=%~1
+
+set "ARG=%~1"
+if "%ARG:~0,2%"=="--" (
+    rem Handle long arguments
+    if "%ARG%"=="--debug" (
+        set BUILD_TYPE=Debug
+    ) else if "%ARG%"=="--release" (
+        set BUILD_TYPE=Release
+    ) else if "%ARG%"=="--relwithdebinfo" (
+        set BUILD_TYPE=RelWithDebInfo
+    ) else if "%ARG%"=="--arch" (
+        shift
+        if "%~1"=="" (
+            echo ERROR: --arch requires a value ^(x86 or x64^)
+            exit /b 1
+        )
+        set TARGET_ARCH_BITS=%~1
+    ) else (
+        echo ERROR: Unknown argument %ARG%
+        exit /b 1
+    )
+) else if "%ARG:~0,1%"=="-" (
+    rem Handle short arguments
+    if "%ARG%"=="-c" (
+        set CLEAN=1
+    ) else if "%ARG%"=="-d" (
+        set BUILD_TYPE=Debug
+    ) else if "%ARG%"=="-r" (
+        set BUILD_TYPE=Release
+    ) else if "%ARG%"=="-o" (
+        set BUILD_TYPE=RelWithDebInfo
+    ) else if "%ARG%"=="-i" (
+        set INSTALL=1
+    ) else if "%ARG%"=="-t" (
+        set ENABLE_TESTS=ON
+    ) else if "%ARG%"=="-T" (
+        set RUN_TESTS=1
+        set ENABLE_TESTS=ON
+    ) else if "%ARG%"=="-n" (
+        set USE_NINJA=1
+    ) else if "%ARG%"=="-v" (
+        set VERBOSE=1
+    ) else (
+        echo ERROR: Unknown argument %ARG%
+        exit /b 1
+    )
+) else (
+    echo ERROR: Unexpected argument %ARG%
+    exit /b 1
 )
 shift
 goto parse

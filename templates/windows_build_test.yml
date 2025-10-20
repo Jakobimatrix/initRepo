@@ -72,7 +72,7 @@ jobs:
         run: |
           source initRepo/.environment
           ./initRepo/scripts/build.sh --${{ matrix.build_type }} -t --compiler ${{ matrix.compiler }} --arch ${{ matrix.arch }} --ninja
-          7za a ${{ matrix.compiler }}_${{ matrix.arch }}_${{ matrix.build_type }}_build.zip build-${{ matrix.compiler }}-${{ matrix.build_type }}-${{ matrix.arch }}
+          7za a ${{ matrix.compiler }}_${{ matrix.build_type }}_${{ matrix.arch }}_build.zip build-${{ matrix.compiler }}-${{ matrix.build_type }}-${{ matrix.arch }}
 
       - name: Setup MSVC
         if: matrix.compiler == 'msvc'
@@ -98,7 +98,9 @@ jobs:
               exit /b 1
           )
 
-          echo Running build script with: %FLAG% -t --arch %ARCH%
+          echo Running build script with flags...
+          echo Build type flag: %FLAG%
+          echo Architecture: %ARCH%
           
           rem Enable command echoing to see what's happening
           echo on
@@ -114,7 +116,7 @@ jobs:
               exit /b %BUILD_ERROR%
           )
           
-          7z a msvc_%ARCH%_%BUILD_TYPE%_build.zip build-msvc-%BUILD_TYPE%-%ARCH%
+          7z a msvc_%BUILD_TYPE%_%ARCH%_build.zip build-msvc-%BUILD_TYPE%-%ARCH%
         env:
           BUILD_TYPE: ${{ matrix.build_type }}
           ARCH: ${{ matrix.arch }}
