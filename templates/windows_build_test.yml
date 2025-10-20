@@ -61,14 +61,6 @@ jobs:
             base-devel
             git
             mingw-w64-${{ matrix.arch == 'x86' && 'i686' || 'x86_64' }}-cmake
-
-      - name: Install specific GCC and Clang versions
-        if: matrix.compiler != 'msvc'
-        uses: msys2/setup-msys2@v2
-        with:
-          msystem: ${{ matrix.arch == 'x86' && 'MINGW32' || 'MINGW64' }}
-          update: true
-          install: >-
             mingw-w64-${{ matrix.arch == 'x86' && 'i686' || 'x86_64' }}-gcc
             mingw-w64-${{ matrix.arch == 'x86' && 'i686' || 'x86_64' }}-clang
             mingw-w64-${{ matrix.arch == 'x86' && 'i686' || 'x86_64' }}-ninja
@@ -93,7 +85,24 @@ jobs:
           if "%BUILD_TYPE%"=="debug" set FLAG=-d
           if "%BUILD_TYPE%"=="release" set FLAG=-r
 
+          echo Current directory:
+          cd
+          echo Directory contents:
+          dir
+          echo Checking if build script exists:
+          if exist initRepo\scripts\build.cmd (
+              echo Build script found
+          ) else (
+              echo Build script NOT found
+              exit /b 1
+          )
+
           call initRepo\scripts\build.cmd %FLAG% -t --arch %ARCH%
+          if errorlevel 1 (
+              echo Build script failed with error code %errorlevel%
+              exit /b %errorlevel%
+          )
+          
           7z a msvc_%ARCH%_%BUILD_TYPE%_build.zip build-msvc-%BUILD_TYPE%-%ARCH%
         env:
           BUILD_TYPE: ${{ matrix.build_type }}
