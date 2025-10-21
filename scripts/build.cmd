@@ -36,8 +36,8 @@ if "%ARG:~0,2%"=="--" (
         set BUILD_TYPE=Release
     ) else if "%ARG%"=="--relwithdebinfo" (
         set BUILD_TYPE=RelWithDebInfo
-    ) else if "%ARG:~0,7%"=="--arch=" (
-        for /f "tokens=1,2 delims==" %%A in ("%ARG%") do set "ARCHVAL=%%B"
+    ) else if /I "%ARG:~0,7%"=="--arch=" (
+        set "ARCHVAL=%ARG:~7%"
     ) else (
         echo ERROR: Unknown long argument %ARG%
         goto help
@@ -236,11 +236,12 @@ echo Options:
 echo   -c              Clean build
 echo   -d              Debug build
 echo   -r              Release build
+echo   -s              Skip build
 echo   -o              RelWithDebInfo build
 echo   -t              Enable tests
 echo   -T              Run tests
 echo   -i              Install after build
 echo   -n              Use Ninja generator if available
-echo   --arch ARCH     Target architecture (x86 or x64)
+echo   --arch=ARCH     Target architecture (x86 or x64)
 echo   -v              Verbose (dump CMake vars)
 exit /b 1

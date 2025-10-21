@@ -92,7 +92,7 @@ jobs:
           if "%BUILD_TYPE%"=="release" set FLAG=-r
 
           echo Running build script...
-          echo call initRepo\scripts\build.cmd %FLAG% -t --arch%=ARCH%
+          echo call initRepo\scripts\build.cmd %FLAG% -t --arch=%ARCH%
           echo on
           call initRepo\scripts\build.cmd %FLAG% -t --arch=%ARCH%
           set BUILD_ERROR=%errorlevel%
@@ -168,7 +168,7 @@ jobs:
           if "%BUILD_TYPE%"=="debug" set FLAG=-d
           if "%BUILD_TYPE%"=="release" set FLAG=-r
 
-          echo call initRepo\scripts\build.cmd %FLAG% -s -t -T -J --arch%=ARCH%
+          echo call initRepo\scripts\build.cmd %FLAG% -s -t -T -J --arch=%ARCH%
           echo on
           call initRepo\scripts\build.cmd %FLAG% -s -t -T -J --arch=%ARCH%
         env:
