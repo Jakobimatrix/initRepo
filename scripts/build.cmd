@@ -36,25 +36,32 @@ if "%ARG:~0,2%"=="--" (
         set BUILD_TYPE=Release
     ) else if "%ARG%"=="--relwithdebinfo" (
         set BUILD_TYPE=RelWithDebInfo
+    ) else if "%ARG:~0,7%"=="--arch=" (
+        for /f "tokens=1,2 delims==" %%A in ("%ARG%") do set "ARCHVAL=%%B"
     ) else if "%ARG%"=="--arch" (
         shift
-        if "%~1"=="" (
-            echo ERROR: --arch requires a value ^(x86 or Win32 or x64^)
-            goto help
-        )
-        if "%~1"=="x86" (
+        set "ARCHVAL=%~1"
+    ) else (
+        set "ARCHVAL="
+    )
+
+    if defined ARCHVAL (
+        if "%ARCHVAL%"=="x86" (
             set TARGET_ARCH=Win32
             set TARGET_ARCH_BITS=x86
-        ) else if "%~1"=="Win32" (
+        ) else if "%ARCHVAL%"=="Win32" (
             set TARGET_ARCH=Win32
             set TARGET_ARCH_BITS=x86
-        ) else if "%~1"=="x64" (
+        ) else if "%ARCHVAL%"=="x64" (
             set TARGET_ARCH=x64
             set TARGET_ARCH_BITS=x64
         ) else (
-            echo ERROR: Invalid architecture %~1. Must be x86 or Win32 or x64
+            echo ERROR: Invalid architecture %ARCHVAL%. Must be x86 or Win32 or x64
             goto help
         )
+        shift
+        goto parse
+    )
     ) else (
         echo ERROR: Unknown argument %ARG%
         goto help
