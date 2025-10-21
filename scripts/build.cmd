@@ -43,6 +43,9 @@ if "%ARG:~0,2%"=="--" (
         set "ARCHVAL=%~1"
     ) else (
         set "ARCHVAL="
+    ) else (
+        echo ERROR: Unknown argument %ARG%
+        goto help
     )
 
     if defined ARCHVAL (
@@ -62,10 +65,7 @@ if "%ARG:~0,2%"=="--" (
         shift
         goto parse
     )
-    ) else (
-        echo ERROR: Unknown argument %ARG%
-        goto help
-    )
+
 ) else if "%ARG:~0,1%"=="-" (
     rem Handle short arguments
     if "%ARG%"=="-c" (
