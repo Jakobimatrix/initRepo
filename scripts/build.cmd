@@ -26,10 +26,10 @@ set VERBOSE=0
 rem --- Parse args ---
 :parse
 if "%~1"=="" goto parsed
-
 set "ARG=%~1"
+
+rem === Long options: start with "--" ===
 if "%ARG:~0,2%"=="--" (
-    rem Handle long arguments
     if "%ARG%"=="--debug" (
         set BUILD_TYPE=Debug
     ) else if "%ARG%"=="--release" (
@@ -42,32 +42,25 @@ if "%ARG:~0,2%"=="--" (
         shift
         set "ARCHVAL=%~1"
     ) else (
-        set "ARCHVAL="
-    ) else (
-        echo ERROR: Unknown argument %ARG%
+        echo ERROR: Unknown long argument %ARG%
         goto help
     )
 
     if defined ARCHVAL (
-        if "%ARCHVAL%"=="x86" (
+        if /I "%ARCHVAL%"=="x86" (
             set TARGET_ARCH=Win32
             set TARGET_ARCH_BITS=x86
-        ) else if "%ARCHVAL%"=="Win32" (
-            set TARGET_ARCH=Win32
-            set TARGET_ARCH_BITS=x86
-        ) else if "%ARCHVAL%"=="x64" (
+        ) else if /I "%ARCHVAL%"=="x64" (
             set TARGET_ARCH=x64
             set TARGET_ARCH_BITS=x64
         ) else (
-            echo ERROR: Invalid architecture %ARCHVAL%. Must be x86 or Win32 or x64
+            echo ERROR: Invalid architecture %ARCHVAL%
             goto help
         )
-        shift
-        goto parse
     )
 
 ) else if "%ARG:~0,1%"=="-" (
-    rem Handle short arguments
+    rem === Short flags: start with "-" ===
     if "%ARG%"=="-c" (
         set CLEAN=1
     ) else if "%ARG%"=="-d" (
@@ -88,16 +81,19 @@ if "%ARG:~0,2%"=="--" (
     ) else if "%ARG%"=="-v" (
         set VERBOSE=1
     ) else (
-        echo ERROR: Unknown argument %ARG%
+        echo ERROR: Unknown short argument %ARG%
         goto help
     )
+
 ) else (
     echo ERROR: Unexpected argument %ARG%
     goto help
 )
+
 shift
 goto parse
 :parsed
+
 
 if "%BUILD_TYPE%"=="" (
     echo Error: must specify -d, -r, or -o
