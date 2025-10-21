@@ -92,11 +92,9 @@ jobs:
           if "%BUILD_TYPE%"=="release" set FLAG=-r
 
           echo Running build script...
-          echo Build type flag: %FLAG%
-          echo Architecture: %ARCH%
-          echo call initRepo\scripts\build.cmd %FLAG% -t --arch %ARCH%
+          echo call initRepo\scripts\build.cmd %FLAG% -t --arch%=ARCH%
           echo on
-          call initRepo\scripts\build.cmd %FLAG% -t --arch %ARCH%
+          call initRepo\scripts\build.cmd %FLAG% -t --arch=%ARCH%
           set BUILD_ERROR=%errorlevel%
           if %BUILD_ERROR% neq 0 exit /b %BUILD_ERROR%
           
@@ -167,8 +165,12 @@ jobs:
         run: |
           7z x workspace.zip
           7z x ${{ matrix.compiler }}_${{ matrix.build_type }}_${{ matrix.arch }}_build.zip
-          source initRepo/.environment
-          ./initRepo/scripts/build.sh -s -T -J --${{ matrix.build_type }} --compiler ${{ matrix.compiler }} --arch ${{ matrix.arch }}
+          if "%BUILD_TYPE%"=="debug" set FLAG=-d
+          if "%BUILD_TYPE%"=="release" set FLAG=-r
+
+          echo call initRepo\scripts\build.cmd %FLAG% -s -t -T -J --arch%=ARCH%
+          echo on
+          call initRepo\scripts\build.cmd %FLAG% -s -t -T -J --arch=%ARCH%
         env:
           BUILD_TYPE: ${{ matrix.build_type }}
           ARCH: ${{ matrix.arch }}

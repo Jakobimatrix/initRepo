@@ -38,16 +38,14 @@ if "%ARG:~0,2%"=="--" (
         set BUILD_TYPE=RelWithDebInfo
     ) else if "%ARG:~0,7%"=="--arch=" (
         for /f "tokens=1,2 delims==" %%A in ("%ARG%") do set "ARCHVAL=%%B"
-    ) else if "%ARG%"=="--arch" (
-        shift
-        set "ARCHVAL=%~1"
     ) else (
         echo ERROR: Unknown long argument %ARG%
         goto help
     )
 
     if defined ARCHVAL (
-        if /I "%ARCHVAL%"=="x86" (
+        if /I "%ARCHVAL%"=="x86"  set "ARCHVAL=Win32"
+        if /I "%ARCHVAL%"=="Win32" (
             set TARGET_ARCH=Win32
             set TARGET_ARCH_BITS=x86
         ) else if /I "%ARCHVAL%"=="x64" (
@@ -71,6 +69,8 @@ if "%ARG:~0,2%"=="--" (
         set BUILD_TYPE=RelWithDebInfo
     ) else if "%ARG%"=="-i" (
         set INSTALL=1
+    ) else if "%ARG%"=="-s" (
+        set SKIP_BUILD=1
     ) else if "%ARG%"=="-t" (
         set ENABLE_TESTS=ON
     ) else if "%ARG%"=="-T" (
@@ -165,6 +165,11 @@ rem Convert to lowercase using powershell
 for /f %%i in ('powershell -command "$env:BUILD_TYPE.ToLower()"') do set BUILD_TYPE_LOWER=%%i
 
 set "BUILD_DIR=build-msvc-%BUILD_TYPE_LOWER%-%TARGET_ARCH_BITS%"
+
+if "%SKIP_BUILD%"=="1" (
+    goto runtest
+)
+
 if "%CLEAN%"=="1" (
     echo Cleaning build directory: %BUILD_DIR%
     if exist "%BUILD_DIR%" rmdir /s /q "%BUILD_DIR%"
@@ -202,6 +207,8 @@ if "%GENERATOR%"=="Ninja" (
     cmake --build . --config %BUILD_TYPE%
 )
 if errorlevel 1 exit /b 11
+
+:runtest
 
 rem --- Run tests ---
 if "%RUN_TESTS%"=="1" (
