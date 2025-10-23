@@ -168,9 +168,9 @@ jobs:
           if "%BUILD_TYPE%"=="debug" set FLAG=-d
           if "%BUILD_TYPE%"=="release" set FLAG=-r
 
-          echo call initRepo\scripts\build.cmd %FLAG% -s -t -T -J --arch^=%ARCH%
+          echo call "initRepo\scripts\build.cmd" %FLAG% -s -t -T -J "--arch=%ARCH%"
           echo on
-          call initRepo\scripts\build.cmd %FLAG% -s -t -T -J --arch^=%ARCH%
+          call "initRepo\scripts\build.cmd" %FLAG% -s -t -T -J "--arch=%ARCH%"
         env:
           BUILD_TYPE: ${{ matrix.build_type }}
           ARCH: ${{ matrix.arch }}
