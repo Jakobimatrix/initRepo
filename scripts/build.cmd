@@ -10,6 +10,18 @@ set "SCRIPT_DIR=%~dp0"
 for %%I in ("%SCRIPT_DIR%..") do set "REPO_ROOT=%%~fI"
 cd /d "%REPO_ROOT%"
 
+
+echo Received arguments:
+set i=0
+:printargs
+if "%~1"=="" goto doneprint
+set /a i+=1
+echo   Arg !i!: "%~1"
+shift
+goto printargs
+:doneprint
+exit /b
+
 rem --- Defaults ---
 set CLEAN=0
 set INSTALL=0
