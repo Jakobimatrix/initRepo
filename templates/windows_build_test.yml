@@ -90,11 +90,12 @@ jobs:
           rem Map BUILD_TYPE to flag
           if "%BUILD_TYPE%"=="debug" set FLAG=-d
           if "%BUILD_TYPE%"=="release" set FLAG=-r
+          set ARCH_ARG=--arch=%ARCH%
 
           echo Running build script...
-          echo call initRepo\scripts\build.cmd %FLAG% -t --arch^=%ARCH%
+          echo call initRepo\scripts\build.cmd %FLAG% -t %ARCH_ARG%
           echo on
-          call initRepo\scripts\build.cmd %FLAG% -t --arch^=%ARCH%
+          call initRepo\scripts\build.cmd %FLAG% -t %ARCH_ARG%
           set BUILD_ERROR=%errorlevel%
           if %BUILD_ERROR% neq 0 exit /b %BUILD_ERROR%
           
