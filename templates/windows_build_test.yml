@@ -85,24 +85,25 @@ jobs:
 
       - name: Build for MSVC
         if: matrix.compiler == 'msvc'
-        shell: cmd
+        shell: pwsh
         run: |
-          rem Map BUILD_TYPE to flag
-          if "%BUILD_TYPE%"=="debug" set FLAG=-d
-          if "%BUILD_TYPE%"=="release" set FLAG=-r
-          set "ARCH_ARG=--arch=%ARCH%"
+          $env:FLAG = ''
+          if ($env:BUILD_TYPE -eq 'debug')   { $env:FLAG = '-d' }
+          elseif ($env:BUILD_TYPE -eq 'release') { $env:FLAG = '-r' }
 
-          echo Running build script...
-          echo call initRepo\scripts\build.cmd %FLAG% -t "%ARCH_ARG%"
-          echo on
-          call initRepo\scripts\build.cmd %FLAG% -t "%ARCH_ARG%"
-          set BUILD_ERROR=%errorlevel%
-          if %BUILD_ERROR% neq 0 exit /b %BUILD_ERROR%
-          
-          7z a msvc_%BUILD_TYPE%_%ARCH%_build.zip build-msvc-%BUILD_TYPE%-%ARCH%
+          $archArg = "--arch=$env:ARCH"
+
+          Write-Host "Running build script..."
+          Write-Host "cmd /c \"call initRepo\\scripts\\build.cmd $env:FLAG -t $archArg\""
+
+          cmd /c "call initRepo\scripts\build.cmd $env:FLAG -t $archArg"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+          7z a "msvc_${env:BUILD_TYPE}_${env:ARCH}_build.zip" "build-msvc-$($env:BUILD_TYPE)-$($env:ARCH)"
         env:
           BUILD_TYPE: ${{ matrix.build_type }}
           ARCH: ${{ matrix.arch }}
+
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
@@ -162,17 +163,22 @@ jobs:
 
       - name: Run Tests
         if: matrix.compiler == 'msvc'
-        shell: cmd
+        shell: pwsh
         run: |
           7z x workspace.zip
-          7z x ${{ matrix.compiler }}_${{ matrix.build_type }}_${{ matrix.arch }}_build.zip
-          if "%BUILD_TYPE%"=="debug" set FLAG=-d
-          if "%BUILD_TYPE%"=="release" set FLAG=-r
-          set "ARCH_ARG=--arch=%ARCH%"
+          7z x "${{ matrix.compiler }}_${{ matrix.build_type }}_${{ matrix.arch }}_build.zip"
 
-          echo call "initRepo\scripts\build.cmd" %FLAG% -s -t -T -J "%ARCH_ARG%"
-          echo on
-          call "initRepo\scripts\build.cmd" %FLAG% -s -t -T -J "%ARCH_ARG%"
+          $env:FLAG = ''
+          if ($env:BUILD_TYPE -eq 'debug')   { $env:FLAG = '-d' }
+          elseif ($env:BUILD_TYPE -eq 'release') { $env:FLAG = '-r' }
+
+          $archArg = "--arch=$env:ARCH"
+
+          Write-Host "Running test script..."
+          Write-Host "cmd /c \"call initRepo\\scripts\\build.cmd $env:FLAG -s -t -T -J $archArg\""
+
+          cmd /c "call initRepo\scripts\build.cmd $env:FLAG -s -t -T -J $archArg"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
         env:
           BUILD_TYPE: ${{ matrix.build_type }}
           ARCH: ${{ matrix.arch }}
