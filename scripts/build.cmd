@@ -132,7 +132,9 @@ if not defined VS_DEV_CMD (
     exit /b 9
 )
 
-call "%VS_DEV_CMD:"=%" -arch=%TARGET_ARCH% >nul
+echo Initializing MSVC environment for %TARGET_ARCH%...
+call "%VS_DEV_CMD:"=%" -arch=%TARGET_ARCH%
+
 echo Using Visual Studio from: %VS_PATH%
 
 rem --- Determine generator automatically ---
