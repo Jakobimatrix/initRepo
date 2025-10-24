@@ -195,7 +195,10 @@ if /i not "%GENERATOR%"=="Ninja" (
 
 echo working direktory: %BUILD_DIR%
 echo Running: cmake %CMAKE_ARGS% ..
-cmake %CMAKE_ARGS% ..
+rem --- github runner bug, dont run cmake multiple times for extra arguments, because of race conditions
+set CMAKE_NO_PARALLEL_GENERATOR=1
+timeout /t 2 >nul
+cmake --no-warn-unused-cli %CMAKE_ARGS% ..
 
 if errorlevel 1 (
     echo ERROR: CMake configuration failed!
@@ -205,6 +208,9 @@ if errorlevel 1 (
 if "%VERBOSE%"=="1" (
     cmake -LAH ..
 )
+
+rem --- github runner race condition problems with running cmake again because why not...
+timeout /t 2 >nul
 
 rem --- Build ---
 echo Building project...
