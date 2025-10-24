@@ -20,7 +20,7 @@ set RUN_TESTS=0
 set TEST_OUTPUT_JUNIT=0
 set USE_NINJA=0
 set TARGET_ARCH=x64
-set TARGET_ARCH_BITS=x64
+set CMAKE_ARCH=x64
 set SKIP_BUILD=0
 set VERBOSE=0
 
@@ -53,11 +53,11 @@ if "%ARG:~0,2%"=="--" (
     if defined ARCHVAL (
         if /I "!ARCHVAL!"=="x86"  set "ARCHVAL=Win32"
         if /I "!ARCHVAL!"=="Win32" (
-            set TARGET_ARCH=Win32
-            set TARGET_ARCH_BITS=x86
+            set TARGET_ARCH=x86
+            set CMAKE_ARCH=Win32
         ) else if /I "!ARCHVAL!"=="x64" (
             set TARGET_ARCH=x64
-            set TARGET_ARCH_BITS=x64
+            set CMAKE_ARCH=x64
         ) else (
             echo ERROR: Invalid architecture !ARCHVAL!
             goto help
@@ -173,7 +173,7 @@ if "%GENERATOR%"=="" (
 rem Convert to lowercase using powershell
 for /f %%i in ('powershell -command "$env:BUILD_TYPE.ToLower()"') do set BUILD_TYPE_LOWER=%%i
 
-set "BUILD_DIR=build-msvc-%BUILD_TYPE_LOWER%-%TARGET_ARCH_BITS%"
+set "BUILD_DIR=build-msvc-%BUILD_TYPE_LOWER%-%TARGET_ARCH%"
 
 if "%SKIP_BUILD%"=="1" (
     goto runtest
@@ -192,13 +192,16 @@ set CMAKE_ARGS=-DCMAKE_BUILD_TYPE=%BUILD_TYPE% -DBUILD_TESTING=%ENABLE_TESTS% -G
 
 rem For Visual Studio generators supply -A; for Ninja (when used with MSVC) do NOT pass -A
 if /i not "%GENERATOR%"=="Ninja" (
-    set CMAKE_ARGS=%CMAKE_ARGS% -A %TARGET_ARCH%
+    set CMAKE_ARGS=%CMAKE_ARGS% -A %CMAKE_ARCH%
 )
 
 echo working direktory: %BUILD_DIR%
 echo Running: cmake %CMAKE_ARGS% ..
 rem --- github runner bug, dont run cmake multiple times for extra arguments, because of race conditions
 set CMAKE_NO_PARALLEL_GENERATOR=1
+set TMP=%BUILD_DIR%\tmp
+set TEMP=%BUILD_DIR%\tmp
+if not exist "%TMP%" mkdir "%TMP%"
 timeout /t 2 >nul
 cmake --no-warn-unused-cli %CMAKE_ARGS% ..
 
