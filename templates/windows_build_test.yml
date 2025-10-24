@@ -90,12 +90,12 @@ jobs:
           rem Map BUILD_TYPE to flag
           if "%BUILD_TYPE%"=="debug" set FLAG=-d
           if "%BUILD_TYPE%"=="release" set FLAG=-r
-          set ARCH_ARG=--arch=%ARCH%
+          set "ARCH_ARG=--arch=%ARCH%"
 
           echo Running build script...
-          echo call initRepo\scripts\build.cmd %FLAG% -t %ARCH_ARG%
+          echo call initRepo\scripts\build.cmd %FLAG% -t "%ARCH_ARG%"
           echo on
-          call initRepo\scripts\build.cmd %FLAG% -t %ARCH_ARG%
+          call initRepo\scripts\build.cmd %FLAG% -t "%ARCH_ARG%"
           set BUILD_ERROR=%errorlevel%
           if %BUILD_ERROR% neq 0 exit /b %BUILD_ERROR%
           
@@ -168,11 +168,11 @@ jobs:
           7z x ${{ matrix.compiler }}_${{ matrix.build_type }}_${{ matrix.arch }}_build.zip
           if "%BUILD_TYPE%"=="debug" set FLAG=-d
           if "%BUILD_TYPE%"=="release" set FLAG=-r
-          set ARCH_ARG=--arch=%ARCH%
+          set "ARCH_ARG=--arch=%ARCH%"
 
-          echo call "initRepo\scripts\build.cmd" %FLAG% -s -t -T -J %ARCH_ARG%
+          echo call "initRepo\scripts\build.cmd" %FLAG% -s -t -T -J "%ARCH_ARG%"
           echo on
-          call "initRepo\scripts\build.cmd" %FLAG% -s -t -T -J %ARCH_ARG%
+          call "initRepo\scripts\build.cmd" %FLAG% -s -t -T -J "%ARCH_ARG%"
         env:
           BUILD_TYPE: ${{ matrix.build_type }}
           ARCH: ${{ matrix.arch }}
