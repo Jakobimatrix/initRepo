@@ -7,7 +7,7 @@ rem  Detects Visual Studio version and generator automatically
 rem ============================================================================
 
 set "SCRIPT_DIR=%~dp0"
-for %%I in ("%SCRIPT_DIR%..") do set "REPO_ROOT=%%~fI"
+for %%I in ("%SCRIPT_DIR%..\..") do set "REPO_ROOT=%%~fI"
 cd /d "%REPO_ROOT%"
 
 
@@ -132,7 +132,7 @@ if not defined VS_DEV_CMD (
     exit /b 9
 )
 
-call %VS_DEV_CMD:"=% -arch=%TARGET_ARCH% >nul
+call "%VS_DEV_CMD:"=%" -arch=%TARGET_ARCH% >nul
 echo Using Visual Studio from: %VS_PATH%
 
 rem --- Determine generator automatically ---
