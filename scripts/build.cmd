@@ -51,15 +51,15 @@ if "%ARG:~0,2%"=="--" (
     )
 
     if defined ARCHVAL (
-        if /I "%ARCHVAL%"=="x86"  set "ARCHVAL=Win32"
-        if /I "%ARCHVAL%"=="Win32" (
+        if /I "!ARCHVAL!"=="x86"  set "ARCHVAL=Win32"
+        if /I "!ARCHVAL!"=="Win32" (
             set TARGET_ARCH=Win32
             set TARGET_ARCH_BITS=x86
-        ) else if /I "%ARCHVAL%"=="x64" (
+        ) else if /I "!ARCHVAL!"=="x64" (
             set TARGET_ARCH=x64
             set TARGET_ARCH_BITS=x64
         ) else (
-            echo ERROR: Invalid architecture %ARCHVAL%
+            echo ERROR: Invalid architecture !ARCHVAL!
             goto help
         )
     )
