@@ -96,9 +96,9 @@ jobs:
           $archArg = "--arch=$env:ARCH"
 
           Write-Host "Running test script..."
-          Write-Host "cmd /c \"call initRepo\scripts\build.cmd $env:FLAG -s -t `"$archArg`"\""
+          Write-Host "cmd /c \"call initRepo\scripts\build.cmd $env:FLAG -t `"$archArg`"\""
 
-          cmd /c "call initRepo\scripts\build.cmd $env:FLAG -s -t `"$archArg`""
+          cmd /c "call initRepo\scripts\build.cmd $env:FLAG -t `"$archArg`""
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
           7z a "msvc_${env:BUILD_TYPE}_${env:ARCH}_build.zip" "build-msvc-$($env:BUILD_TYPE)-$($env:ARCH)"
