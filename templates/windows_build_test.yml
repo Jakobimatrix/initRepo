@@ -88,7 +88,6 @@ jobs:
         shell: pwsh
         run: |
           7z x workspace.zip
-          7z x "${{ matrix.compiler }}_${{ matrix.build_type }}_${{ matrix.arch }}_build.zip"
 
           $env:FLAG = ''
           if ($env:BUILD_TYPE -eq 'debug')   { $env:FLAG = '-d' }
@@ -101,6 +100,8 @@ jobs:
 
           cmd /c "call initRepo\scripts\build.cmd $env:FLAG -s -t `"$archArg`""
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+          7z a "msvc_${env:BUILD_TYPE}_${env:ARCH}_build.zip" "build-msvc-$($env:BUILD_TYPE)-$($env:ARCH)"
         env:
           BUILD_TYPE: ${{ matrix.build_type }}
           ARCH: ${{ matrix.arch }}
