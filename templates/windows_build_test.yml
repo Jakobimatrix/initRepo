@@ -33,6 +33,9 @@ jobs:
           path: workspace.zip
           retention-days: 1
 
+  # ============================================================
+  # Normal GCC/Clang builds
+  # ============================================================
   build:
     needs: setup
     runs-on: windows-latest
@@ -40,7 +43,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        compiler: [gcc, clang, msvc]
+        compiler: [gcc, clang]
         build_type: [debug, release]
         arch: [x86, x64]
     steps:
@@ -53,9 +56,7 @@ jobs:
         shell: bash
         run: 7z x workspace.zip
 
-      # ---------------- MSYS2 setup ----------------
       - name: Setup MSYS2 for GCC/Clang
-        if: matrix.compiler != 'msvc'
         uses: msys2/setup-msys2@v2
         with:
           msystem: ${{ matrix.arch == 'x86' && 'MINGW32' || 'MINGW64' }}
@@ -69,43 +70,12 @@ jobs:
             mingw-w64-${{ matrix.arch == 'x86' && 'i686' || 'x86_64' }}-clang
             mingw-w64-${{ matrix.arch == 'x86' && 'i686' || 'x86_64' }}-ninja
 
-      # ---------------- Build step ----------------
       - name: Build for GCC/Clang
-        if: matrix.compiler != 'msvc'
         shell: msys2 {0}
         run: |
           source initRepo/.environment
           ./initRepo/scripts/build.sh --${{ matrix.build_type }} -t --compiler ${{ matrix.compiler }} --arch ${{ matrix.arch }} --ninja
           7za a ${{ matrix.compiler }}_${{ matrix.build_type }}_${{ matrix.arch }}_build.zip build-${{ matrix.compiler }}-${{ matrix.build_type }}-${{ matrix.arch }}
-
-      # ---------------- MSVC build ----------------
-      - name: Setup MSVC
-        if: matrix.compiler == 'msvc'
-        uses: microsoft/setup-msbuild@v1.3.1
-
-      - name: Build for MSVC
-        if: matrix.compiler == 'msvc'
-        shell: pwsh
-        run: |
-          7z x workspace.zip
-
-          $env:FLAG = ''
-          if ($env:BUILD_TYPE -eq 'debug')   { $env:FLAG = '-d' }
-          elseif ($env:BUILD_TYPE -eq 'release') { $env:FLAG = '-r' }
-
-          $archArg = "--arch=$env:ARCH"
-
-          Write-Host "Running test script..."
-          Write-Host "cmd /c \"call initRepo\scripts\build.cmd $env:FLAG -t `"$archArg`"\""
-
-          cmd /c "call initRepo\scripts\build.cmd $env:FLAG -t `"$archArg`""
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-
-          7z a "msvc_${env:BUILD_TYPE}_${env:ARCH}_build.zip" "build-msvc-$($env:BUILD_TYPE)-$($env:ARCH)"
-        env:
-          BUILD_TYPE: ${{ matrix.build_type }}
-          ARCH: ${{ matrix.arch }}
-
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
@@ -114,6 +84,64 @@ jobs:
           path: ${{ matrix.compiler }}_${{ matrix.build_type }}_${{ matrix.arch }}_build.zip
           retention-days: 1
 
+  # ============================================================
+  # MSVC Build (explicit)
+  # ============================================================
+  build_msvc:
+    needs: setup
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        build_type: [Debug, Release]
+        arch: [x86, x64]
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: workspace
+          path: .
+
+      - name: Extract workspace
+        shell: bash
+        run: 7z x workspace.zip
+
+      - name: Setup MSVC
+        uses: microsoft/setup-msbuild@v1.3.1
+
+      - name: Configure and Build (MSVC)
+        shell: cmd
+        run: |
+          echo Detecting Visual Studio installation...
+          for /f "usebackq tokens=*" %%v in (`"%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -latest -requires Microsoft.Component.MSBuild -property installationPath`) do set VS_PATH=%%v
+          call "%VS_PATH%\Common7\Tools\VsDevCmd.bat" -arch=${{ matrix.arch }}
+
+          if /I "${{ matrix.arch }}"=="x86" (set CMAKE_ARCH=Win32) else (set CMAKE_ARCH=x64)
+          set BUILD_DIR=build-msvc-${{ matrix.build_type }}-${{ matrix.arch }}
+
+          if exist "%BUILD_DIR%" rmdir /s /q "%BUILD_DIR%"
+          mkdir "%BUILD_DIR%"
+          cd "%BUILD_DIR%"
+
+          echo Running CMake configure...
+          cmake -G "Visual Studio 17 2022" -A %CMAKE_ARCH% -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DBUILD_TESTING=ON ..
+
+          echo Building project...
+          cmake --build . --config ${{ matrix.build_type }} -- /m
+
+          7z a "msvc_${{ matrix.build_type }}_${{ matrix.arch }}_build.zip" "%BUILD_DIR%"
+        env:
+          BUILD_TYPE: ${{ matrix.build_type }}
+          ARCH: ${{ matrix.arch }}
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: msvc-${{ matrix.build_type }}-${{ matrix.arch }}-build
+          path: msvc_${{ matrix.build_type }}_${{ matrix.arch }}_build.zip
+          retention-days: 1
+
+  # ============================================================
+  # Test for GCC/Clang
+  # ============================================================
   test:
     needs: build
     if: always()
@@ -121,7 +149,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        compiler: [gcc, clang, msvc]
+        compiler: [gcc, clang]
         build_type: [debug, release]
         arch: [x86, x64]
     steps:
@@ -136,7 +164,6 @@ jobs:
           path: .
 
       - name: Setup MSYS2
-        if: matrix.compiler != 'msvc'
         uses: msys2/setup-msys2@v2
         with:
           msystem: ${{ matrix.arch == 'x86' && 'MINGW32' || 'MINGW64' }}
@@ -150,12 +177,7 @@ jobs:
             mingw-w64-${{ matrix.arch == 'x86' && 'i686' || 'x86_64' }}-clang
             mingw-w64-${{ matrix.arch == 'x86' && 'i686' || 'x86_64' }}-ninja
 
-      - name: Setup MSVC
-        if: matrix.compiler == 'msvc'
-        uses: microsoft/setup-msbuild@v1.3.1
-
       - name: Run Tests
-        if: matrix.compiler != 'msvc'
         shell: msys2 {0}
         run: |
           7za x workspace.zip
@@ -163,32 +185,56 @@ jobs:
           source initRepo/.environment
           ./initRepo/scripts/build.sh -s -T -J --${{ matrix.build_type }} --compiler ${{ matrix.compiler }} --arch ${{ matrix.arch }}
 
-      - name: Run Tests
-        if: matrix.compiler == 'msvc'
-        shell: pwsh
-        run: |
-          7z x workspace.zip
-          7z x "${{ matrix.compiler }}_${{ matrix.build_type }}_${{ matrix.arch }}_build.zip"
-
-          $env:FLAG = ''
-          if ($env:BUILD_TYPE -eq 'debug')   { $env:FLAG = '-d' }
-          elseif ($env:BUILD_TYPE -eq 'release') { $env:FLAG = '-r' }
-
-          $archArg = "--arch=$env:ARCH"
-
-          Write-Host "Running test script..."
-          Write-Host "cmd /c \"call initRepo\scripts\build.cmd $env:FLAG -s -t -T -J `"$archArg`"\""
-
-          cmd /c "call initRepo\scripts\build.cmd $env:FLAG -s -t -T -J `"$archArg`""
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-        env:
-          BUILD_TYPE: ${{ matrix.build_type }}
-          ARCH: ${{ matrix.arch }}
-
       - name: Publish test results
         if: always()
         uses: EnricoMi/publish-unit-test-result-action/composite@v2
         with:
           files: build-${{ matrix.compiler }}-${{ matrix.build_type }}-${{ matrix.arch }}/test_results.xml
           check_name: Test Results (${{ matrix.compiler }}/${{ matrix.build_type }}/${{ matrix.arch }})
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+  # ============================================================
+  # MSVC Test (explicit)
+  # ============================================================
+  test_msvc:
+    needs: build_msvc
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        build_type: [Debug, Release]
+        arch: [x86, x64]
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: workspace
+          path: .
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: msvc-${{ matrix.build_type }}-${{ matrix.arch }}-build
+          path: .
+
+      - name: Setup MSVC
+        uses: microsoft/setup-msbuild@v1.3.1
+
+      - name: Run MSVC Tests
+        shell: cmd
+        run: |
+          for /f "usebackq tokens=*" %%v in (`"%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -latest -requires Microsoft.Component.MSBuild -property installationPath`) do set VS_PATH=%%v
+          call "%VS_PATH%\Common7\Tools\VsDevCmd.bat" -arch=${{ matrix.arch }}
+
+          if /I "${{ matrix.arch }}"=="x86" (set CMAKE_ARCH=Win32) else (set CMAKE_ARCH=x64)
+          set BUILD_DIR=build-msvc-${{ matrix.build_type }}-${{ matrix.arch }}
+          7z x workspace.zip
+          7z x msvc_${{ matrix.build_type }}_${{ matrix.arch }}_build.zip
+
+          cd "%BUILD_DIR%"
+          ctest --output-on-failure --output-junit test_results.xml
+
+      - name: Publish MSVC test results
+        if: always()
+        uses: EnricoMi/publish-unit-test-result-action/composite@v2
+        with:
+          files: build-msvc-${{ matrix.build_type }}-${{ matrix.arch }}/test_results.xml
+          check_name: Test Results (MSVC/${{ matrix.build_type }}/${{ matrix.arch }})
           github_token: ${{ secrets.GITHUB_TOKEN }}
