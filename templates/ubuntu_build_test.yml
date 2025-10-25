@@ -252,7 +252,7 @@ jobs:
 
       - name: Publish GCC test results
         if: always()
-        uses: EnricoMi/publish-unit-test-result-action@v2
+        uses: EnricoMi/publish-unit-test-result-action/linux@2
         with:
           files: |
             build-gcc-${{ env.GCC_VERSION }}-${{ matrix.build_type }}-${{ env.ARCH }}-${{ matrix.arch }}/test_results.xml
@@ -318,7 +318,7 @@ jobs:
 
       - name: Publish Clang test results
         if: always()
-        uses: EnricoMi/publish-unit-test-result-action@v2
+        uses: EnricoMi/publish-unit-test-result-action/linux@2
         with:
           files: |
             build-clang-${{ env.CLANG_VERSION }}-${{ matrix.build_type }}-${{ env.ARCH }}-${{ matrix.arch }}/test_results.xml

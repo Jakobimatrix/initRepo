@@ -187,7 +187,7 @@ jobs:
 
       - name: Publish test results
         if: always()
-        uses: EnricoMi/publish-unit-test-result-action/composite@v2
+        uses: EnricoMi/publish-unit-test-result-action/windows/bash@v2
         with:
           files: build-${{ matrix.compiler }}-${{ matrix.build_type }}-${{ matrix.arch }}/test_results.xml
           check_name: Test Results (${{ matrix.compiler }}/${{ matrix.build_type }}/${{ matrix.arch }})
@@ -234,7 +234,7 @@ jobs:
 
       - name: Publish MSVC test results
         if: always()
-        uses: EnricoMi/publish-unit-test-result-action/composite@v2
+        uses: EnricoMi/publish-unit-test-result-action/windows/bash@v2
         with:
           files: build-msvc-${{ matrix.build_type }}-${{ matrix.arch }}/test_results.xml
           check_name: Test Results (MSVC/${{ matrix.build_type }}/${{ matrix.arch }})
