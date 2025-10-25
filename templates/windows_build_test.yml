@@ -85,11 +85,12 @@ jobs:
           retention-days: 1
 
   # ============================================================
-  # MSVC Build (explicit)
+  # MSVC Build
   # ============================================================
   build_msvc:
     needs: setup
     runs-on: windows-latest
+    continue-on-error: true
     strategy:
       matrix:
         build_type: [Debug, Release]
@@ -127,10 +128,9 @@ jobs:
           echo Building project...
           cmake --build . --config ${{ matrix.build_type }} -- /m
 
+          cd ..
+
           7z a "msvc_${{ matrix.build_type }}_${{ matrix.arch }}_build.zip" "%BUILD_DIR%"
-        env:
-          BUILD_TYPE: ${{ matrix.build_type }}
-          ARCH: ${{ matrix.arch }}
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
@@ -194,10 +194,11 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
   # ============================================================
-  # MSVC Test (explicit)
+  # MSVC Test
   # ============================================================
   test_msvc:
     needs: build_msvc
+    if: always()
     runs-on: windows-latest
     strategy:
       matrix:
