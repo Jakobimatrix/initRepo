@@ -2,7 +2,12 @@ Dear stranger
 If I write "you" I mean me. Though you might use this repo too, it is mostly for me to manage my projects (for example to enforce them to have the same structure)
 
 Due to the structure of the repository its tests are in a seperate [test repository](https://github.com/Jakobimatrix/initRepoTest) using this repo as a subrepository
+
+Works for Linux:
 [![C/C++ CI](https://github.com/Jakobimatrix/initRepoTest/actions/workflows/ubuntu_build_test.yml/badge.svg)](https://github.com/Jakobimatrix/initRepoTest/actions/workflows/ubuntu_build_test.yml)
+
+Works for Windows:
+[![Windows C/C++ CI](https://github.com/Jakobimatrix/initRepoTest/actions/workflows/windows_build_test.yml/badge.svg)](https://github.com/Jakobimatrix/initRepoTest/actions/workflows/windows_build_test.yml)
 
 # initRepo 
 
@@ -36,7 +41,7 @@ further reading:
 [githook-clang-format](https://github.com/andrewseidl/githook-clang-format)
 
 ### LF
-In case you are working on Linux And windof you probably want to enforce LF lineendings
+In case you are working on Linux and windof you probably want to enforce LF line endings
 
 
 ## Provided structure COPIED with init.sh
@@ -72,6 +77,7 @@ initRepo
 ├── cmake
 │   ├── ClangFuzzyTests.cmake           --> if Option ENABLE_FUZZING is set, link the project against clang fuzzer
 │   ├── CompilerSetup.cmake             --> sets c++ standard 20, defines release/debug modes, enables LTO if ENABLE_LTO is set
+│   ├── CMakeGraphVizOptions.cmake      --> Options for graphviz, used for Documentation / Dependencey graph
 │   ├── CompilerWarnings.cmake          --> All warnings are errors (except some exceptions)
 │   ├── Includes.cmake                  --> optional includes for third party libraries
 │   └── Options.cmake                   --> helps with shared libraries and mutlti threading
@@ -86,19 +92,25 @@ initRepo
 │   ├── build.sh               --> helps to build your project
 │   ├── checkClangFormat.sh    --> checks if clang format rules are followed
 │   ├── checkClangTidy.sh      --> checks if clang tidy rules are followed
+│   ├── checkDoxygenHeader.sh  --> checks if a given file starts with a doxygen header.
+│   ├── checkFileHeaders.sh    --> checks if each cpp/hpp/h file starts with a doxygen header.
 │   ├── checkShellCheck.sh     --> checks if shellcheck rules are followed (for bash)
+│   ├── createDokumentation.sh --> runns Doxygen
+│   ├── ensureToolVersion.sh   --> helper for build.sh (checks if a tool is installed in the expected version)
 │   ├── init.sh                --> used to install files and project struckture in your new repository
-│   ├── installCompilers.sh    --> used to install compilers
+│   ├── installCompiler.sh     --> used to install compilers
 │   ├── runFuzzer.sh           --> used to run the fuzzy tests
+│   ├── showCoverage.sh        --> runs gcc tests in debug mode and prints the coverage
 │   ├── update.sh              --> update the subrepository and scripts
 
 ```
 
 ## CI / CD
-A simple CI / CD pipeline for github is included. 
- - It uses the check*.sh scripts to ensure rules.
- - It builds the project with clang and gcc in debug and release mode
- - It runns available tests
+Two simple CI / CD pipeline for github is included.
+ - One runns on Windows, one on Linux.
+ - the Linux runner uses the check*.sh scripts to ensure rules.
+ - both build the project with clang and gcc (Windows also with msvc) 32 Bit and 64 Bit in debug and release mode
+ - It runns all available ctests for all compilers and modes.
 
  ## .environment
  There is a .environment inside the initRepo root folder dictating compiler paths, versions etc.
