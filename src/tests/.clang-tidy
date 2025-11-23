@@ -1,7 +1,7 @@
 # catch2 introduces some bad macros. For the test folder lets remove the following warnings:
 
 Checks: |
-  -ppcoreguidelines-avoid-non-const-global-variables.GlobList
+  -cppcoreguidelines-avoid-non-const-global-variables.GlobList
   -misc-use-internal-linkage.GlobList,
   -misc-include-cleaner.GlobList,
   -misc-use-anonymous-namespace,
