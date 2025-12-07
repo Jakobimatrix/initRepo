@@ -21,7 +21,7 @@ Usage: checkDoxygenHeader.sh [-v|--verbose] <file>
 
 Checks whether <file> starts with a proper Doxygen header:
   - starts with /** (order of tags irrelevant)
-  - contains: @file <actual-filename>, @brief, @date dd.mm.yyyy, @author, @version
+  - contains: @file <actual-filename>, @brief, @date dd.mm.yyyy, @author
 Exit codes: 0 = PASS, 1 = FAIL, 2 = bad invocation
 USAGE
 }
@@ -85,13 +85,6 @@ check_header() {
         vlog "[OK] @brief found"
     else
         vlog "[FAIL] @brief missing"
-        ok=false
-    fi
-
-    if [[ $header =~ \*+[[:space:]]*@version[[:space:]] ]]; then
-        vlog "[OK] @version found"
-    else
-        vlog "[FAIL] @version missing"
         ok=false
     fi
 
