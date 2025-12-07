@@ -27,9 +27,9 @@ FormatStyle:     none
 CheckOptions:
   # min variable length is 3, but I allow these because of math
   - key: readability-identifier-length.IgnoredVariableNames
-    value: "x|y|z|dx|dy|dz|t|i|n|k|r|g|b|a|h|s|v"
+    value: "x|y|z|dx|dy|dz|t|i|n|k|r|g|b|a|h|s|v|id|ID|is"
   - key: readability-identifier-length.IgnoredParameterNames
-    value: "x|y|z|dx|dy|dz|t|i|n|k|r|g|b|a|h|s|v"
+    value: "x|y|z|dx|dy|dz|t|i|n|k|r|g|b|a|h|s|v|id|ID|is"
   - key: modernize-use-trailing-return-type.LambdaStyle
     value: all_except_auto
     # allow common 'non-magic' numeric literals: 0, 1, 0.5, 2 and powers of two
