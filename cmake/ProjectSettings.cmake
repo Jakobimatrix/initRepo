@@ -54,7 +54,14 @@ set(GCC_WARNINGS
     -Wlogical-op # warn about logical operations being used where bitwise were probably wanted
 )
 
+
 function(set_project_settings target_name)
+    # Propagate the globally set C++ standard to all consumers of the INTERFACE target
+    if(NOT DEFINED CMAKE_CXX_STANDARD)
+        message(FATAL_ERROR "CMAKE_CXX_STANDARD is not defined!") 
+    endif()
+
+    target_compile_features(${target_name} INTERFACE cxx_std_${CMAKE_CXX_STANDARD})
 
     # Compiler warnings
     if(MSVC)

@@ -1,7 +1,6 @@
-if(DEFINED INIT_REPO_INCLUDED)
-  return()
-endif()
-set(INIT_REPO_INCLUDED TRUE)
+
+if(NOT DEFINED INIT_REPO_INCLUDED)
+    set(INIT_REPO_INCLUDED TRUE)
 
 include(cmake/CompilerSetup.cmake)
 include(cmake/Includes.cmake)
@@ -25,10 +24,10 @@ else()
     set(ENABLE_FUZZING OFF)
 endif ()
 
-add_library(BuildSettings_LIB)
-add_library(BuildSettings_EXE)
-add_library(BuildSettings_FUZZER)
-add_library(BuildSettings_CATHCH2_UNITTEST)
+add_library(BuildSettings_LIB INTERFACE)
+add_library(BuildSettings_EXE INTERFACE)
+add_library(BuildSettings_FUZZER INTERFACE)
+add_library(BuildSettings_CATHCH2_UNITTEST INTERFACE) 
 
 set_project_settings(BuildSettings_LIB)
 set_project_settings(BuildSettings_EXE)
@@ -82,6 +81,7 @@ set(GRAPHVIZ_EXTERNAL_LIBS FALSE)
 
 
 message(STATUS "Compiler: ${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}")
+message(STATUS "Cpp standard: C++${CMAKE_CXX_STANDARD}")
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 message(STATUS "Architecture: ${TARGET_ARCH}")
 message(STATUS "CMake source dir: ${CMAKE_SOURCE_DIR}")
@@ -92,6 +92,9 @@ message(STATUS "CMake version: ${CMAKE_VERSION}")
 message(STATUS "CMake system: ${CMAKE_SYSTEM}")
 message(STATUS "CMake system name: ${CMAKE_SYSTEM_NAME}")
 message(STATUS "CMake system processor: ${CMAKE_SYSTEM_PROCESSOR}")
+
 message(STATUS "CMake host system: ${CMAKE_HOST_SYSTEM}")
 message(STATUS "CMake host system name: ${CMAKE_HOST_SYSTEM_NAME}")
 message(STATUS "CMake host system processor: ${CMAKE_HOST_SYSTEM_PROCESSOR}")
+
+endif()
