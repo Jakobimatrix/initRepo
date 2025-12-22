@@ -2,14 +2,6 @@
 function(include_eigen target_name)
     find_package(Eigen3 3.3 REQUIRED NO_MODULE)
 
-    set(EIGEN_COMPILE_FLAGS
-        -march=native
-        -mfpmath=sse
-        -mms-bitfields       # Optional: mainly for mingw32, known bug with epoll on 32bit
-        -fno-strict-aliasing
-    )
-
-    target_compile_options(${target_name} INTERFACE ${EIGEN_COMPILE_FLAGS})
     target_link_libraries(${target_name} INTERFACE Eigen3::Eigen)
 endfunction()
 
@@ -38,17 +30,15 @@ function(include_open_cv target_name)
 endfunction()
 
 function(setup_catch2_and_ctest)
-    if (NOT FUZZER_ENABLED)
-        include(FetchContent)
-        FetchContent_Declare(
-            Catch2
-            GIT_REPOSITORY https://github.com/catchorg/Catch2.git
-            GIT_TAG        v3.4.0
-        )
-        FetchContent_MakeAvailable(Catch2)
-        include(Catch)
-        include(CTest)
-    endif()
+    include(FetchContent)
+    FetchContent_Declare(
+        Catch2
+        GIT_REPOSITORY https://github.com/catchorg/Catch2.git
+        GIT_TAG        v3.4.0
+    )
+    FetchContent_MakeAvailable(Catch2)
+    include(Catch)
+    include(CTest)
 endfunction()
 
 
@@ -74,4 +64,44 @@ function(add_catch_test FOLDER)
         message(WARNING "No test_*.cpp files found in folder ${FOLDER}")
     endif()
   endif()
+endfunction()
+
+
+function(manage_library lib_name version)
+    # Get current LIB_LIST and LIB_LIST_VERSION
+    if(NOT DEFINED LIB_LIST)
+        set(LIB_LIST "")
+    endif()
+    if(NOT DEFINED LIB_LIST_VERSION)
+        set(LIB_LIST_VERSION "")
+    endif()
+
+    # Check if lib_name is in LIB_LIST
+    list(FIND LIB_LIST "${lib_name}" _lib_index)
+    if(_lib_index EQUAL -1)
+        # Not found, add lib_name and lib_name+version
+        list(APPEND LIB_LIST "${lib_name}")
+        list(APPEND LIB_LIST_VERSION "${lib_name}${version}")
+        set(LIB_LIST "${LIB_LIST}" CACHE INTERNAL "Global library list")
+        set(LIB_LIST_VERSION "${LIB_LIST_VERSION}" CACHE INTERNAL "Global library+version list")
+        return()
+    endif()
+
+    # Check if lib_name+version is in LIB_LIST_VERSION
+    list(FIND LIB_LIST_VERSION "${lib_name}${version}" _libver_index)
+    if(_libver_index GREATER -1)
+        set(ACCEPTED_LIB_VERSION "${version}" PARENT_SCOPE)
+        return()
+    endif()
+
+    # Find any entry starting with lib_name in LIB_LIST_VERSION
+    set(_found_version "")
+    foreach(entry IN LISTS LIB_LIST_VERSION)
+        string(REGEX MATCH "^${lib_name}(.+)$" _match "${entry}")
+        if(_match)
+            string(REGEX REPLACE "^${lib_name}" "" _found_version "${entry}")
+            break()
+        endif()
+    endforeach()
+    set(ACCEPTED_LIB_VERSION "${_found_version}" PARENT_SCOPE)
 endfunction()

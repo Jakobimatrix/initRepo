@@ -191,14 +191,14 @@ jobs:
           sudo apt-get install -y cmake make
           if [ "${{ matrix.compiler }}" = "gcc" ]; then
             if [ "${{ matrix.build_type }}" = "debug" ]; then
-                ./initRepo/scripts/build.sh -d -t -g --compiler gcc --arch ${{ matrix.arch }}
+                ./initRepo/scripts/build.sh -d -t -g --compiler gcc --arch ${{ matrix.arch }} --march native
             else
-                ./initRepo/scripts/build.sh -r -t --compiler gcc --arch ${{ matrix.arch }}
+                ./initRepo/scripts/build.sh -r -t --compiler gcc --arch ${{ matrix.arch }} --march native
             fi
             tar -czf gcc_${{ matrix.arch }}_${{ matrix.build_type }}_build.tar.gz build-gcc-${GCC_VERSION}-${{ matrix.build_type }}-${ARCH}-${{ matrix.arch }}
           else [ "${{ matrix.compiler }}" = "clang" ]
-            ./initRepo/scripts/build.sh --${{ matrix.build_type }} -f --compiler clang --arch ${{ matrix.arch }}
-            ./initRepo/scripts/build.sh --${{ matrix.build_type }} -t --compiler clang --arch ${{ matrix.arch }}
+            ./initRepo/scripts/build.sh --${{ matrix.build_type }} -f --compiler clang --arch ${{ matrix.arch }} --march native
+            ./initRepo/scripts/build.sh --${{ matrix.build_type }} -t --compiler clang --arch ${{ matrix.arch }} --march native
             tar -czf clang_${{ matrix.arch }}_${{ matrix.build_type }}_build.tar.gz build-clang-${CLANG_VERSION}-${{ matrix.build_type }}-${ARCH}-${{ matrix.arch }}
           fi
 
@@ -248,7 +248,7 @@ jobs:
             sudo apt-get install -y gcovr lcov
           fi
           sudo apt-get install -y cmake make
-          ./initRepo/scripts/build.sh -s -T --${{ matrix.build_type }} -J --compiler gcc --arch ${{ matrix.arch }}  # skip cmake and build + run Tests in Junit format output
+          ./initRepo/scripts/build.sh -s -T --${{ matrix.build_type }} -J --compiler gcc --arch ${{ matrix.arch }} --march native  # skip cmake and build + run Tests in Junit format output
 
       - name: Publish GCC test results
         if: always()
@@ -314,7 +314,7 @@ jobs:
           fi
           sudo apt-get update
           sudo apt-get install -y cmake make
-          ./initRepo/scripts/build.sh -s -T --${{ matrix.build_type }} -J --compiler clang --arch ${{ matrix.arch }}
+          ./initRepo/scripts/build.sh -s -T --${{ matrix.build_type }} -J --compiler clang --arch ${{ matrix.arch }} --march native
 
       - name: Publish Clang test results
         if: always()

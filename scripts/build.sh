@@ -20,12 +20,13 @@ show_help() {
     echo "  -i               Install after build"
     echo "  --compiler COMP  Use specific compiler (e.g. gcc, clang)"
     echo "  --arch ARCH      Architecture (x86, x64) [default: $ARCH_BITS]"
+    echo "  --march VALUE    Set -march architecture string for CMake (ENABLE_MARCH). Allowed inputs are: native or the target like: core2, nehalem, sandybridge, skylake, zen3, zen4,... or the year + vendor like: 2017;AMD, 2018;Intel"
     echo "  -h               Show this help message"
     echo "  -t               Build tests"
     echo "  -T               Run Tests after build"
     echo "  -J               Test output returns junit"
     echo "  -f               Enable fuzzing"
-    echo "  -v               Verbode: dump CMake variables"
+    echo "  -v               Verbose: dump CMake variables"
     echo "  -l               List available compilers"
     echo "  -s               skip cmake and build [to be combined with -T, expects complete build]"
     echo "  -g               enable code coverage (only in combination with -d)"
@@ -55,6 +56,7 @@ ENABLE_COVERAGE=OFF
 USE_NINJA=false
 TARGET_ARCH_BITS="${ARCH_BITS}"
 TARGET_ARCH="${ARCH}"
+ENABLE_MARCH=""
 
 # Compiler paths from .environment
 CLANG_CPP_PATH="${CLANG_CPP_PATH}"
@@ -147,6 +149,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         -J) TEST_OUTPUT_JUNIT=true ;;
         -n|--ninja) USE_NINJA=true ;;
+        --march)
+            shift
+            ENABLE_MARCH="$1"
+            ;;
          *)
             echo "Unknown option: $1"
             show_help
@@ -271,7 +277,11 @@ if [[ "$SKIP_BUILD" == false ]]; then
     echo "compiling from: $ENVIRONMENT: $ARCH-$ARCH_BITS"
     echo "compiling for: $ENVIRONMENT: $ARCH-$TARGET_ARCH_BITS"
     echo "Configuring with CMake..."
+
     CMAKE_ARGS=(-DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_CXX_COMPILER=$COMPILER_PATH -DCMAKE_C_COMPILER=$CC_PATH -DBUILD_TESTING=$ENABLE_TESTS -DENABLE_FUZZING=$ENABLE_FUZZING -DENABLE_COVERAGE=$ENABLE_COVERAGE)
+    if [[ -n "$ENABLE_MARCH" ]]; then
+        CMAKE_ARGS+=(-DENABLE_MARCH="$ENABLE_MARCH")
+    fi
     
     # Use ninja if requested and found
     if [[ "$USE_NINJA" == true ]]; then
