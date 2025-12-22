@@ -3,6 +3,10 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+# Export compile_commands.json for clang-tidy/clangd
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+
 # Default to Release build if not specified
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type (default Release)" FORCE)
@@ -20,8 +24,4 @@ if (MSVC)
     # Force conformance mode
     add_compile_options(/permissive- /Zc:preprocessor)
 endif ()
-
-# Export compile_commands.json for clang-tidy/clangd
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-
 
