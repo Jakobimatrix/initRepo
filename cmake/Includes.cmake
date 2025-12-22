@@ -1,7 +1,66 @@
+# Include Boost with target-specific flags
+function(include_boost target_name)
+    # Try to find a system-installed Boost first
+    find_package(Boost QUIET)
+    if(NOT Boost_FOUND)
+        include(FetchContent)
+        message(STATUS "Boost not found, downloading from git...")
+        FetchContent_Declare(
+            boost
+            GIT_REPOSITORY https://github.com/boostorg/boost.git
+            GIT_TAG        master
+            GIT_PROGRESS   TRUE
+        )
+        # Fetch all submodules (Boost uses submodules for its libraries)
+        set(FETCHCONTENT_QUIET OFF)
+        FetchContent_GetProperties(boost)
+        if(NOT boost_POPULATED)
+            FetchContent_Populate(boost)
+            execute_process(
+                COMMAND git submodule update --init --recursive
+                WORKING_DIRECTORY ${boost_SOURCE_DIR}
+            )
+        endif()
+        # Add Boost include directory as INTERFACE target
+        add_library(Boost::boost INTERFACE IMPORTED)
+        set_target_properties(Boost::boost PROPERTIES
+            INTERFACE_INCLUDE_DIRECTORIES "${boost_SOURCE_DIR}"
+        )
+    else()
+        message(STATUS "Found system Boost: ${Boost_INCLUDE_DIRS}")
+        if(NOT TARGET Boost::boost)
+            add_library(Boost::boost INTERFACE IMPORTED)
+            set_target_properties(Boost::boost PROPERTIES
+                INTERFACE_INCLUDE_DIRECTORIES "${Boost_INCLUDE_DIRS}"
+            )
+        endif()
+    endif()
+    target_link_libraries(${target_name} INTERFACE Boost::boost)
+endfunction()
+
 # Include Eigen with target-specific flags
 function(include_eigen target_name)
-    find_package(Eigen3 3.3 REQUIRED NO_MODULE)
-
+    # Try to find a system-installed Eigen3 first
+    find_package(Eigen3 QUIET NO_MODULE)
+    if(NOT Eigen3_FOUND)
+        include(FetchContent)
+        message(STATUS "Eigen3 not found, downloading from git...")
+        FetchContent_Declare(
+            eigen
+            GIT_REPOSITORY https://gitlab.com/libeigen/eigen.git
+            GIT_TAG        3.4.0
+            GIT_PROGRESS   TRUE
+        )
+        FetchContent_MakeAvailable(eigen)
+        # Eigen3Config.cmake is in eigen/cmake
+        set(EIGEN3_INCLUDE_DIR "${eigen_SOURCE_DIR}")
+        add_library(Eigen3::Eigen INTERFACE IMPORTED)
+        set_target_properties(Eigen3::Eigen PROPERTIES
+            INTERFACE_INCLUDE_DIRECTORIES "${EIGEN3_INCLUDE_DIR}"
+        )
+    else()
+        message(STATUS "Found system Eigen3: ${Eigen3_DIR}")
+    endif()
     target_link_libraries(${target_name} INTERFACE Eigen3::Eigen)
 endfunction()
 
@@ -29,16 +88,30 @@ function(include_open_cv target_name)
     target_link_libraries(${target_name} INTERFACE ${OpenCV_LIBS})
 endfunction()
 
+# Setup Catch2 and CTest for unit testing
 function(setup_catch2_and_ctest)
-    include(FetchContent)
-    FetchContent_Declare(
-        Catch2
-        GIT_REPOSITORY https://github.com/catchorg/Catch2.git
-        GIT_TAG        v3.4.0
-    )
-    FetchContent_MakeAvailable(Catch2)
+    if(NOT BUILD_TESTING)
+        message(STATUS "CTest is disabled, skipping Catch2 setup")
+        return()
+    endif()
+    # Try to find a system-installed Catch2 first
+    find_package(Catch2 3.4.0 QUIET)
+    if(NOT Catch2_FOUND)
+        include(FetchContent)
+        message(STATUS "Catch2 not found, downloading from git...")
+        FetchContent_Declare(
+            Catch2
+            GIT_REPOSITORY https://github.com/catchorg/Catch2.git
+            GIT_TAG        v3.4.0
+            GIT_PROGRESS   TRUE
+        )
+        FetchContent_MakeAvailable(Catch2)
+    else()
+        message(STATUS "Found system Catch2: ${Catch2_DIR}")
+    endif()
     include(Catch)
     include(CTest)
+    message(STATUS "Setup Catch2 complete")
 endfunction()
 
 
