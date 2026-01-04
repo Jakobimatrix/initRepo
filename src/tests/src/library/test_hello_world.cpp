@@ -49,7 +49,7 @@ TEST_CASE("Fibonacci") {
     std::vector<int> test_data{1, 2, 3, 4};
     meter.measure([&test_data] {
       for (const int data : test_data) {
-        constexpr int result = lib::fibonacci(data);
+        const int result = lib::fibonacci(data);
         Catch::Benchmark::DoNotOptimize(result);
       }
     });
