@@ -51,7 +51,7 @@ TEST_CASE("Fibonacci") {
       // The lambda needs to do something with the function result
       // and return something so that the compiler does not optimize it away.
       int sum = 0;
-      for (int data : test_data) {
+      for (const int data : test_data) {
         sum += lib::fibonacci(data);
       }
       return sum;
