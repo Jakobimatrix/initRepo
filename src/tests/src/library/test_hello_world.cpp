@@ -48,10 +48,13 @@ TEST_CASE("Fibonacci") {
   (Catch::Benchmark::Chronometer meter) {
     std::vector<int> test_data{1, 2, 3, 4};
     meter.measure([&test_data] {
-      for (const int data : test_data) {
-        const int result = lib::fibonacci(data);
-        Catch::Benchmark::DoNotOptimize(result);
+      // The lambda needs to do something with the function result
+      // and return something so that the compiler does not optimize it away.
+      int sum = 0;
+      for (int data : test_data) {
+        sum += lib::fibonacci(data);
       }
+      return sum;
     });
   };
 }
