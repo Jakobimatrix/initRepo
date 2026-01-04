@@ -38,7 +38,7 @@ TEST_CASE("Fibonacci") {
   CHECK(lib::fibonacci(5) == 8);
 
   constexpr int TWENTY      = 20;
-  constexpr int THIRTY_FIVE = 20;
+  constexpr int THIRTY_FIVE = 35;
 
   BENCHMARK("Fibonacci 20") { return lib::fibonacci(TWENTY); };
 
@@ -49,7 +49,8 @@ TEST_CASE("Fibonacci") {
     std::vector<int> test_data{1, 2, 3, 4};
     meter.measure([&test_data] {
       for (const int data : test_data) {
-        lib::fibonacci(data);
+        constexpr int result = lib::fibonacci(data);
+        Catch::Benchmark::DoNotOptimize(result);
       }
     });
   };
