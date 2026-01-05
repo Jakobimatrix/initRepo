@@ -6,6 +6,7 @@ include(cmake/CompilerSetup.cmake)
 include(cmake/Includes.cmake)
 include(cmake/ProjectSettings.cmake)
 
+option(BUILD_TESTING "Enable building of unit tests with CTest/Catch2" ON)
 set(ENABLE_MARCH "" CACHE STRING "Architecture for -march: empty disables, 'native' for host, 'year;vendor (2017;AMD)' or 'chip name (e.g. skylake)' for specific CPU.")
 option(ENABLE_MFPMATH_SSE "Use SSE for floating-point math (legacy x86)" OFF)
 option(ENABLE_MMS_BITFIELDS "MSVC-compatible bitfield layout (MinGW/Windows only)" OFF)

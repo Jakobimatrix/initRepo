@@ -119,6 +119,10 @@ endfunction()
 # add_catch_test(${CMAKE_CURRENT_SOURCE_DIR}/path_to_folder_containing_files_with_TEST_CASE lib1, lib2, lib3, ${ENVIRONMENT_SETTINGS})
 function(add_catch_test FOLDER)
 # ARGN will contain all additional arguments passed after FOLDER
+  if(NOT BUILD_TESTING)
+    message(STATUS "CTest is disabled, skipping ${FOLDER} setup")
+    return()
+  endif()
   if (TARGET Catch2::Catch2WithMain)
     file(GLOB_RECURSE TEST_SOURCES "${FOLDER}/test_*.cpp")
 
