@@ -206,7 +206,7 @@ jobs:
           fi
           sudo apt-get install -y cmake make
 
-          ./initRepo/scripts/build.sh -t --arch ${{ matrix.arch }} ${COMPILER_FLAG} ${OPTIMIZATION_FLAG} ${COVERAGE_FLAG}
+          ./initRepo/scripts/build.sh -t --arch ${{ matrix.arch }} ${COMPILER_FLAG} ${OPTIMIZATION_FLAG} ${{COVERAGE_FLAG}}
           if [ "${{ matrix.compiler }}" = "gcc" ]; then
             tar -czf gcc_${{ matrix.arch }}_${{ matrix.build_type }}_build.tar.gz build-gcc-${GCC_VERSION}-${{ matrix.build_type }}-${ARCH}-${{ matrix.arch }}
           else [ "${{ matrix.compiler }}" = "clang" ]
@@ -262,7 +262,7 @@ jobs:
           fi
           sudo apt-get update
           sudo apt-get install -y cmake make
-          ./initRepo/scripts/build.sh -s -T --${{ matrix.build_type }} -J --compiler gcc --arch ${{ matrix.arch }} ${COVERAGE_FLAG}  # skip cmake and build + run Tests in Junit format output
+          ./initRepo/scripts/build.sh -s -T --${{ matrix.build_type }} -J --compiler gcc --arch ${{ matrix.arch }} ${{COVERAGE_FLAG}}  # skip cmake and build + run Tests in Junit format output
 
       - name: Publish GCC test results
         if: always()
@@ -278,12 +278,9 @@ jobs:
           python3 -m pip install gcovr
           python3 -m gcovr --version
           ls -la 
-
+          echo "---- <GCDA files> ----"
           find . -name '*.gcda'
-
-          sudo apt-get install tree
-          tree build-gcc-${{ env.GCC_VERSION }}-${{ matrix.build_type }}-${{ env.ARCH }}-${{ matrix.arch }}/ | grep -v catch
-
+          echo "---- </GCDA files> ----"
           python3 -m gcovr --gcov-executable gcov-${{ env.GCC_VERSION }} \
               -r . build-gcc-${{ env.GCC_VERSION }}-${{ matrix.build_type }}-${{ env.ARCH }}-${{ matrix.arch }} \
               --exclude '.*_deps/.*' --gcov-ignore-parse-errors \
