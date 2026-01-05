@@ -261,9 +261,6 @@ jobs:
             sudo apt-get install -y libstdc++-${GCC_VERSION}-dev:i386 g++-${GCC_VERSION}-multilib gcc-${GCC_VERSION}-multilib 
           fi
           sudo apt-get update
-          if [ "${{ matrix.build_type }}" = "debug" ] && [ "${{ matrix.arch }}" = "x64" ]; then
-            sudo apt-get install -y gcovr lcov
-          fi
           sudo apt-get install -y cmake make
           ./initRepo/scripts/build.sh -s -T --${{ matrix.build_type }} -J --compiler gcc --arch ${{ matrix.arch }} ${COVERAGE_FLAG}  # skip cmake and build + run Tests in Junit format output
 
@@ -277,8 +274,11 @@ jobs:
       - name: Generate coverage report
         if: matrix.build_type == 'debug' && matrix.arch == 'x64'
         run: |
-          gcovr --gcov-executable gcov-${{ env.GCC_VERSION }} \
-              -r . build-gcc-${{ env.GCC_VERSION }}-debug-${{ env.ARCH }}-x64 \
+          sudo apt-get install -y lcov
+          python3 -m pip install --upgrade pip
+          python3 -m pip install gcovr
+          python3 -m gcovr --gcov-executable gcov-${{ env.GCC_VERSION }} \
+              -r src build-gcc-${{ env.GCC_VERSION }}-debug-${{ env.ARCH }}-x64/src \
               --exclude '.*_deps/.*' --gcov-ignore-parse-errors \
               --xml-pretty -o coverage.xml
           echo "---- Checking coverage.xml ----"
