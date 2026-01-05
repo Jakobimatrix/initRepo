@@ -278,8 +278,11 @@ jobs:
           python3 -m pip install gcovr
           python3 -m gcovr --version
           ls -la 
-          
+
           find . -name '*.gcda'
+
+          sudo apt-get install tree
+          tree build-gcc-${{ env.GCC_VERSION }}-${{ matrix.build_type }}-${{ env.ARCH }}-${{ matrix.arch }}/ | grep -v catch
 
           python3 -m gcovr --gcov-executable gcov-${{ env.GCC_VERSION }} \
               -r . build-gcc-${{ env.GCC_VERSION }}-${{ matrix.build_type }}-${{ env.ARCH }}-${{ matrix.arch }} \
