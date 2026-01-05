@@ -278,12 +278,11 @@ jobs:
           python3 -m pip install gcovr
           python3 -m gcovr --version
           ls -la 
-          ls -la ../
-          for file in $(find . -name '*.gcda'); do
-              echo "$file"
-          done
+          
+          find . -name '*.gcda'
+
           python3 -m gcovr --gcov-executable gcov-${{ env.GCC_VERSION }} \
-              -r . build-gcc-${{ env.GCC_VERSION }}-${{ matrix.build_type }}-${{ env.ARCH }}-${{ matrix.arch }}/src \
+              -r . build-gcc-${{ env.GCC_VERSION }}-${{ matrix.build_type }}-${{ env.ARCH }}-${{ matrix.arch }} \
               --exclude '.*_deps/.*' --gcov-ignore-parse-errors \
               --xml-pretty -o coverage.xml
           echo "---- Checking coverage.xml ----"
