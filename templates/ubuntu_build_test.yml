@@ -274,11 +274,11 @@ jobs:
       - name: Generate coverage report
         if: matrix.build_type == 'debug' && matrix.arch == 'x64'
         run: |
-          sudo apt-get install -y lcov
           python3 -m pip install --upgrade pip
           python3 -m pip install gcovr
+          python3 -m gcovr --version
           python3 -m gcovr --gcov-executable gcov-${{ env.GCC_VERSION }} \
-              -r src build-gcc-${{ env.GCC_VERSION }}-debug-${{ env.ARCH }}-x64/src \
+              -r . build-gcc-${{ env.GCC_VERSION }}-${{ matrix.build_type }}-${{ env.ARCH }}-${{ matrix.arch }}/src \
               --exclude '.*_deps/.*' --gcov-ignore-parse-errors \
               --xml-pretty -o coverage.xml
           echo "---- Checking coverage.xml ----"

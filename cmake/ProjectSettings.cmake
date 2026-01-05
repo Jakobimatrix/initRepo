@@ -270,10 +270,12 @@ function(set_project_settings target_name)
         elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
             target_compile_options(${target_name} INTERFACE
                 /PROFILE            # Enable profiling instrumentation
+                /COVERAGE           # Enable coverage instrumentation
                 /DEBUG              # Generate debug information
             )
             target_link_options(${target_name} INTERFACE
                 /PROFILE            # Enable profiling at link time
+                /COVERAGE           # Enable coverage
                 /DEBUG              # Include debug information in output
             )
         endif()
