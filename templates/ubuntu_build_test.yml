@@ -277,6 +277,11 @@ jobs:
           python3 -m pip install --upgrade pip
           python3 -m pip install gcovr
           python3 -m gcovr --version
+          ls -la 
+          ls -la ../
+          for file in $(find . -name '*.gcda'); do
+              echo "$file"
+          done
           python3 -m gcovr --gcov-executable gcov-${{ env.GCC_VERSION }} \
               -r . build-gcc-${{ env.GCC_VERSION }}-${{ matrix.build_type }}-${{ env.ARCH }}-${{ matrix.arch }}/src \
               --exclude '.*_deps/.*' --gcov-ignore-parse-errors \
