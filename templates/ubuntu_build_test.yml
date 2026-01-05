@@ -243,7 +243,7 @@ jobs:
       - run: |
           # Only enable -g for x64 debug builds on gcc for code coverage for unit tests
           COVERAGE_FLAG=""
-          if [ "${{ matrix.compiler }}" = "gcc" && "${{ matrix.build_type }}" = "debug"  && [ "${{ matrix.arch }}" = "x64" ]; then
+          if [ "${{ matrix.build_type }}" = "debug"  && [ "${{ matrix.arch }}" = "x64" ]; then
             COVERAGE_FLAG="-g"
           fi
 
