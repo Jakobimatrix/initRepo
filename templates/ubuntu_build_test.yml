@@ -278,9 +278,19 @@ jobs:
         if: matrix.build_type == 'debug' && matrix.arch == 'x64'
         run: |
           gcovr --gcov-executable gcov-${{ env.GCC_VERSION }} \
-              -r . build-gcc-${{ env.GCC_VERSION }}-debug-${{ env.ARCH }}-x64/src \
+              -r . build-gcc-${{ env.GCC_VERSION }}-debug-${{ env.ARCH }}-x64 \
               --exclude '.*_deps/.*' --gcov-ignore-parse-errors \
               --xml-pretty -o coverage.xml
+          echo "---- Checking coverage.xml ----"
+          if [ -f coverage.xml ]; then
+              echo "coverage.xml was created!"
+              echo "---- Content start ----"
+              cat coverage.xml
+              echo "---- Content end ----"
+          else
+              echo "coverage.xml was NOT created!"
+              return 1
+          fi
 
       - name: Publish coverage summary
         if: matrix.build_type == 'debug' && matrix.arch == 'x64'
