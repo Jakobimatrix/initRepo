@@ -74,7 +74,7 @@ jobs:
         shell: msys2 {0}
         run: |
           source initRepo/.environment
-          ./initRepo/scripts/build.sh --${{ matrix.build_type }} -t --compiler ${{ matrix.compiler }} --arch ${{ matrix.arch }} --ninja --march native
+          ./initRepo/scripts/build.sh --${{ matrix.build_type }} -t --compiler ${{ matrix.compiler }} --arch ${{ matrix.arch }} --ninja
           7za a ${{ matrix.compiler }}_${{ matrix.build_type }}_${{ matrix.arch }}_build.zip build-${{ matrix.compiler }}-${{ matrix.build_type }}-${{ matrix.arch }}
 
       - name: Upload build artifact
@@ -123,7 +123,7 @@ jobs:
           cd "%BUILD_DIR%"
 
           echo Running CMake configure...
-          cmake -G "Visual Studio 17 2022" -A %CMAKE_ARCH% -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DBUILD_TESTING=ON -DENABLE_MARCH=native ..
+          cmake -G "Visual Studio 17 2022" -A %CMAKE_ARCH% -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DBUILD_TESTING=ON ..
 
           echo Building project...
           cmake --build . --config ${{ matrix.build_type }} -- /m
@@ -183,7 +183,7 @@ jobs:
           7za x workspace.zip
           7za x ${{ matrix.compiler }}_${{ matrix.build_type }}_${{ matrix.arch }}_build.zip
           source initRepo/.environment
-          ./initRepo/scripts/build.sh -s -T -J --${{ matrix.build_type }} --compiler ${{ matrix.compiler }} --arch ${{ matrix.arch }} --march native
+          ./initRepo/scripts/build.sh -s -T -J --${{ matrix.build_type }} --compiler ${{ matrix.compiler }} --arch ${{ matrix.arch }}
 
       - name: Publish test results
         if: always()
