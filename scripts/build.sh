@@ -99,8 +99,8 @@ list_available_compiler() {
 while [[ $# -gt 0 ]]; do
     case $1 in
         -c) CLEAN=true ;;
-        -d) BUILD_TYPE="O1" ;;
-        --debug) BUILD_TYPE="O1" ;;
+        -d) BUILD_TYPE="O1Debug" ;;
+        --debug) BUILD_TYPE="O1Debug" ;;
         -r) BUILD_TYPE="Release" ;;
         --release) BUILD_TYPE="Release" ;;
         -o) BUILD_TYPE="RelWithDebInfo" ;;

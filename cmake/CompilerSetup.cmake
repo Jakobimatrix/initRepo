@@ -13,9 +13,9 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 
 # Define our debug mode Activated with 'cmake -DCMAKE_BUILD_TYPE=O1'
-set(CMAKE_CXX_FLAGS_O1 "-O1 -g" CACHE STRING "Flags for O1 build" FORCE)
-set(CMAKE_C_FLAGS_O1     "-O1 -g" CACHE STRING "Flags for O1 build" FORCE)
-set(CMAKE_EXE_LINKER_FLAGS_O1 "" CACHE STRING "" FORCE)
+set(CMAKE_CXX_FLAGS_O1Debug "-O1 -g" CACHE STRING "Flags for O1Debug build" FORCE)
+set(CMAKE_C_FLAGS_O1Debug    "-O1 -g" CACHE STRING "Flags for O1Debug build" FORCE)
+set(CMAKE_EXE_LINKER_FLAGS_O1Debug "" CACHE STRING "" FORCE)
 
 if (MSVC)
     # Disable warnings about deprecated std functions and secure CRT

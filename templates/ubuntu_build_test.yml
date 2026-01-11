@@ -148,7 +148,7 @@ jobs:
     strategy:
       matrix:
         compiler: [gcc, clang]
-        build_type: [debug, release]
+        build_type: [o1debug, release]
         arch: [x86, x64]
     steps:
       - uses: actions/download-artifact@v4
@@ -157,9 +157,9 @@ jobs:
           path: .
       
       - run: |
-          # Only enable -g for x64 debug builds on gcc for code coverage for unit tests
+          # Only enable -g for x64 o1debug builds on gcc for code coverage for unit tests
           COVERAGE_FLAG=""
-          if [[ "${{ matrix.compiler }}" == "gcc" && "${{ matrix.build_type }}" == "debug" && "${{ matrix.arch }}" == "x64" ]]; then
+          if [[ "${{ matrix.compiler }}" == "gcc" && "${{ matrix.build_type }}" == "o1debug" && "${{ matrix.arch }}" == "x64" ]]; then
             COVERAGE_FLAG="-g"
           fi
 
@@ -174,7 +174,7 @@ jobs:
           fi
 
           FUZZER_FLAG=""
-          if [[ "${{ matrix.compiler }}" == "clang" && "${{ matrix.build_type }}" == "debug"]]; then
+          if [[ "${{ matrix.compiler }}" == "clang" && "${{ matrix.build_type }}" == "o1debug"]]; then
             FUZZER_FLAG="-f"
           fi
 
@@ -233,7 +233,7 @@ jobs:
     if: always()
     strategy:
       matrix:
-        build_type: [debug, release]
+        build_type: [o1debug, release]
         arch: [x86, x64]
     steps:
       - uses: actions/download-artifact@v4
@@ -247,9 +247,9 @@ jobs:
           path: .
 
       - run: |
-          # Only enable -g for x64 debug builds on gcc for code coverage for unit tests
+          # Only enable -g for x64 o1debug builds on gcc for code coverage for unit tests
           COVERAGE_FLAG=""
-          if [[ "${{ matrix.build_type }}" = "debug"  && "${{ matrix.arch }}" = "x64" ]]; then
+          if [[ "${{ matrix.build_type }}" = "o1debug"  && "${{ matrix.arch }}" = "x64" ]]; then
             COVERAGE_FLAG="-g"
           fi
 
@@ -279,7 +279,7 @@ jobs:
             build-gcc-${{ env.GCC_VERSION }}-${{ matrix.build_type }}-${{ env.ARCH }}-${{ matrix.arch }}/test_results.xml
             
       - name: Generate coverage report
-        if: matrix.build_type == 'debug' && matrix.arch == 'x64'
+        if: matrix.build_type == 'o1debug' && matrix.arch == 'x64'
         run: |
           python3 -m pip install --upgrade pip
           python3 -m pip install gcovr
@@ -304,7 +304,7 @@ jobs:
           fi
 
       - name: Publish coverage summary
-        if: matrix.build_type == 'debug' && matrix.arch == 'x64'
+        if: matrix.build_type == 'o1debug' && matrix.arch == 'x64'
         uses: irongut/CodeCoverageSummary@v1.3.0
         with:
           filename: coverage.xml
@@ -313,7 +313,7 @@ jobs:
           output: file
           
       - name: Append coverage to summary # workaround: publish-unit-test-result-action overwrites the summary
-        if: matrix.build_type == 'debug' && matrix.arch == 'x64'
+        if: matrix.build_type == 'o1debug' && matrix.arch == 'x64'
         run: |
           echo "## Code Coverage" >> $GITHUB_STEP_SUMMARY
           cat code-coverage-results.md >> $GITHUB_STEP_SUMMARY
@@ -324,7 +324,7 @@ jobs:
     needs: [build]
     strategy:
       matrix:
-        build_type: [debug, release]
+        build_type: [o1debug, release]
         arch: [x86, x64]
     steps:
       - uses: actions/download-artifact@v4
@@ -375,13 +375,13 @@ jobs:
 
       - uses: actions/download-artifact@v4
         with:
-          name: clang-x64-debug-build
+          name: clang-x64-o1debug-build
           path: .  
           
       - run: |
           set -e
           tar -xzf workspace.tar.gz -C .
-          tar -xzf clang_x64_debug_build.tar.gz -C .
+          tar -xzf clang_x64_o1debug_build.tar.gz -C .
           source initRepo/.environment
           if [ -f .environment ]; then source .environment; fi
           sudo apt-get update

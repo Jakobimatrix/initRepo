@@ -24,5 +24,5 @@ fi
 
 ./initRepo/scripts/build.sh -c -d -g -t -T --compiler gcc
 
-gcovr --gcov-executable gcov-${GCC_VERSION} -r . build-gcc-${GCC_VERSION}-debug/src --exclude '.*_deps/.*' --gcov-ignore-parse-errors > coverage.txt 2>/dev/null
+gcovr --gcov-executable gcov-${GCC_VERSION} -r . build-gcc-${GCC_VERSION}-o1debug/src --exclude '.*_deps/.*' --gcov-ignore-parse-errors > coverage.txt 2>/dev/null
 cat coverage.txt

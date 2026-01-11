@@ -21,7 +21,7 @@ fi
 source ./initRepo/scripts/ensureToolVersion.sh
 ensure_tool_versioned clang-tidy "${CLANG_TIDY_VERSION}"
 
-BUILD_DIR="build-clang-${CLANG_VERSION,,}-debug-${ARCH,,}-${ARCH_BITS,,}"
+BUILD_DIR="build-clang-${CLANG_VERSION,,}-o1debug-${ARCH,,}-${ARCH_BITS,,}"
 
 # Build the project, test and fuzzer targets to generate compile_commands.json
 ./initRepo/scripts/build.sh -d -t -f --compiler clang
