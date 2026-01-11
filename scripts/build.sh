@@ -234,6 +234,7 @@ if [[ -z "$COMPILER_NAME" ]]; then
 fi
 
 if [[ "$ENVIRONMENT" == "Linux" ]]; then
+    # ${VAR,,} is a Bash operator that converts the value of VAR to lowercase.
     BUILD_DIR="build-${COMPILER_NAME,,}-${COMPILER_VERSION,,}-${BUILD_TYPE,,}-${TARGET_ARCH,,}-${TARGET_ARCH_BITS,,}"
 else
     BUILD_DIR="build-${COMPILER_NAME,,}-${BUILD_TYPE,,}-${TARGET_ARCH_BITS,,}"
