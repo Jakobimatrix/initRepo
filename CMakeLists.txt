@@ -50,53 +50,6 @@ if(NOT CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
   )
 endif()
 
-## Fuzzer:
-set(FUZZ_MODE "ADDRESS" CACHE STRING "Choose fuzzing sanitizer mode: ADDRESS, THREAD, MEMORY")
-if(FUZZ_MODE STREQUAL "ADDRESS")
-    # Enable fuzzing with address sanitizer and undefined behavior sanitizer
-    set(FUZZER_SAN_FLAGS address,undefined)
-elseif(FUZZ_MODE STREQUAL "THREAD")
-    # Enable fuzzing with thread sanitizer for race condition detection
-    set(FUZZER_SAN_FLAGS thread)
-elseif(FUZZ_MODE STREQUAL "MEMORY")
-    # Enable fuzzing with memory sanitizer for uninitialized memory detection
-    set(FUZZER_SAN_FLAGS memory)
-else()
-    message(FATAL_ERROR "Invalid FUZZ_MODE: ${FUZZ_MODE}. Choose BASIC, SAFE, THREAD, MEMORY.")
-endif()
-
-if(FUZZER_ENABLED)
-    # Apply all targets against sanitizer flag for full fuzzing instrumentation (without main function)
-    target_link_options(BuildSettings_LIB INTERFACE -fsanitize=fuzzer-no-link,${FUZZER_SAN_FLAGS})
-    target_compile_options(BuildSettings_LIB INTERFACE -fsanitize=fuzzer-no-link,${FUZZER_SAN_FLAGS})
-
-    # Apply fuzzer sanitizer flags for full fuzzing instrumentation (fsanitize will provide the main function)
-    target_compile_options(BuildSettings_FUZZER INTERFACE -fsanitize=fuzzer,${FUZZER_SAN_FLAGS})
-    target_link_options(BuildSettings_FUZZER INTERFACE -fsanitize=fuzzer,${FUZZER_SAN_FLAGS})
-endif()
-
-# Function: generate_fuzzer_name
-# Args:
-#   BASE_NAME     - base name of the fuzzer (e.g., "fuzzer_example")
-#   OUT_VAR       - name of variable to store the resulting fuzzer name
-function(generate_fuzzer_name BASE_NAME OUT_VAR)
-    # Ensure build type is set
-    if(NOT CMAKE_BUILD_TYPE)
-        message(FATAL_ERROR "CMAKE_BUILD_TYPE must be set for fuzzing. Choose one of: O1, RelWithDebInfo, etc.")
-    endif()
-
-    # Convert FUZZ_MODE to lowercase for the executable name
-    string(TOLOWER "${FUZZ_MODE}" FUZZ_MODE_LOWER)
-
-    # Construct full fuzzer executable name
-    # Example: fuzzer_example_address_O1
-    set(FULL_NAME "${BASE_NAME}_${FUZZ_MODE_LOWER}_${CMAKE_BUILD_TYPE}")
-
-    # Return value
-    set(${OUT_VAR} "${FULL_NAME}" PARENT_SCOPE)
-endfunction()
-
-
 # graphviz
 set(GRAPHVIZ_IGNORE_TARGETS "test*")
 set(GRAPHVIZ_EXTERNAL_LIBS FALSE)

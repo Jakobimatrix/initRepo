@@ -116,7 +116,8 @@ endfunction()
 
 
 # create a catch2 unit test executable like so: 
-# add_catch_test(${CMAKE_CURRENT_SOURCE_DIR}/path_to_folder_containing_files_with_TEST_CASE lib1, lib2, lib3, ${ENVIRONMENT_SETTINGS})
+# add_catch_test(${CMAKE_CURRENT_SOURCE_DIR}/path_to_folder_containing_files_with_TEST_CASE lib1, lib2, lib3)
+# lib1, lib2, lib3 are optional libraries to link private against the test executable
 function(add_catch_test FOLDER)
 # ARGN will contain all additional arguments passed after FOLDER
   if(NOT BUILD_TESTING)
@@ -143,7 +144,7 @@ function(add_catch_test FOLDER)
   endif()
 endfunction()
 
-
+# include guard for multiple includes of the same library cmake
 function(manage_library lib_name version)
     # Get current LIB_LIST and LIB_LIST_VERSION
     if(NOT DEFINED LIB_LIST)
@@ -181,4 +182,345 @@ function(manage_library lib_name version)
         endif()
     endforeach()
     set(ACCEPTED_LIB_VERSION "${_found_version}" PARENT_SCOPE)
+endfunction()
+
+# Set fuzzer sanitizer flags based on FUZZ_MODE
+function(set_fuzzer_sanitizer_flags FUZZ_MODE)
+    string(TOUPPER "${FUZZ_MODE}" FUZZ_MODE_UPPER)
+
+    if(FUZZ_MODE_UPPER STREQUAL "ADDRESS")
+        set(FUZZER_SAN_FLAGS "address,undefined" PARENT_SCOPE)
+    elseif(FUZZ_MODE_UPPER STREQUAL "THREAD")
+        set(FUZZER_SAN_FLAGS "thread" PARENT_SCOPE)
+    elseif(FUZZ_MODE_UPPER STREQUAL "MEMORY")
+        set(FUZZER_SAN_FLAGS "memory" PARENT_SCOPE)
+    else()
+        message(FATAL_ERROR "Invalid FUZZ_MODE: ${FUZZ_MODE}. Supported modes: ADDRESS, THREAD, MEMORY")
+    endif()
+endfunction()
+
+# Function: add_versioned_library 
+# if BUILD_SHARED_LIBS is set, creates SHARED library, else STATIC
+# if BUILD_FUZZERS is set, also creates OBJECT libraries for each fuzzer mode
+# Args:
+#   NAME          - name of the library
+#   VERSION       - version of the library (e.g., 1.2.3)
+#   SOURCES       - source files for the library
+#   PUBLIC_HEADERS- public header files to install
+#   LINK_PUBLIC   - libraries to link publicly
+#   LINK_PRIVATE  - libraries to link privately
+#   LINK_OPTIONS  - link options for the library
+#   COMPILE_OPTIONS - compile options for the library
+function(add_versioned_library NAME)
+    set(options)
+    set(oneValueArgs VERSION)
+    set(multiValueArgs SOURCES PUBLIC_HEADERS LINK_PUBLIC LINK_PRIVATE LINK_OPTIONS COMPILE_OPTIONS)
+    cmake_parse_arguments(ARG "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+
+    if(NOT ARG_VERSION)
+        message(FATAL_ERROR "add_versioned_library requires VERSION")
+    endif()
+
+    # Determine library type based on BUILD_SHARED_LIBS
+    set(LIB_TYPE STATIC)
+    if(BUILD_SHARED_LIBS)
+        set(LIB_TYPE SHARED)
+    endif()
+
+    # ------------------------------
+    # Normal OBJECT library
+    # ------------------------------
+    add_library(${NAME}_obj OBJECT ${ARG_SOURCES})
+
+    target_include_directories(${NAME}_obj
+        PUBLIC
+            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+            $<INSTALL_INTERFACE:include>
+    )
+
+    target_link_libraries(${NAME}_obj
+        PRIVATE ${ARG_LINK_PRIVATE}
+    )
+
+    if(ARG_LINK_OPTIONS)
+        target_link_options(${NAME}_obj PRIVATE ${ARG_LINK_OPTIONS})
+    endif()
+
+    if(ARG_COMPILE_OPTIONS)
+        target_compile_options(${NAME}_obj PRIVATE ${ARG_COMPILE_OPTIONS})
+    endif()
+
+    # ------------------------------
+    # Packaged library
+    # ------------------------------
+    add_library(${NAME} $<TARGET_OBJECTS:${NAME}_obj>)
+    add_library(${NAME}::${NAME} ALIAS ${NAME})
+
+    set_target_properties(${NAME} PROPERTIES
+        VERSION   ${ARG_VERSION}
+        SOVERSION ${ARG_VERSION_MAJOR}
+    )
+
+    target_link_libraries(${NAME}
+        PUBLIC  ${ARG_LINK_PUBLIC}
+    )
+
+    if(ARG_LINK_OPTIONS)
+        target_link_options(${NAME} PRIVATE ${ARG_LINK_OPTIONS})
+    endif()
+
+    if(ARG_COMPILE_OPTIONS)
+        target_compile_options(${NAME} PRIVATE ${ARG_COMPILE_OPTIONS})
+    endif()
+
+    # ------------------------------
+    # Install normal library + headers
+    # ------------------------------
+    install(TARGETS ${NAME}
+        EXPORT ${NAME}Targets
+        ARCHIVE DESTINATION lib
+        LIBRARY DESTINATION lib
+        RUNTIME DESTINATION bin
+        INCLUDES DESTINATION include
+    )
+
+    install(DIRECTORY include/ DESTINATION include)
+
+    install(EXPORT ${NAME}Targets
+        NAMESPACE ${NAME}::
+        DESTINATION lib/cmake/${NAME}
+    )
+
+    include(CMakePackageConfigHelpers)
+    write_basic_package_version_file(
+        ${CMAKE_CURRENT_BINARY_DIR}/${NAME}ConfigVersion.cmake
+        VERSION ${ARG_VERSION}
+        COMPATIBILITY SameMajorVersion
+    )
+
+    configure_package_config_file(
+        ${CMAKE_CURRENT_LIST_DIR}/Config.cmake.in
+        ${CMAKE_CURRENT_BINARY_DIR}/${NAME}Config.cmake
+        INSTALL_DESTINATION lib/cmake/${NAME}
+    )
+
+    install(FILES
+        ${CMAKE_CURRENT_BINARY_DIR}/${NAME}Config.cmake
+        ${CMAKE_CURRENT_BINARY_DIR}/${NAME}ConfigVersion.cmake
+        DESTINATION lib/cmake/${NAME}
+    )
+
+    # ------------------------------
+    # Fuzz OBJECT libraries
+    # ------------------------------
+    if(FUZZER_ENABLED)
+        set(FUZZ_MODES address memory thread)
+        foreach(MODE IN LISTS FUZZ_MODES)
+            set_fuzzer_sanitizer_flags(${MODE})
+            set(obj_name ${NAME}_obj_fuzz_${MODE})
+            add_library(${obj_name} OBJECT ${ARG_SOURCES})
+
+            target_include_directories(${obj_name} PUBLIC
+                $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+            )
+
+            target_link_libraries(${obj_name} 
+                PRIVATE ${ARG_LINK_PRIVATE}
+            )
+
+            target_compile_options(${obj_name} PRIVATE
+                -fsanitize=fuzzer-no-link,${FUZZER_SAN_FLAGS}
+            )
+
+            target_link_options(${obj_name} PRIVATE
+                -fsanitize=fuzzer-no-link,${FUZZER_SAN_FLAGS}
+            )
+
+            if(ARG_COMPILE_OPTIONS)
+                target_compile_options(${obj_name} PRIVATE ${ARG_COMPILE_OPTIONS})
+            endif()
+
+            if(ARG_LINK_OPTIONS)
+                target_link_options(${obj_name} PRIVATE ${ARG_LINK_OPTIONS})
+            endif()
+        endforeach()
+    endif()
+endfunction()
+
+# Function: add_versioned_header_only_library
+# Args:
+#   NAME          - name of the library
+#   VERSION       - version of the library (e.g., 1.2.3)
+#   PUBLIC_HEADERS- public header files to install
+#   LINK_PUBLIC   - libraries to link publicly
+#   LINK_PRIVATE  - libraries to link privately
+function(add_versioned_header_only_library NAME)
+    set(options)
+    set(oneValueArgs VERSION)
+    set(multiValueArgs PUBLIC_HEADERS LINK_PUBLIC LINK_PRIVATE)
+    cmake_parse_arguments(ARG "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+
+    if(NOT ARG_VERSION)
+        message(FATAL_ERROR "add_versioned_header_only_library requires VERSION")
+    endif()
+
+    # ------------------------------
+    # Create INTERFACE library
+    # ------------------------------
+    add_library(${NAME} INTERFACE)
+    add_library(${NAME}::${NAME} ALIAS ${NAME})
+
+    # Include directories
+    target_include_directories(${NAME}
+        INTERFACE
+            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+            $<INSTALL_INTERFACE:include>
+    )
+
+    # Link dependencies
+    if(ARG_LINK_PUBLIC)
+        target_link_libraries(${NAME} INTERFACE ${ARG_LINK_PUBLIC})
+    endif()
+    if(ARG_LINK_PRIVATE)
+        target_link_libraries(${NAME} PRIVATE ${ARG_LINK_PRIVATE})
+    endif()
+
+    # Optionally add headers to IDE/target for convenience
+    if(ARG_PUBLIC_HEADERS)
+        target_sources(${NAME} INTERFACE ${ARG_PUBLIC_HEADERS})
+    endif()
+
+    # ------------------------------
+    # Install headers + export target
+    # ------------------------------
+    install(TARGETS ${NAME}
+        EXPORT ${NAME}Targets
+        INCLUDES DESTINATION include
+    )
+
+    install(DIRECTORY include/ DESTINATION include)
+
+    install(EXPORT ${NAME}Targets
+        NAMESPACE ${NAME}::
+        DESTINATION lib/cmake/${NAME}
+    )
+
+    include(CMakePackageConfigHelpers)
+    write_basic_package_version_file(
+        ${CMAKE_CURRENT_BINARY_DIR}/${NAME}ConfigVersion.cmake
+        VERSION ${ARG_VERSION}
+        COMPATIBILITY SameMajorVersion
+    )
+
+    configure_package_config_file(
+        ${CMAKE_CURRENT_LIST_DIR}/Config.cmake.in
+        ${CMAKE_CURRENT_BINARY_DIR}/${NAME}Config.cmake
+        INSTALL_DESTINATION lib/cmake/${NAME}
+    )
+
+    install(FILES
+        ${CMAKE_CURRENT_BINARY_DIR}/${NAME}Config.cmake
+        ${CMAKE_CURRENT_BINARY_DIR}/${NAME}ConfigVersion.cmake
+        DESTINATION lib/cmake/${NAME}
+    )
+endfunction()
+
+# Function: add_versioned_executable
+# Args:
+#   NAME          - name of the executable
+#   SOURCES       - source files for the executable
+#   LINK_PUBLIC   - libraries to link publicly
+#   LINK_PRIVATE  - libraries to link privately
+#   LINK_OPTIONS  - link options for the executable
+#   COMPILE_OPTIONS - compile options for the executable
+function(add_versioned_executable NAME)
+    set(options)
+    set(oneValueArgs VERSION)
+    set(multiValueArgs SOURCES LINK_PUBLIC LINK_PRIVATE LINK_OPTIONS COMPILE_OPTIONS)
+    cmake_parse_arguments(ARG "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+
+    if(NOT ARG_SOURCES)
+        message(FATAL_ERROR "add_versioned_executable requires SOURCES")
+    endif()
+
+    add_executable(${NAME} ${ARG_SOURCES})
+
+    target_link_libraries(${NAME}
+        PRIVATE
+            ${ARG_LINK_PRIVATE}
+        PUBLIC
+            ${ARG_LINK_PUBLIC}
+    )
+
+    if(ARG_COMPILE_OPTIONS)
+        target_compile_options(${NAME} PRIVATE ${ARG_COMPILE_OPTIONS})
+    endif()
+
+    if(ARG_LINK_OPTIONS)
+        target_link_options(${NAME} PRIVATE ${ARG_LINK_OPTIONS})
+    endif()
+
+    install(TARGETS ${NAME}
+        RUNTIME DESTINATION bin
+    )
+endfunction()
+
+# Function: add_versioned_fuzzer_executable
+# Args:
+#   NAME          - name of the fuzzer executable
+#   SOURCES       - source files for the fuzzer executable
+#   LINK_PUBLIC   - libraries to link publicly
+#   LINK_PRIVATE  - libraries to link privately
+#   LINK_OPTIONS  - link options for the fuzzer executable
+#   COMPILE_OPTIONS - compile options for the fuzzer executable
+function(add_versioned_fuzzer_executable NAME)
+    if(NOT FUZZER_ENABLED)
+        return()
+    endif()
+
+    set(options)
+    set(oneValueArgs)
+    set(multiValueArgs SOURCES LINK_PUBLIC LINK_PRIVATE LINK_OPTIONS COMPILE_OPTIONS)
+    cmake_parse_arguments(ARG "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+
+    if(NOT ARG_SOURCES)
+        message(FATAL_ERROR "add_versioned_fuzzer_executable requires SOURCES")
+    endif()
+
+    foreach(MODE IN ITEMS ADDRESS MEMORY THREAD)
+        string(TOLOWER ${MODE} mode_lower)
+
+        set_fuzzer_sanitizer_flags(${MODE})
+
+        add_executable(${NAME}_fuzz_${mode_lower}_${CMAKE_BUILD_TYPE}
+            ${ARG_SOURCES}
+        )
+
+        target_link_libraries(${NAME}_fuzz_${mode_lower}_${CMAKE_BUILD_TYPE}
+            PRIVATE
+                ${ARG_LINK_PRIVATE}
+            PUBLIC
+                ${ARG_LINK_PUBLIC}
+        )
+
+        target_compile_options(${NAME}_fuzz_${mode_lower}_${CMAKE_BUILD_TYPE}
+            PRIVATE -fsanitize=fuzzer,${FUZZER_SAN_FLAGS}
+        )
+
+        target_link_options(${NAME}_fuzz_${mode_lower}_${CMAKE_BUILD_TYPE}
+            PRIVATE -fsanitize=fuzzer,${FUZZER_SAN_FLAGS}
+        )
+
+        if(ARG_COMPILE_OPTIONS)
+            target_compile_options(${NAME}_fuzz_${mode_lower}_${CMAKE_BUILD_TYPE} PRIVATE ${ARG_COMPILE_OPTIONS})
+        endif()
+
+        if(ARG_LINK_OPTIONS)
+            target_link_options(${NAME}_fuzz_${mode_lower}_${CMAKE_BUILD_TYPE} PRIVATE ${ARG_LINK_OPTIONS})
+        endif()
+
+        install(TARGETS ${NAME}_fuzz_${mode_lower}_${CMAKE_BUILD_TYPE}
+            RUNTIME DESTINATION bin
+        )
+    endforeach()
 endfunction()

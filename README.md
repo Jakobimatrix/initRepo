@@ -128,9 +128,11 @@ Two simple CI / CD pipeline for github is included.
 
    
 
+---
+
 ## Fuzzing
 
-The fuzzer helps to automatically find bugs by executing your code with a large number of generated and mutated inputs.
+The fuzzer helps automatically find bugs by executing your code with a large number of generated and mutated inputs.
 This project uses **Clang libFuzzer**, optionally combined with sanitizers, to detect memory errors, undefined behavior, and logic bugs.
 
 ---
@@ -152,36 +154,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size);
 This function is called repeatedly by libFuzzer with different inputs.
 
 ---
-
-It links against **BuildSettings_FUZZER** which is an umbrella target.
-All other libraries which get linked against the fuzzer should themself link against **BuildSettings_LIB** which is also an umbrella target:
-
-```cmake
-set(FUZZ_MODE "ADDRESS" CACHE STRING "Choose fuzzing sanitizer mode: ADDRESS, THREAD, MEMORY")
-if(FUZZ_MODE STREQUAL "ADDRESS")
-    # Enable fuzzing with address sanitizer and undefined behavior sanitizer
-    set(FUZZER_SAN_FLAGS address,undefined)
-elseif(FUZZ_MODE STREQUAL "THREAD")
-    # Enable fuzzing with thread sanitizer for race condition detection
-    set(FUZZER_SAN_FLAGS thread)
-elseif(FUZZ_MODE STREQUAL "MEMORY")
-    # Enable fuzzing with memory sanitizer for uninitialized memory detection
-    set(FUZZER_SAN_FLAGS memory)
-else()
-    message(FATAL_ERROR "Invalid FUZZ_MODE: ${FUZZ_MODE}. Choose BASIC, SAFE, THREAD, MEMORY.")
-endif()
-
-if(FUZZER_ENABLED)
-    # Apply all targets against sanitizer flag for full fuzzing instrumentation (without main function)
-    target_link_options(BuildSettings_LIB INTERFACE -fsanitize=fuzzer-no-link,${FUZZER_SAN_FLAGS})
-    target_compile_options(BuildSettings_LIB INTERFACE -fsanitize=fuzzer-no-link,${FUZZER_SAN_FLAGS})
-    
-    # Apply fuzzer sanitizer flags for full fuzzing instrumentation (fsanitize will provide the main function)
-    target_compile_options(BuildSettings_FUZZER INTERFACE -fsanitize=fuzzer,${FUZZER_SAN_FLAGS})
-    target_link_options(BuildSettings_FUZZER INTERFACE -fsanitize=fuzzer,${FUZZER_SAN_FLAGS})
-endif()
-```
-
 
 ### Build
 
@@ -216,27 +188,51 @@ or
 **Note:**
 Pure Debug builds (`-O0`) are intentionally rejected for fuzzing, because libFuzzer and sanitizers rely on compiler optimizations to work correctly. Release builds (`-O3`) are also discouraged for fuzzing, because aggressive optimizations can remove code paths, inline away checks, and reduce coverage quality, making bugs harder to detect and debugging more difficult.
 
+**Important:**
+Each fuzzer target now produces **three executables** (`_fuzz_address`, `_fuzz_memory`, `_fuzz_thread`) for the same source.
+This increases compile time roughly **3×**, so plan your CI/build accordingly.
+
+---
+
+### Fuzzer types and coverage
+
+| Fuzzer executable       | Detects / Bugs / Errors                                                                |
+| ----------------------- | -------------------------------------------------------------------------------------- |
+| `<target>_fuzz_address` | Heap use-after-free, stack out-of-bounds, null dereference, general undefined behavior |
+| `<target>_fuzz_memory`  | Uninitialized reads, memory leaks, buffer misuse                                       |
+| `<target>_fuzz_thread`  | Data races, thread-safety violations, race-condition-induced UB                        |
+
+* **Address**: combines AddressSanitizer + UndefinedBehaviorSanitizer
+* **Memory**: MemorySanitizer detects uninitialized memory access and leaks
+* **Thread**: ThreadSanitizer detects concurrent memory access issues
+
 ---
 
 ### Optimization levels and bug classes
 
-Different optimization levels expose **different classes of bugs**.
-`-O2` does **not** strictly supersede `-O1`.
+Different optimization levels expose **different classes of bugs**. `-O2` does **not** strictly supersede `-O1`.
 
-| Bug class / behavior                      | -O1 | -O2 |
-| ----------------------------------------- | :-: | :-: |
-| Heap use-after-free                       | Yes | Yes |
-| Stack out-of-bounds                       | Yes | Yes |
+| Bug class / behavior                      | -O1 |    -O2   |
+| ----------------------------------------- | :-: | :------: |
+| Heap use-after-free                       | Yes |    Yes   |
+| Stack out-of-bounds                       | Yes |    Yes   |
 | Null dereference                          | Yes | Partial* |
-| Missing bounds checks                     | Yes | No* |
-| Undefined behavior (general)              | Yes | Yes |
-| Lifetime / aliasing bugs                  | No  | Yes |
-| Bugs caused by optimizer assumptions (UB) | No  | Yes |
-| Code paths removed by optimization        | No  | Yes |
-| Coverage quality / fuzzing guidance       | Yes | Partial |
+| Missing bounds checks                     | Yes |    No*   |
+| Undefined behavior (general)              | Yes |    Yes   |
+| Lifetime / aliasing bugs                  |  No |    Yes   |
+| Bugs caused by optimizer assumptions (UB) |  No |    Yes   |
+| Code paths removed by optimization        |  No |    Yes   |
+| Coverage quality / fuzzing guidance       | Yes |  Partial |
 
 * Some checks or code paths may be optimized away at `-O2`, making certain bugs harder or impossible to trigger.
 * Both modes are complementary and should be used together for best results.
+
+---
+
+| Fuzzer executable       | -O1  | -O2 |
+| `<target>_fuzz_address` | Heap use-after-free, Stack out-of-bounds, Null dereference, Undefined behavior, Coverage guidance | Heap use-after-free, Stack out-of-bounds, Partial null dereference, Undefined behavior, Lifetime/aliasing bugs, Optimizer UB assumptions, Code paths removed, Partial coverage guidance |
+| `<target>_fuzz_memory`  | Uninitialized reads, Memory leaks, Buffer misuse | Uninitialized reads, Memory leaks, Partial buffer misuse |
+| `<target>_fuzz_thread`  | Data races, Thread-safety violations, Race-condition-induced UB | Data races, Thread-safety violations, Partial race-condition-induced |
 
 ---
 
@@ -244,68 +240,27 @@ Different optimization levels expose **different classes of bugs**.
 
 `scripts/runFuzzer.sh <executable> [-c corpus_dir] [-j jobs] [-m] [--max_len N] [-h]`
 
+* Run the **specific fuzzer variant** depending on the bug type you want to target
+* `_fuzz_address` → general memory and UB
+* `_fuzz_memory` → uninitialized memory, leaks
+* `_fuzz_thread` → concurrency bugs
+
+---
+
 ### Reproducing crashes
 
-#### 1. Qt Creator
+Follow the same procedure as before for Qt Creator or VS Code.
 
-1. **Add your fuzzer binary as a run configuration**
-
-   * Go to **Projects → Run → Add Kit / Custom Executable**
-   * Set the **executable path** to `fuzzer_binary`
-
-2. **Set command-line arguments**
-
-   * Add your crash file as an argument:
-
-     ```
-     crash-<hash>
-     ```
-   * Optionally add libFuzzer flags:
-
-     ```
-     -runs=1 -handle_segv=0
-     ```
-
-3. **Debug**
-
-   * Click the debug button. Qt Creator will launch the fuzzer under its debugger.
-   * When the crash happens, you can inspect the call stack, variables, and step through `LLVMFuzzerTestOneInput`.
+* Use the crash file produced by libFuzzer
+* Apply `-runs=1` and `-handle_segv=0` for debugging
+* Step through `LLVMFuzzerTestOneInput` to locate the issue
 
 ---
 
-#### 2. Visual Studio Code (with C++ extension / launch.json)
+**Notes / Best Practices**
 
-1. **Open `launch.json`** (Ctrl+Shift+D → create a launch config)
-
-2. **Add a configuration** like:
-
-```json
-{
-    "name": "Debug Fuzzer Crash",
-    "type": "cppdbg",
-    "request": "launch",
-    "program": "${workspaceFolder}/build/fuzzer_binary",
-    "args": ["crash-<hash>", "-runs=1", "-handle_segv=0"],
-    "stopAtEntry": false,
-    "cwd": "${workspaceFolder}",
-    "environment": [],
-    "externalConsole": false,
-    "MIMode": "gdb",
-    "miDebuggerPath": "/usr/bin/gdb"
-}
-```
-
-3. **Launch the debugger**
-
-   * Select your configuration
-   * Click **Start Debugging** (F5)
-   * When the crash occurs, the debugger stops exactly at the crash point.
-
----
-
-#### Notes / Best Practices
-
-* Always use `-runs=1` when reproducing a crash, otherwise libFuzzer will loop endlessly.
+* Always use `-runs=1` when reproducing a crash.
 * Use `-handle_segv=0 -handle_abort=0` so that the debugger catches signals immediately.
-* Ensure the fuzzer binary is compiled with `-g` and **O1** or **O2** (not O0 or O3 for fuzzing).
+* Ensure the fuzzer binary is compiled with `-g` and **O1** or **O2** (not O0 or O3).
+* Remember that **each fuzzer target builds three executables**, increasing compile time.
 * You can step through `LLVMFuzzerTestOneInput` as a normal function; the crash will appear there.
