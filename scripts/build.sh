@@ -11,8 +11,9 @@ show_help() {
     echo "Usage: ./build.sh [options]"
     echo "Options:"
     echo "  -c               Clean build"
-    echo "  -d               Debug build"
-    echo "  --debug          Debug build"
+    echo "  -d               Debug build -g -O1"
+    echo "  --debug          Debug build -g -O1"
+    echo "  --o1debug        Debug build -g -O1"
     echo "  -r               Release build"
     echo "  --release        Release build"
     echo "  -o               RelWithDebInfo build"
@@ -101,6 +102,7 @@ while [[ $# -gt 0 ]]; do
         -c) CLEAN=true ;;
         -d) BUILD_TYPE="O1Debug" ;;
         --debug) BUILD_TYPE="O1Debug" ;;
+        --o1debug) BUILD_TYPE="O1Debug" ;;
         -r) BUILD_TYPE="Release" ;;
         --release) BUILD_TYPE="Release" ;;
         -o) BUILD_TYPE="RelWithDebInfo" ;;
