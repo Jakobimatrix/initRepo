@@ -264,7 +264,7 @@ if [[ "$SKIP_BUILD" == false ]]; then
     fi
 
     # Validate fuzzer option
-    if [[ "$FUZZER_ENABLED" == "ON" && "$BUILD_TYPE" != "Release" ]]; then
+    if [[ "$FUZZER_ENABLED" == "ON" && "$BUILD_TYPE" == "Release" ]]; then
         echo "Error: Fuzzing (-f) in release mode (-r)--> O3 is a bad Idea. Use debug (-d) --> (-g -O1) or RelWithDebInfo (-o) --> (-g -O2)."
         exit 1
     fi
