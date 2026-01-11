@@ -168,7 +168,7 @@ jobs:
             COMPILER_FLAG="--compiler clang"
           fi
 
-          OPTIMIZATION_FLAG="-d"
+          OPTIMIZATION_FLAG="-d -f"
           if [ "${{ matrix.build_type }}" = "release" ]; then
             OPTIMIZATION_FLAG="-r"
           fi
@@ -347,8 +347,8 @@ jobs:
           fi
           sudo apt-get update
           sudo apt-get install -y cmake make
-          echo "./initRepo/scripts/build.sh -s -f -T --${{ matrix.build_type }} -J --compiler clang --arch ${{ matrix.arch }}"
-          ./initRepo/scripts/build.sh -s -f -T --${{ matrix.build_type }} -J --compiler clang --arch ${{ matrix.arch }}
+          echo "./initRepo/scripts/build.sh -s -T --${{ matrix.build_type }} -J --compiler clang --arch ${{ matrix.arch }}"
+          ./initRepo/scripts/build.sh -s -T --${{ matrix.build_type }} -J --compiler clang --arch ${{ matrix.arch }}
 
       - name: Publish Clang test results
         if: always()

@@ -135,13 +135,23 @@ This project uses **Clang libFuzzer**, optionally combined with sanitizers, to d
 
 ---
 
-### Vorbereitung
+### Precondition
 
 A minimal example fuzzer can be found here:
 
 ```
 src/executables/src/fuzzer_example.cpp
 ```
+
+The fuzzer entry point is implemented via:
+
+```cpp
+extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size);
+```
+
+This function is called repeatedly by libFuzzer with different inputs.
+
+---
 
 It links against **BuildSettings_FUZZER** which is an umbrella target.
 All other libraries which get linked against the fuzzer should themself link against **BuildSettings_LIB** which is also an umbrella target:
@@ -172,17 +182,6 @@ if(FUZZER_ENABLED)
 endif()
 ```
 
-
-
-The fuzzer entry point is implemented via:
-
-```cpp
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size);
-```
-
-This function is called repeatedly by libFuzzer with different inputs.
-
----
 
 ### Build
 
@@ -240,6 +239,10 @@ Different optimization levels expose **different classes of bugs**.
 * Both modes are complementary and should be used together for best results.
 
 ---
+
+### Running the fuzzer
+
+`scripts/runFuzzer.sh <executable> [-c corpus_dir] [-j jobs] [-m] [--max_len N] [-h]`
 
 ### Reproducing crashes
 
