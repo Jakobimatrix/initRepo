@@ -174,7 +174,7 @@ jobs:
           fi
 
           FUZZER_FLAG=""
-          if [[ "${{ matrix.compiler }}" == "clang" && "${{ matrix.build_type }}" == "o1debug"]]; then
+          if [[ "${{ matrix.compiler }}" == "clang" && "${{ matrix.build_type }}" == "o1debug" ]]; then
             FUZZER_FLAG="-f"
           fi
 
