@@ -75,7 +75,7 @@ If change is needed, update the repo. All projects should be based on the same r
 ```
 initRepo
 ├── cmake
-│   ├── ClangFuzzyTests.cmake           --> if Option ENABLE_FUZZING is set, link the project against clang fuzzer
+│   ├── ClangFuzzyTests.cmake           --> if Option FUZZER_ENABLED is set, link the project against clang fuzzer
 │   ├── CompilerSetup.cmake             --> sets c++ standard 20, defines release/debug modes, enables LTO if ENABLE_LTO is set
 │   ├── CMakeGraphVizOptions.cmake      --> Options for graphviz, used for Documentation / Dependencey graph
 │   ├── CompilerWarnings.cmake          --> All warnings are errors (except some exceptions)
@@ -127,3 +127,182 @@ Two simple CI / CD pipeline for github is included.
 6. To update scripts: `./initRepo/scripts/update.sh`
 
    
+
+## Fuzzing
+
+The fuzzer helps to automatically find bugs by executing your code with a large number of generated and mutated inputs.
+This project uses **Clang libFuzzer**, optionally combined with sanitizers, to detect memory errors, undefined behavior, and logic bugs.
+
+---
+
+### Vorbereitung
+
+A minimal example fuzzer can be found here:
+
+```
+src/executables/src/fuzzer_example.cpp
+```
+
+It links against **BuildSettings_FUZZER** which is an umbrella target.
+All other libraries which get linked against the fuzzer should themself link against **BuildSettings_LIB** which is also an umbrella target:
+
+```cmake
+set(FUZZ_MODE "ADDRESS" CACHE STRING "Choose fuzzing sanitizer mode: ADDRESS, THREAD, MEMORY")
+if(FUZZ_MODE STREQUAL "ADDRESS")
+    # Enable fuzzing with address sanitizer and undefined behavior sanitizer
+    set(FUZZER_SAN_FLAGS address,undefined)
+elseif(FUZZ_MODE STREQUAL "THREAD")
+    # Enable fuzzing with thread sanitizer for race condition detection
+    set(FUZZER_SAN_FLAGS thread)
+elseif(FUZZ_MODE STREQUAL "MEMORY")
+    # Enable fuzzing with memory sanitizer for uninitialized memory detection
+    set(FUZZER_SAN_FLAGS memory)
+else()
+    message(FATAL_ERROR "Invalid FUZZ_MODE: ${FUZZ_MODE}. Choose BASIC, SAFE, THREAD, MEMORY.")
+endif()
+
+if(FUZZER_ENABLED)
+    # Apply all targets against sanitizer flag for full fuzzing instrumentation (without main function)
+    target_link_options(BuildSettings_LIB INTERFACE -fsanitize=fuzzer-no-link,${FUZZER_SAN_FLAGS})
+    target_compile_options(BuildSettings_LIB INTERFACE -fsanitize=fuzzer-no-link,${FUZZER_SAN_FLAGS})
+    
+    # Apply fuzzer sanitizer flags for full fuzzing instrumentation (fsanitize will provide the main function)
+    target_compile_options(BuildSettings_FUZZER INTERFACE -fsanitize=fuzzer,${FUZZER_SAN_FLAGS})
+    target_link_options(BuildSettings_FUZZER INTERFACE -fsanitize=fuzzer,${FUZZER_SAN_FLAGS})
+endif()
+```
+
+
+
+The fuzzer entry point is implemented via:
+
+```cpp
+extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size);
+```
+
+This function is called repeatedly by libFuzzer with different inputs.
+
+---
+
+### Build
+
+Use the provided `build.sh` script.
+
+Important flags:
+
+* `-f`
+  Enables the fuzzer build configuration (libFuzzer + sanitizers)
+
+* `--compiler clang`
+  Required, since libFuzzer is a Clang tool
+
+* `-d` or `-o`
+  Selects the optimization level:
+
+  * `-d` → Debug-like build using **`-O1 -g`**
+  * `-o` → RelWithDebInfo using **`-O2 -g`**
+
+Example:
+
+```bash
+./build.sh -f --compiler clang -d
+```
+
+or
+
+```bash
+./build.sh -f --compiler clang -o
+```
+
+**Note:**
+Pure Debug builds (`-O0`) are intentionally rejected for fuzzing, because libFuzzer and sanitizers rely on compiler optimizations to work correctly. Release builds (`-O3`) are also discouraged for fuzzing, because aggressive optimizations can remove code paths, inline away checks, and reduce coverage quality, making bugs harder to detect and debugging more difficult.
+
+---
+
+### Optimization levels and bug classes
+
+Different optimization levels expose **different classes of bugs**.
+`-O2` does **not** strictly supersede `-O1`.
+
+| Bug class / behavior                      | -O1 | -O2 |
+| ----------------------------------------- | :-: | :-: |
+| Heap use-after-free                       | Yes | Yes |
+| Stack out-of-bounds                       | Yes | Yes |
+| Null dereference                          | Yes | Partial* |
+| Missing bounds checks                     | Yes | No* |
+| Undefined behavior (general)              | Yes | Yes |
+| Lifetime / aliasing bugs                  | No  | Yes |
+| Bugs caused by optimizer assumptions (UB) | No  | Yes |
+| Code paths removed by optimization        | No  | Yes |
+| Coverage quality / fuzzing guidance       | Yes | Partial |
+
+* Some checks or code paths may be optimized away at `-O2`, making certain bugs harder or impossible to trigger.
+* Both modes are complementary and should be used together for best results.
+
+---
+
+### Reproducing crashes
+
+#### 1. Qt Creator
+
+1. **Add your fuzzer binary as a run configuration**
+
+   * Go to **Projects → Run → Add Kit / Custom Executable**
+   * Set the **executable path** to `fuzzer_binary`
+
+2. **Set command-line arguments**
+
+   * Add your crash file as an argument:
+
+     ```
+     crash-<hash>
+     ```
+   * Optionally add libFuzzer flags:
+
+     ```
+     -runs=1 -handle_segv=0
+     ```
+
+3. **Debug**
+
+   * Click the debug button. Qt Creator will launch the fuzzer under its debugger.
+   * When the crash happens, you can inspect the call stack, variables, and step through `LLVMFuzzerTestOneInput`.
+
+---
+
+#### 2. Visual Studio Code (with C++ extension / launch.json)
+
+1. **Open `launch.json`** (Ctrl+Shift+D → create a launch config)
+
+2. **Add a configuration** like:
+
+```json
+{
+    "name": "Debug Fuzzer Crash",
+    "type": "cppdbg",
+    "request": "launch",
+    "program": "${workspaceFolder}/build/fuzzer_binary",
+    "args": ["crash-<hash>", "-runs=1", "-handle_segv=0"],
+    "stopAtEntry": false,
+    "cwd": "${workspaceFolder}",
+    "environment": [],
+    "externalConsole": false,
+    "MIMode": "gdb",
+    "miDebuggerPath": "/usr/bin/gdb"
+}
+```
+
+3. **Launch the debugger**
+
+   * Select your configuration
+   * Click **Start Debugging** (F5)
+   * When the crash occurs, the debugger stops exactly at the crash point.
+
+---
+
+#### Notes / Best Practices
+
+* Always use `-runs=1` when reproducing a crash, otherwise libFuzzer will loop endlessly.
+* Use `-handle_segv=0 -handle_abort=0` so that the debugger catches signals immediately.
+* Ensure the fuzzer binary is compiled with `-g` and **O1** or **O2** (not O0 or O3 for fuzzing).
+* You can step through `LLVMFuzzerTestOneInput` as a normal function; the crash will appear there.

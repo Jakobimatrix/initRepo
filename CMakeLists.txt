@@ -20,10 +20,16 @@ option(ENABLE_CPPCHECK "Run cppcheck static analysis if available" OFF)
 option(ENABLE_MULTITHREADING "Link against pthreads/Threads on Unix" OFF)
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    option(ENABLE_FUZZING "Enable fuzz testing build options" OFF)
+    option(FUZZER_ENABLED "Enable fuzz testing build options" OFF)
 else()
-    set(ENABLE_FUZZING OFF)
+    set(FUZZER_ENABLED OFF)
 endif ()
+
+if (FUZZER_ENABLED)
+    if (CMAKE_BUILD_TYPE STREQUAL "Release")
+        message(FATAL_ERROR "Fuzzer build requires -O1 or -O2 optimization level and -g (debug symbols), not -O3 (Release). Please set -DCMAKE_BUILD_TYPE to 'RelWithDebInfo' or '01'.")
+    endif()
+endif()
 
 add_library(BuildSettings_LIB INTERFACE)
 add_library(BuildSettings_EXE INTERFACE)
@@ -59,20 +65,36 @@ else()
     message(FATAL_ERROR "Invalid FUZZ_MODE: ${FUZZ_MODE}. Choose BASIC, SAFE, THREAD, MEMORY.")
 endif()
 
-if(ENABLE_FUZZING)
-    # Link all targets against sanitizer flag
+if(FUZZER_ENABLED)
+    # Apply all targets against sanitizer flag for full fuzzing instrumentation (without main function)
     target_link_options(BuildSettings_LIB INTERFACE -fsanitize=fuzzer-no-link,${FUZZER_SAN_FLAGS})
-    target_link_options(BuildSettings_EXE INTERFACE -fsanitize=fuzzer-no-link,${FUZZER_SAN_FLAGS})
-    target_link_options(BuildSettings_CATHCH2_UNITTEST INTERFACE -fsanitize=fuzzer-no-link,${FUZZER_SAN_FLAGS})
-
     target_compile_options(BuildSettings_LIB INTERFACE -fsanitize=fuzzer-no-link,${FUZZER_SAN_FLAGS})
-    target_compile_options(BuildSettings_EXE INTERFACE -fsanitize=fuzzer-no-link,${FUZZER_SAN_FLAGS})
-    target_compile_options(BuildSettings_CATHCH2_UNITTEST INTERFACE -fsanitize=fuzzer-no-link,${FUZZER_SAN_FLAGS})
 
     # Apply fuzzer sanitizer flags for full fuzzing instrumentation (fsanitize will provide the main function)
     target_compile_options(BuildSettings_FUZZER INTERFACE -fsanitize=fuzzer,${FUZZER_SAN_FLAGS})
     target_link_options(BuildSettings_FUZZER INTERFACE -fsanitize=fuzzer,${FUZZER_SAN_FLAGS})
 endif()
+
+# Function: generate_fuzzer_name
+# Args:
+#   BASE_NAME     - base name of the fuzzer (e.g., "fuzzer_example")
+#   OUT_VAR       - name of variable to store the resulting fuzzer name
+function(generate_fuzzer_name BASE_NAME OUT_VAR)
+    # Ensure build type is set
+    if(NOT CMAKE_BUILD_TYPE)
+        message(FATAL_ERROR "CMAKE_BUILD_TYPE must be set for fuzzing. Choose one of: O1, RelWithDebInfo, etc.")
+    endif()
+
+    # Convert FUZZ_MODE to lowercase for the executable name
+    string(TOLOWER "${FUZZ_MODE}" FUZZ_MODE_LOWER)
+
+    # Construct full fuzzer executable name
+    # Example: fuzzer_example_address_O1
+    set(FULL_NAME "${BASE_NAME}_${FUZZ_MODE_LOWER}_${CMAKE_BUILD_TYPE}")
+
+    # Return value
+    set(${OUT_VAR} "${FULL_NAME}" PARENT_SCOPE)
+endfunction()
 
 
 # graphviz

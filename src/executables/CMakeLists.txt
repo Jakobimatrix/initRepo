@@ -1,9 +1,11 @@
 
 
 if (FUZZER_ENABLED)
-  add_executable(fuzzer_example src/fuzzer_example.cpp)
 
-  target_link_libraries(fuzzer_example 
+  generate_fuzzer_name("fuzzer_example" FUZZER_EXE_NAME)
+  add_executable(FUZZER_EXE_NAME src/fuzzer_example.cpp)
+
+  target_link_libraries(FUZZER_EXE_NAME 
     PRIVATE 
     BuildSettings_FUZZER
   )

@@ -45,7 +45,7 @@ CLEAN=false
 INSTALL=false
 BUILD_TYPE=""
 ENABLE_TESTS=OFF
-ENABLE_FUZZING=OFF
+FUZZER_ENABLED=OFF
 LIST_COMPILERS=false
 VERBOSE=false
 COMPILER="${DEFAULT_COMPILER}"
@@ -99,8 +99,8 @@ list_available_compiler() {
 while [[ $# -gt 0 ]]; do
     case $1 in
         -c) CLEAN=true ;;
-        -d) BUILD_TYPE="Debug" ;;
-        --debug) BUILD_TYPE="Debug" ;;
+        -d) BUILD_TYPE="O1" ;;
+        --debug) BUILD_TYPE="O1" ;;
         -r) BUILD_TYPE="Release" ;;
         --release) BUILD_TYPE="Release" ;;
         -o) BUILD_TYPE="RelWithDebInfo" ;;
@@ -135,7 +135,7 @@ while [[ $# -gt 0 ]]; do
             fi
             ;;
         -t) ENABLE_TESTS=ON ;;
-        -f) ENABLE_FUZZING=ON ;;
+        -f) FUZZER_ENABLED=ON ;;
         -v) VERBOSE=true ;;
         -l) LIST_COMPILERS=true ;;
         -h) 
@@ -257,8 +257,14 @@ if [[ "$SKIP_BUILD" == false ]]; then
     fi
 
     # Validate fuzzer option
-    if [[ "$ENABLE_FUZZING" == "ON" && "$COMPILER" != "clang++" ]]; then
+    if [[ "$FUZZER_ENABLED" == "ON" && "$COMPILER" != "clang++" ]]; then
         echo "Error: Fuzzing (-f) is only supported with the clang compiler."
+        exit 1
+    fi
+
+    # Validate fuzzer option
+    if [[ "$FUZZER_ENABLED" == "ON" && "$BUILD_TYPE" != "Release" ]]; then
+        echo "Error: Fuzzing (-f) in release mode (-r)--> O3 is a bad Idea. Use debug (-d) --> (-g -O1) or RelWithDebInfo (-o) --> (-g -O2)."
         exit 1
     fi
 
@@ -278,7 +284,7 @@ if [[ "$SKIP_BUILD" == false ]]; then
     echo "compiling for: $ENVIRONMENT: $ARCH-$TARGET_ARCH_BITS"
     echo "Configuring with CMake..."
 
-    CMAKE_ARGS=(-DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_CXX_COMPILER=$COMPILER_PATH -DCMAKE_C_COMPILER=$CC_PATH -DBUILD_TESTING=$ENABLE_TESTS -DENABLE_FUZZING=$ENABLE_FUZZING -DENABLE_COVERAGE=$ENABLE_COVERAGE)
+    CMAKE_ARGS=(-DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_CXX_COMPILER=$COMPILER_PATH -DCMAKE_C_COMPILER=$CC_PATH -DBUILD_TESTING=$ENABLE_TESTS -DFUZZER_ENABLED=$FUZZER_ENABLED -DENABLE_COVERAGE=$ENABLE_COVERAGE)
     if [[ -n "$ENABLE_MARCH" ]]; then
         CMAKE_ARGS+=(-DENABLE_MARCH="$ENABLE_MARCH")
     fi
