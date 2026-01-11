@@ -4,7 +4,7 @@
 #    SOURCES 
 #      src/time.cpp
 #    PUBLIC_HEADERS i
-#      nclude/time/templated_header.hpp
+#      include/time/templated_header.hpp
 #    LINK_PUBLIC 
 #      lib_1
 #      lib_2
@@ -29,7 +29,7 @@
 #)
 
 add_versioned_library(library_name 
-  Version 
+  VERSION 
     0.0.1
   SOURCES
     src/math.cpp
