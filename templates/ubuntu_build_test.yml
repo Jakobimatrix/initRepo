@@ -168,9 +168,14 @@ jobs:
             COMPILER_FLAG="--compiler clang"
           fi
 
-          OPTIMIZATION_FLAG="-d -f"
+          OPTIMIZATION_FLAG="-d"
           if [ "${{ matrix.build_type }}" = "release" ]; then
             OPTIMIZATION_FLAG="-r"
+          fi
+
+          FUZZER_FLAG=""
+          if [[ "${{ matrix.compiler }}" == "clang" && "${{ matrix.build_type }}" == "debug"]]; then
+            FUZZER_FLAG="-f"
           fi
 
           set -e
@@ -206,8 +211,8 @@ jobs:
           fi
           sudo apt-get install -y cmake make
 
-          echo "./initRepo/scripts/build.sh -t --arch ${{ matrix.arch }} ${COMPILER_FLAG} ${OPTIMIZATION_FLAG} ${COVERAGE_FLAG}"
-          ./initRepo/scripts/build.sh -t --arch ${{ matrix.arch }} ${COMPILER_FLAG} ${OPTIMIZATION_FLAG} ${COVERAGE_FLAG}
+          echo "./initRepo/scripts/build.sh -t --arch ${{ matrix.arch }} ${COMPILER_FLAG} ${OPTIMIZATION_FLAG} ${COVERAGE_FLAG} ${FUZZER_FLAG}"
+          ./initRepo/scripts/build.sh -t --arch ${{ matrix.arch }} ${COMPILER_FLAG} ${OPTIMIZATION_FLAG} ${COVERAGE_FLAG} ${FUZZER_FLAG}
           if [ "${{ matrix.compiler }}" = "gcc" ]; then
             tar -czf gcc_${{ matrix.arch }}_${{ matrix.build_type }}_build.tar.gz build-gcc-${GCC_VERSION}-${{ matrix.build_type }}-${ARCH}-${{ matrix.arch }}
           else [ "${{ matrix.compiler }}" = "clang" ]
