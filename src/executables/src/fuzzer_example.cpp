@@ -9,7 +9,6 @@
  *         4) Create a Debug executable (or unit test) that can read the crash-<md5hash> and call badFunction in debug mode to analyze the crash.
  **/
 
-#include <cstdint>
 #include <cstdio>
 
 namespace {

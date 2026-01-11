@@ -150,7 +150,7 @@ jobs:
       fail-fast: false
       matrix:
         compiler: [gcc, clang]
-        build_type: [debug, release]
+        build_type: [o1debug, release]
         arch: [x86, x64]
     steps:
       - uses: actions/download-artifact@v4
