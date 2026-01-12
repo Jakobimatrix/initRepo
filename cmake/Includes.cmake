@@ -204,8 +204,14 @@ function(set_fuzzer_sanitizer_flags FUZZ_MODE)
 endfunction()
 
 # Function: add_versioned_library 
-# if BUILD_SHARED_LIBS is set, creates SHARED library, else STATIC
-# if BUILD_FUZZERS is set, also creates OBJECT libraries for each fuzzer mode
+# creates:
+# lib_obj                (normal objects)
+# lib_headers            (INTERFACE)
+# lib                (packaged library)
+# if FUZZER_ENABLED:
+# lib_obj_fuzz_address   (instrumented object)
+# lib_obj_fuzz_memory    (instrumented object)
+# lib_obj_fuzz_thread    (instrumented object)
 # Args:
 #   NAME          - name of the library
 #   VERSION       - version of the library (e.g., 1.2.3)
@@ -483,6 +489,7 @@ endfunction()
 
 
 # Function: add_versioned_fuzzer_executable
+# creates 3 executables for each sanitizer mode (address, memory, thread)
 # Args:
 #   NAME          - name of the fuzzer executable
 #   SOURCES       - source files for the fuzzer executable
