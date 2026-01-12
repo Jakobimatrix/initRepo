@@ -330,7 +330,7 @@ if [[ "$SKIP_BUILD" == false ]]; then
         cmake -LAH ..
     fi
 
-    echo "Building project..."
+    echo "cmake --build . -- -j$(nproc)"
     cmake --build . -- -j"$(nproc)"
 
 else
