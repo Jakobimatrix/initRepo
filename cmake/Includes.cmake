@@ -2,6 +2,14 @@ macro(_vmsg msg)
     message(STATUS "[DEBUG] ${msg}")
 endmacro()
 
+set(FUZZ_MODES address memory)
+
+if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+    list(APPEND FUZZ_MODES thread)
+else()
+    message(STATUS "[FUZZ] ThreadSanitizer disabled on 32-bit targets")
+endif()
+
 # Include Boost with target-specific flags
 function(include_boost target_name)
     # Try to find a system-installed Boost first
@@ -343,7 +351,7 @@ function(add_versioned_library NAME)
     if(FUZZER_ENABLED)
         _vmsg("  FUZZER_ENABLED → creating instrumented object libraries")
 
-        foreach(MODE IN ITEMS address memory thread)
+        foreach(MODE IN ITEMS ${FUZZ_MODES})
             set_fuzzer_sanitizer_flags(${MODE})
             set(obj ${NAME}_obj_fuzz_${MODE})
 
@@ -523,11 +531,10 @@ function(add_versioned_fuzzer_executable NAME)
         )
     endif()
 
-    foreach(MODE IN ITEMS ADDRESS MEMORY THREAD)
-        string(TOLOWER ${MODE} mode_lower)
+    foreach(MODE IN ITEMS ${FUZZ_MODES})
         set_fuzzer_sanitizer_flags(${MODE})
 
-        set(EXE ${NAME}_fuzz_${mode_lower}_${CMAKE_BUILD_TYPE})
+        set(EXE ${NAME}_fuzz_${MODE}_${CMAKE_BUILD_TYPE})
         _vmsg("  creating ${EXE}")
 
         add_executable(${EXE} ${ARG_SOURCES})
@@ -539,7 +546,7 @@ function(add_versioned_fuzzer_executable NAME)
 
         # instrumented object libraries # theyre header-only only sibling targets
         foreach(LIB IN LISTS ARG_LINK_PRIVATE_INSTRUMENT)
-            set(OBJ ${LIB}_obj_fuzz_${mode_lower})
+            set(OBJ ${LIB}_obj_fuzz_${MODE})
 
             if(NOT TARGET ${OBJ})
                 message(FATAL_ERROR
