@@ -1,5 +1,5 @@
 macro(_vmsg msg)
-    message(STATUS "[versioned] ${msg}")
+    message(STATUS "[DEBUG] ${msg}")
 endmacro()
 
 # Include Boost with target-specific flags
@@ -261,6 +261,18 @@ function(add_versioned_library NAME)
         target_link_options(${NAME}_obj PRIVATE ${ARG_LINK_OPTIONS})
     endif()
 
+
+    # --------------------------------------------------
+    # header dump library target
+    # --------------------------------------------------
+    add_library(${NAME}_headers INTERFACE)
+
+    target_include_directories(${NAME}_headers
+        INTERFACE
+            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+            $<INSTALL_INTERFACE:include>
+    )
+
     # --------------------------------------------------
     # Real library target
     # --------------------------------------------------
@@ -276,6 +288,8 @@ function(add_versioned_library NAME)
     if(ARG_LINK_PUBLIC)
         target_link_libraries(${NAME} PUBLIC ${ARG_LINK_PUBLIC})
     endif()
+
+    target_link_libraries(${NAME} PUBLIC ${NAME}_headers)
 
     # --------------------------------------------------
     # Install + package
@@ -514,7 +528,7 @@ function(add_versioned_fuzzer_executable NAME)
             target_link_libraries(${EXE} PRIVATE ${ARG_LINK_PRIVATE})
         endif()
 
-        # instrumented object libraries (FIX)
+        # instrumented object libraries # theyre header-only only sibling targets
         foreach(LIB IN LISTS ARG_LINK_PRIVATE_INSTRUMENT)
             set(OBJ ${LIB}_obj_fuzz_${mode_lower})
 
@@ -527,6 +541,14 @@ function(add_versioned_fuzzer_executable NAME)
             target_sources(${EXE} PRIVATE
                 $<TARGET_OBJECTS:${OBJ}>
             )
+
+            if(NOT TARGET ${LIB}_headers)
+                message(FATAL_ERROR
+                    "Fuzzer ${EXE}: expected instrumented object library headers target '${LIB}_headers' does not exist"
+                )
+            endif()
+
+            target_link_libraries(${EXE} PRIVATE ${LIB}_headers)
         endforeach()
 
         target_compile_options(${EXE} PRIVATE
