@@ -301,6 +301,8 @@ function(add_versioned_library NAME)
     # Install + package
     # --------------------------------------------------
     install(TARGETS ${NAME}
+            ${NAME}
+            ${NAME}_headers
         EXPORT ${NAME}Targets
         ARCHIVE DESTINATION lib
         LIBRARY DESTINATION lib
