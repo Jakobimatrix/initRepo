@@ -1,3 +1,7 @@
+macro(_vmsg msg)
+    message(STATUS "[versioned] ${msg}")
+endmacro()
+
 # Include Boost with target-specific flags
 function(include_boost target_name)
     # Try to find a system-installed Boost first
@@ -217,64 +221,65 @@ function(add_versioned_library NAME)
     set(multiValueArgs SOURCES PUBLIC_HEADERS LINK_PUBLIC LINK_PRIVATE LINK_OPTIONS COMPILE_OPTIONS)
     cmake_parse_arguments(ARG "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
+    _vmsg("add_versioned_library(${NAME})")
+
     if(NOT ARG_VERSION)
-        message(FATAL_ERROR "add_versioned_library requires VERSION")
+        message(FATAL_ERROR "add_versioned_library(${NAME}): VERSION is required")
     endif()
 
-    # Determine library type based on BUILD_SHARED_LIBS
-    set(LIB_TYPE STATIC)
-    if(BUILD_SHARED_LIBS)
-        set(LIB_TYPE SHARED)
+    if(NOT ARG_SOURCES)
+        message(FATAL_ERROR "add_versioned_library(${NAME}): SOURCES is empty")
     endif()
 
-    # ------------------------------
-    # Normal OBJECT library
-    # ------------------------------
+    if(NOT EXISTS "${CMAKE_CURRENT_LIST_DIR}/Config.cmake.in")
+        message(FATAL_ERROR
+            "add_versioned_library(${NAME}): missing Config.cmake.in at "
+            "${CMAKE_CURRENT_LIST_DIR}/Config.cmake.in"
+        )
+    endif()
+
+    # --------------------------------------------------
+    # Base object library
+    # --------------------------------------------------
     add_library(${NAME}_obj OBJECT ${ARG_SOURCES})
+    _vmsg("  created object library ${NAME}_obj")
 
-    target_include_directories(${NAME}_obj
-        PUBLIC
-            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-            $<INSTALL_INTERFACE:include>
+    target_include_directories(${NAME}_obj PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        $<INSTALL_INTERFACE:include>
     )
 
-    target_link_libraries(${NAME}_obj
-        PRIVATE ${ARG_LINK_PRIVATE}
-    )
-
-    if(ARG_LINK_OPTIONS)
-        target_link_options(${NAME}_obj PRIVATE ${ARG_LINK_OPTIONS})
+    if(ARG_LINK_PRIVATE)
+        target_link_libraries(${NAME}_obj PRIVATE ${ARG_LINK_PRIVATE})
     endif()
 
     if(ARG_COMPILE_OPTIONS)
         target_compile_options(${NAME}_obj PRIVATE ${ARG_COMPILE_OPTIONS})
     endif()
 
-    # ------------------------------
-    # Packaged library
-    # ------------------------------
-    add_library(${NAME} $<TARGET_OBJECTS:${NAME}_obj>)
+    if(ARG_LINK_OPTIONS)
+        target_link_options(${NAME}_obj PRIVATE ${ARG_LINK_OPTIONS})
+    endif()
+
+    # --------------------------------------------------
+    # Real library target
+    # --------------------------------------------------
+    add_library(${NAME})
     add_library(${NAME}::${NAME} ALIAS ${NAME})
 
-    set_target_properties(${NAME} PROPERTIES
-        VERSION   ${ARG_VERSION}
+    target_sources(${NAME} PRIVATE
+        $<TARGET_OBJECTS:${NAME}_obj>
     )
 
-    target_link_libraries(${NAME}
-        PUBLIC  ${ARG_LINK_PUBLIC}
-    )
+    set_target_properties(${NAME} PROPERTIES VERSION ${ARG_VERSION})
 
-    if(ARG_LINK_OPTIONS)
-        target_link_options(${NAME} PRIVATE ${ARG_LINK_OPTIONS})
+    if(ARG_LINK_PUBLIC)
+        target_link_libraries(${NAME} PUBLIC ${ARG_LINK_PUBLIC})
     endif()
 
-    if(ARG_COMPILE_OPTIONS)
-        target_compile_options(${NAME} PRIVATE ${ARG_COMPILE_OPTIONS})
-    endif()
-
-    # ------------------------------
-    # Install normal library + headers
-    # ------------------------------
+    # --------------------------------------------------
+    # Install + package
+    # --------------------------------------------------
     install(TARGETS ${NAME}
         EXPORT ${NAME}Targets
         ARCHIVE DESTINATION lib
@@ -291,6 +296,7 @@ function(add_versioned_library NAME)
     )
 
     include(CMakePackageConfigHelpers)
+
     write_basic_package_version_file(
         ${CMAKE_CURRENT_BINARY_DIR}/${NAME}ConfigVersion.cmake
         VERSION ${ARG_VERSION}
@@ -309,42 +315,38 @@ function(add_versioned_library NAME)
         DESTINATION lib/cmake/${NAME}
     )
 
-    # ------------------------------
-    # Fuzz OBJECT libraries
-    # ------------------------------
+    # --------------------------------------------------
+    # Fuzzer object libraries
+    # --------------------------------------------------
     if(FUZZER_ENABLED)
-        set(FUZZ_MODES address memory thread)
-        foreach(MODE IN LISTS FUZZ_MODES)
-            set_fuzzer_sanitizer_flags(${MODE})
-            set(obj_name ${NAME}_obj_fuzz_${MODE})
-            add_library(${obj_name} OBJECT ${ARG_SOURCES})
+        _vmsg("  FUZZER_ENABLED → creating instrumented object libraries")
 
-            target_include_directories(${obj_name} PUBLIC
+        foreach(MODE IN ITEMS address memory thread)
+            set_fuzzer_sanitizer_flags(${MODE})
+            set(obj ${NAME}_obj_fuzz_${MODE})
+
+            add_library(${obj} OBJECT ${ARG_SOURCES})
+            _vmsg("    ${obj}")
+
+            target_include_directories(${obj} PUBLIC
                 $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
             )
 
-            target_link_libraries(${obj_name} 
-                PRIVATE ${ARG_LINK_PRIVATE}
-            )
+            if(ARG_LINK_PRIVATE)
+                target_link_libraries(${obj} PRIVATE ${ARG_LINK_PRIVATE})
+            endif()
 
-            target_compile_options(${obj_name} PRIVATE
+            target_compile_options(${obj} PRIVATE
                 -fsanitize=fuzzer-no-link,${FUZZER_SAN_FLAGS}
             )
 
-            target_link_options(${obj_name} PRIVATE
+            target_link_options(${obj} PRIVATE
                 -fsanitize=fuzzer-no-link,${FUZZER_SAN_FLAGS}
             )
-
-            if(ARG_COMPILE_OPTIONS)
-                target_compile_options(${obj_name} PRIVATE ${ARG_COMPILE_OPTIONS})
-            endif()
-
-            if(ARG_LINK_OPTIONS)
-                target_link_options(${obj_name} PRIVATE ${ARG_LINK_OPTIONS})
-            endif()
         endforeach()
     endif()
 endfunction()
+
 
 # Function: add_versioned_header_only_library
 # Args:
@@ -434,22 +436,25 @@ endfunction()
 #   COMPILE_OPTIONS - compile options for the executable
 function(add_versioned_executable NAME)
     set(options)
-    set(oneValueArgs VERSION)
+    set(oneValueArgs)
     set(multiValueArgs SOURCES LINK_PUBLIC LINK_PRIVATE LINK_OPTIONS COMPILE_OPTIONS)
     cmake_parse_arguments(ARG "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
+    _vmsg("add_versioned_executable(${NAME})")
+
     if(NOT ARG_SOURCES)
-        message(FATAL_ERROR "add_versioned_executable requires SOURCES")
+        message(FATAL_ERROR "add_versioned_executable(${NAME}): SOURCES is empty")
     endif()
 
-    add_executable(${NAME} ALL ${ARG_SOURCES})
+    add_executable(${NAME} ${ARG_SOURCES})
 
-    target_link_libraries(${NAME}
-        PRIVATE
-            ${ARG_LINK_PRIVATE}
-        PUBLIC
-            ${ARG_LINK_PUBLIC}
-    )
+    if(ARG_LINK_PRIVATE)
+        target_link_libraries(${NAME} PRIVATE ${ARG_LINK_PRIVATE})
+    endif()
+
+    if(ARG_LINK_PUBLIC)
+        target_link_libraries(${NAME} PUBLIC ${ARG_LINK_PUBLIC})
+    endif()
 
     if(ARG_COMPILE_OPTIONS)
         target_compile_options(${NAME} PRIVATE ${ARG_COMPILE_OPTIONS})
@@ -459,10 +464,9 @@ function(add_versioned_executable NAME)
         target_link_options(${NAME} PRIVATE ${ARG_LINK_OPTIONS})
     endif()
 
-    install(TARGETS ${NAME}
-        RUNTIME DESTINATION bin
-    )
+    install(TARGETS ${NAME} RUNTIME DESTINATION bin)
 endfunction()
+
 
 # Function: add_versioned_fuzzer_executable
 # Args:
@@ -474,6 +478,7 @@ endfunction()
 #   COMPILE_OPTIONS - compile options for the fuzzer executable
 function(add_versioned_fuzzer_executable NAME)
     if(NOT FUZZER_ENABLED)
+        _vmsg("add_versioned_fuzzer_executable(${NAME}) skipped (FUZZER_ENABLED=OFF)")
         return()
     endif()
 
@@ -482,43 +487,64 @@ function(add_versioned_fuzzer_executable NAME)
     set(multiValueArgs SOURCES LINK_PRIVATE LINK_PRIVATE_INSTRUMENT LINK_OPTIONS COMPILE_OPTIONS)
     cmake_parse_arguments(ARG "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
+    _vmsg("add_versioned_fuzzer_executable(${NAME})")
+
     if(NOT ARG_SOURCES)
-        message(FATAL_ERROR "add_versioned_fuzzer_executable requires SOURCES")
+        message(FATAL_ERROR "add_versioned_fuzzer_executable(${NAME}): SOURCES is empty")
+    endif()
+
+    if(NOT ARG_LINK_PRIVATE_INSTRUMENT)
+        message(FATAL_ERROR
+            "add_versioned_fuzzer_executable(${NAME}): "
+            "LINK_PRIVATE_INSTRUMENT must be specified"
+        )
     endif()
 
     foreach(MODE IN ITEMS ADDRESS MEMORY THREAD)
         string(TOLOWER ${MODE} mode_lower)
         set_fuzzer_sanitizer_flags(${MODE})
 
-        # fuzzer executable name
-        set(EXE_NAME ${NAME}_fuzz_${mode_lower}_${CMAKE_BUILD_TYPE})
+        set(EXE ${NAME}_fuzz_${mode_lower}_${CMAKE_BUILD_TYPE})
+        _vmsg("  creating ${EXE}")
 
-        # Convert LINK_PRIVATE_INSTRUMENT entries into their corresponding object libraries
-        set(INSTRUMENT_OBJECTS "")
+        add_executable(${EXE} ${ARG_SOURCES})
+
+        # normal private libs
+        if(ARG_LINK_PRIVATE)
+            target_link_libraries(${EXE} PRIVATE ${ARG_LINK_PRIVATE})
+        endif()
+
+        # instrumented object libraries (FIX)
         foreach(LIB IN LISTS ARG_LINK_PRIVATE_INSTRUMENT)
-            list(APPEND INSTRUMENT_OBJECTS $<TARGET_OBJECTS:${LIB}_obj_fuzz_${mode_lower}>)
+            set(OBJ ${LIB}_obj_fuzz_${mode_lower})
+
+            if(NOT TARGET ${OBJ})
+                message(FATAL_ERROR
+                    "Fuzzer ${EXE}: expected instrumented object library ${OBJ} does not exist"
+                )
+            endif()
+
+            target_sources(${EXE} PRIVATE
+                $<TARGET_OBJECTS:${OBJ}>
+            )
         endforeach()
 
-        # Add executable with sources + instrumented object libraries
-        add_executable(${EXE_NAME} ALL ${ARG_SOURCES} ${INSTRUMENT_OBJECTS})
+        target_compile_options(${EXE} PRIVATE
+            -fsanitize=fuzzer,${FUZZER_SAN_FLAGS}
+        )
 
-        # link normal private libraries
-        if(ARG_LINK_PRIVATE)
-            target_link_libraries(${EXE_NAME} PRIVATE ${ARG_LINK_PRIVATE})
-        endif()
+        target_link_options(${EXE} PRIVATE
+            -fsanitize=fuzzer,${FUZZER_SAN_FLAGS}
+        )
 
-        # apply fuzzer instrumentation options
-        target_compile_options(${EXE_NAME} PRIVATE -fsanitize=fuzzer,${FUZZER_SAN_FLAGS})
-        target_link_options(${EXE_NAME} PRIVATE -fsanitize=fuzzer,${FUZZER_SAN_FLAGS})
-
-        # additional user options
         if(ARG_COMPILE_OPTIONS)
-            target_compile_options(${EXE_NAME} PRIVATE ${ARG_COMPILE_OPTIONS})
-        endif()
-        if(ARG_LINK_OPTIONS)
-            target_link_options(${EXE_NAME} PRIVATE ${ARG_LINK_OPTIONS})
+            target_compile_options(${EXE} PRIVATE ${ARG_COMPILE_OPTIONS})
         endif()
 
-        install(TARGETS ${EXE_NAME} RUNTIME DESTINATION bin)
+        if(ARG_LINK_OPTIONS)
+            target_link_options(${EXE} PRIVATE ${ARG_LINK_OPTIONS})
+        endif()
+
+        install(TARGETS ${EXE} RUNTIME DESTINATION bin)
     endforeach()
 endfunction()
