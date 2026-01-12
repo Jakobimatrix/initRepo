@@ -468,8 +468,8 @@ endfunction()
 # Args:
 #   NAME          - name of the fuzzer executable
 #   SOURCES       - source files for the fuzzer executable
-#   LINK_PUBLIC   - libraries to link publicly
 #   LINK_PRIVATE  - libraries to link privately
+#   LINK_PRIVATE_INSTRUMENT  - libraries to link privately which are instrumented for fuzzing
 #   LINK_OPTIONS  - link options for the fuzzer executable
 #   COMPILE_OPTIONS - compile options for the fuzzer executable
 function(add_versioned_fuzzer_executable NAME)
@@ -479,7 +479,7 @@ function(add_versioned_fuzzer_executable NAME)
 
     set(options)
     set(oneValueArgs)
-    set(multiValueArgs SOURCES LINK_PUBLIC LINK_PRIVATE LINK_OPTIONS COMPILE_OPTIONS)
+    set(multiValueArgs SOURCES LINK_PRIVATE LINK_PRIVATE_INSTRUMENT LINK_OPTIONS COMPILE_OPTIONS)
     cmake_parse_arguments(ARG "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
     if(NOT ARG_SOURCES)
@@ -488,38 +488,37 @@ function(add_versioned_fuzzer_executable NAME)
 
     foreach(MODE IN ITEMS ADDRESS MEMORY THREAD)
         string(TOLOWER ${MODE} mode_lower)
-
         set_fuzzer_sanitizer_flags(${MODE})
 
-        add_executable(${NAME}_fuzz_${mode_lower}_${CMAKE_BUILD_TYPE}
-            ${ARG_SOURCES}
-        )
+        # fuzzer executable name
+        set(EXE_NAME ${NAME}_fuzz_${mode_lower}_${CMAKE_BUILD_TYPE})
 
-        target_link_libraries(${NAME}_fuzz_${mode_lower}_${CMAKE_BUILD_TYPE}
-            PRIVATE
-                ${ARG_LINK_PRIVATE}
-            PUBLIC
-                ${ARG_LINK_PUBLIC}
-        )
+        # Convert LINK_PRIVATE_INSTRUMENT entries into their corresponding object libraries
+        set(INSTRUMENT_OBJECTS "")
+        foreach(LIB IN LISTS ARG_LINK_PRIVATE_INSTRUMENT)
+            list(APPEND INSTRUMENT_OBJECTS $<TARGET_OBJECTS:${LIB}_obj_fuzz_${mode_lower}>)
+        endforeach()
 
-        target_compile_options(${NAME}_fuzz_${mode_lower}_${CMAKE_BUILD_TYPE}
-            PRIVATE -fsanitize=fuzzer,${FUZZER_SAN_FLAGS}
-        )
+        # Add executable with sources + instrumented object libraries
+        add_executable(${EXE_NAME} ${ARG_SOURCES} ${INSTRUMENT_OBJECTS})
 
-        target_link_options(${NAME}_fuzz_${mode_lower}_${CMAKE_BUILD_TYPE}
-            PRIVATE -fsanitize=fuzzer,${FUZZER_SAN_FLAGS}
-        )
+        # link normal private libraries
+        if(ARG_LINK_PRIVATE)
+            target_link_libraries(${EXE_NAME} PRIVATE ${ARG_LINK_PRIVATE})
+        endif()
 
+        # apply fuzzer instrumentation options
+        target_compile_options(${EXE_NAME} PRIVATE -fsanitize=fuzzer,${FUZZER_SAN_FLAGS})
+        target_link_options(${EXE_NAME} PRIVATE -fsanitize=fuzzer,${FUZZER_SAN_FLAGS})
+
+        # additional user options
         if(ARG_COMPILE_OPTIONS)
-            target_compile_options(${NAME}_fuzz_${mode_lower}_${CMAKE_BUILD_TYPE} PRIVATE ${ARG_COMPILE_OPTIONS})
+            target_compile_options(${EXE_NAME} PRIVATE ${ARG_COMPILE_OPTIONS})
         endif()
-
         if(ARG_LINK_OPTIONS)
-            target_link_options(${NAME}_fuzz_${mode_lower}_${CMAKE_BUILD_TYPE} PRIVATE ${ARG_LINK_OPTIONS})
+            target_link_options(${EXE_NAME} PRIVATE ${ARG_LINK_OPTIONS})
         endif()
 
-        install(TARGETS ${NAME}_fuzz_${mode_lower}_${CMAKE_BUILD_TYPE}
-            RUNTIME DESTINATION bin
-        )
+        install(TARGETS ${EXE_NAME} RUNTIME DESTINATION bin)
     endforeach()
 endfunction()

@@ -48,5 +48,7 @@ add_versioned_fuzzer_executable(example
       src/fuzzer_example.cpp
     LINK_PRIVATE 
       BuildSettings_FUZZER
+    LINK_PRIVATE_INSTRUMENT
+      library_name
 )
 
