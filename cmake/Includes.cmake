@@ -258,7 +258,6 @@ function(add_versioned_library NAME)
 
     set_target_properties(${NAME} PROPERTIES
         VERSION   ${ARG_VERSION}
-        SOVERSION ${ARG_VERSION_MAJOR}
     )
 
     target_link_libraries(${NAME}

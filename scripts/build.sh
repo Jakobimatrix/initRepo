@@ -20,6 +20,7 @@ show_help() {
     echo "  --relwithdebinfo RelWithDebInfo build"
     echo "  -i               Install after build"
     echo "  --compiler COMP  Use specific compiler (e.g. gcc, clang)"
+    echo "  --builddir NAME  Use custom build directory name (default is build-COMPILER-BUILD_TYPE-ARCH-ARCH_BITS-march)"
     echo "  --arch ARCH      Architecture (x86, x64) [default: $ARCH_BITS]"
     echo "  --march VALUE    Set -march architecture string for CMake (ENABLE_MARCH). Allowed inputs are: native or the target like: core2, nehalem, sandybridge, skylake, zen3, zen4,... or the year + vendor like: 2017;AMD, 2018;Intel"
     echo "  -h               Show this help message"
@@ -58,6 +59,7 @@ USE_NINJA=false
 TARGET_ARCH_BITS="${ARCH_BITS}"
 TARGET_ARCH="${ARCH}"
 ENABLE_MARCH=""
+BUILD_DIR=""
 
 # Compiler paths from .environment
 CLANG_CPP_PATH="${CLANG_CPP_PATH}"
@@ -111,6 +113,10 @@ while [[ $# -gt 0 ]]; do
         --compiler)
             shift
             COMPILER="$1"
+            ;;
+        --builddir)
+            shift
+            BUILD_DIR="$1"
             ;;
         --arch)
             shift
@@ -235,11 +241,16 @@ if [[ -z "$COMPILER_NAME" ]]; then
     exit 1
 fi
 
-if [[ "$ENVIRONMENT" == "Linux" ]]; then
-    # ${VAR,,} is a Bash operator that converts the value of VAR to lowercase.
-    BUILD_DIR="build-${COMPILER_NAME,,}-${COMPILER_VERSION,,}-${BUILD_TYPE,,}-${TARGET_ARCH,,}-${TARGET_ARCH_BITS,,}"
-else
-    BUILD_DIR="build-${COMPILER_NAME,,}-${BUILD_TYPE,,}-${TARGET_ARCH_BITS,,}"
+if [[ -z "$BUILD_DIR" ]]; then
+    if [[ "$ENVIRONMENT" == "Linux" ]]; then
+        # ${VAR,,} is a Bash operator that converts the value of VAR to lowercase.
+        BUILD_DIR="build-${COMPILER_NAME,,}-${COMPILER_VERSION,,}-${BUILD_TYPE,,}-${TARGET_ARCH,,}-${TARGET_ARCH_BITS,,}"
+    else
+        BUILD_DIR="build-${COMPILER_NAME,,}-${BUILD_TYPE,,}-${TARGET_ARCH_BITS,,}"
+    fi
+    if [[ -n "$ENABLE_MARCH" ]]; then
+        BUILD_DIR+="-$ENABLE_MARCH"
+    fi
 fi
 echo "working direktory: $BUILD_DIR"
 
