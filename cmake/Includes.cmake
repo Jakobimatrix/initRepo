@@ -442,7 +442,7 @@ function(add_versioned_executable NAME)
         message(FATAL_ERROR "add_versioned_executable requires SOURCES")
     endif()
 
-    add_executable(${NAME} ${ARG_SOURCES})
+    add_executable(${NAME} ALL ${ARG_SOURCES})
 
     target_link_libraries(${NAME}
         PRIVATE
@@ -500,7 +500,7 @@ function(add_versioned_fuzzer_executable NAME)
         endforeach()
 
         # Add executable with sources + instrumented object libraries
-        add_executable(${EXE_NAME} ${ARG_SOURCES} ${INSTRUMENT_OBJECTS})
+        add_executable(${EXE_NAME} ALL ${ARG_SOURCES} ${INSTRUMENT_OBJECTS})
 
         # link normal private libraries
         if(ARG_LINK_PRIVATE)
