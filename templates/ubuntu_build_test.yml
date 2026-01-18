@@ -393,5 +393,5 @@ jobs:
       - name: tidy_result
         run: |
           set -e
-          ./initRepo/scripts/checkClangTidy.sh
+          ./initRepo/scripts/checkClangTidy.sh --release
           

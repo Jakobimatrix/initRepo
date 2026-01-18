@@ -26,9 +26,22 @@ else()
 endif ()
 
 if (FUZZER_ENABLED)
-    if (CMAKE_BUILD_TYPE STREQUAL "Release")
-        message(FATAL_ERROR "Fuzzer build requires -O1 or -O2 optimization level and -g (debug symbols), not -O3 (Release). Please set -DCMAKE_BUILD_TYPE to 'RelWithDebInfo' or '01'.")
+    if (CMAKE_BUILD_TYPE STREQUAL "O0Debug")
+        message(FATAL_ERROR
+            "FUZZER_ENABLED requires optimization > O0 (-O1 or higher). "
+            "Current build type: ${CMAKE_BUILD_TYPE}")
     endif()
+
+    if (CMAKE_BUILD_TYPE STREQUAL "Release")
+        message(FATAL_ERROR
+            "FUZZER_ENABLED requires debug symbols (-g). "
+            "Release builds do not include debug information.")
+    endif()
+endif()
+
+if (FUZZER_ENABLED AND NOT CMAKE_BUILD_TYPE)
+    message(FATAL_ERROR
+        "FUZZER_ENABLED requires a single-config generator with CMAKE_BUILD_TYPE set.")
 endif()
 
 add_library(BuildSettings_LIB INTERFACE)
@@ -40,6 +53,11 @@ set_project_settings(BuildSettings_LIB)
 set_project_settings(BuildSettings_EXE)
 set_project_settings(BuildSettings_FUZZER)
 set_project_settings(BuildSettings_CATHCH2_UNITTEST)
+
+set_compiler_settings(BuildSettings_LIB)
+set_compiler_settings(BuildSettings_EXE)
+set_compiler_settings(BuildSettings_FUZZER)
+set_compiler_settings(BuildSettings_CATHCH2_UNITTEST)
 
 ##### Target specific options #####
 

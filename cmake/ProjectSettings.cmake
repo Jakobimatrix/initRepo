@@ -245,6 +245,9 @@ function(set_project_settings target_name)
 
     # Code coverage instrumentation
     if (ENABLE_COVERAGE)
+        if(FUZZER_ENABLED)
+            message(FATAL_ERROR "Code coverage and fuzzy testing cannot be enabled at the same time.")
+        endif()
         if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
             set(PROFILE_OUTPUT_DIR "${CMAKE_BINARY_DIR}/profraw")
             file(MAKE_DIRECTORY ${PROFILE_OUTPUT_DIR})

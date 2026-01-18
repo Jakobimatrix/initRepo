@@ -6,16 +6,34 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # Export compile_commands.json for clang-tidy/clangd
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE BOOL "" FORCE)
 
-
-# Default to Release build if not specified
 if(NOT CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type (default Release)" FORCE)
+    message(FATAL_ERROR " CMAKE_BUILD_TYPE is not set. Please set it to one of the supported build types.")
 endif()
 
-# Define our debug mode Activated with 'cmake -DCMAKE_BUILD_TYPE=O1'
-set(CMAKE_CXX_FLAGS_O1Debug "-O1 -g" CACHE STRING "Flags for O1Debug build" FORCE)
-set(CMAKE_C_FLAGS_O1Debug    "-O1 -g" CACHE STRING "Flags for O1Debug build" FORCE)
-set(CMAKE_EXE_LINKER_FLAGS_O1Debug "" CACHE STRING "" FORCE)
+if(UNIX AND NOT CMAKE_CONFIGURATION_TYPES)
+    set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS
+        Debug
+        Release
+        RelWithDebInfo
+        MinSizeRel
+        O0Debug
+        O1Debug
+        O2Debug
+        O3Debug
+    )
+endif()   
+
+function(set_compiler_settings target)
+    if(UNIX)
+        target_compile_options(${target} INTERFACE
+            $<$<CONFIG:O0Debug>:-O0 -g>
+            $<$<CONFIG:O1Debug>:-O1 -g>
+            $<$<CONFIG:O2Debug>:-O2 -g>
+            $<$<CONFIG:O3Debug>:-O3 -g>
+        )
+    endif
+endfunction()
+
 
 if (MSVC)
     # Disable warnings about deprecated std functions and secure CRT

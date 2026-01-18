@@ -11,13 +11,15 @@ show_help() {
     echo "Usage: ./build.sh [options]"
     echo "Options:"
     echo "  -c               Clean build"
-    echo "  -d               Debug build -g -O1"
-    echo "  --debug          Debug build -g -O1"
-    echo "  --o1debug        Debug build -g -O1"
-    echo "  -r               Release build"
-    echo "  --release        Release build"
-    echo "  -o               RelWithDebInfo build"
-    echo "  --relwithdebinfo RelWithDebInfo build"
+    echo "  -d               Debug build -g -O0 | Build folder name end: -Debug"
+    echo "  --debug          Debug build -g -O0 | Build folder name end: -Debug"
+    echo "  --o0debug        Debug build -g -O0 | Build folder name end: -O0Debug"
+    echo "  --o1debug        Debug build -g -O1 | Build folder name end: -01Debug"
+    echo "  --o2debug        Debug build -g -O2 | Build folder name end: -02Debug"
+    echo "  --relwithdebinfo Debug build -g -O2 | Build folder name end: -RelWithDebInfo"
+    echo "  --o3debug        Debug build -g -O3 | Build folder name end: -03Debug"
+    echo "  -r               Release build | Build folder name end: -Release"
+    echo "  --release        Release build | Build folder name end: -Release"
     echo "  -i               Install after build"
     echo "  --compiler COMP  Use specific compiler (e.g. gcc, clang)"
     echo "  --builddir NAME  Use custom build directory name (default is build-COMPILER-BUILD_TYPE-ARCH-ARCH_BITS-march)"
@@ -102,12 +104,15 @@ list_available_compiler() {
 while [[ $# -gt 0 ]]; do
     case $1 in
         -c) CLEAN=true ;;
-        -d) BUILD_TYPE="O1Debug" ;;
-        --debug) BUILD_TYPE="O1Debug" ;;
+        -d) BUILD_TYPE="Debug" ;;
+        --debug) BUILD_TYPE="Debug" ;;
+        --o0debug) BUILD_TYPE="O0Debug" ;;
         --o1debug) BUILD_TYPE="O1Debug" ;;
+        --o2debug) BUILD_TYPE="O2Debug" ;;
+        --o3debug) BUILD_TYPE="O3Debug" ;;
         -r) BUILD_TYPE="Release" ;;
         --release) BUILD_TYPE="Release" ;;
-        -o) BUILD_TYPE="RelWithDebInfo" ;;
+        --releaseWithDebInfo) BUILD_TYPE="RelWithDebInfo" ;;
         -i) INSTALL=true ;;
         -s) SKIP_BUILD=true ;;
         --compiler)
@@ -272,14 +277,18 @@ if [[ "$SKIP_BUILD" == false ]]; then
 
     # Validate fuzzer option
     if [[ "$FUZZER_ENABLED" == "ON" && "$COMPILER" != "clang++" ]]; then
-        echo "Error: Fuzzing (-f) is only supported with the clang compiler."
+        echo "Error: Fuzzing (-f) is only supported with the clang compiler. Use --compiler clang:"
+        show_help
         exit 1
     fi
 
     # Validate fuzzer option
     if [[ "$FUZZER_ENABLED" == "ON" && "$BUILD_TYPE" == "Release" ]]; then
-        echo "Error: Fuzzing (-f) in release mode (-r)--> O3 is a bad Idea. Use debug (-d) --> (-g -O1) or RelWithDebInfo (-o) --> (-g -O2)."
-        exit 1
+        if [[ "$BUILD_TYPE" == "Release" || "$BUILD_TYPE" == "Debug" || "$BUILD_TYPE" == "O0Debug" ]]; then
+            echo "Error: Fuzzing (-f) needs to be done in one of the following modes: --o1debug or --o2debug or --o3debug:"
+            show_help
+            exit 1
+        fi
     fi
 
     # Clean build directory if requested

@@ -21,10 +21,50 @@ fi
 source ./initRepo/scripts/ensureToolVersion.sh
 ensure_tool_versioned clang-tidy "${CLANG_TIDY_VERSION}"
 
-BUILD_DIR="build-clang-${CLANG_VERSION,,}-o1debug-${ARCH,,}-${ARCH_BITS,,}"
 
-# Build the project, test and fuzzer targets to generate compile_commands.json
-./initRepo/scripts/build.sh -d -t -f --compiler clang
+BUILD_TYPE="Debug"
+BUILD_DIR=""
+
+ORIGINAL_ARGS=("$@")
+if [ ${#ORIGINAL_ARGS[@]} -eq 0 ]; then
+    ORIGINAL_ARGS=(-d -t)
+else
+    # Otherwise, append -t
+    ORIGINAL_ARGS+=(-t)
+fi
+
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        -d) BUILD_TYPE="Debug" ;;
+        --debug) BUILD_TYPE="Debug" ;;
+        --o0debug) BUILD_TYPE="O0Debug" ;;
+        --o1debug) BUILD_TYPE="O1Debug" ;;
+        --o2debug) BUILD_TYPE="O2Debug" ;;
+        --o3debug) BUILD_TYPE="O3Debug" ;;
+        -r) BUILD_TYPE="Release" ;;
+        --release) BUILD_TYPE="Release" ;;
+        --releaseWithDebInfo) BUILD_TYPE="RelWithDebInfo" ;;
+        --builddir)
+            shift
+            BUILD_DIR="$1"
+            ;;
+    esac
+    shift
+done
+
+if [[ -z "$BUILD_DIR" ]]; then
+    if [[ "$ENVIRONMENT" == "Linux" ]]; then
+        # ${VAR,,} is a Bash operator that converts the value of VAR to lowercase.
+        BUILD_DIR="build-clang-${CLANG_VERSION,,}-${BUILD_TYPE,,}-${ARCH,,}-${ARCH_BITS,,}"
+    else
+        BUILD_DIR="build-clang-${BUILD_TYPE,,}-${ARCH_BITS,,}"
+    fi
+fi
+
+
+if [ ! -f "${BUILD_DIR}/compile_commands.json" ]; then
+    ./initRepo/scripts/build.sh "${ORIGINAL_ARGS[@]}" --compiler clang
+fi
 
 if [ ! -f "${BUILD_DIR}/compile_commands.json" ]; then
     echo "Error ${BUILD_DIR}/compile_commands.json not found. CMake probably has failed."

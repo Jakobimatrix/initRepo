@@ -460,7 +460,6 @@ endfunction()
 # Args:
 #   NAME          - name of the executable
 #   SOURCES       - source files for the executable
-#   LINK_PUBLIC   - libraries to link publicly
 #   LINK_PRIVATE  - libraries to link privately
 #   LINK_OPTIONS  - link options for the executable
 #   COMPILE_OPTIONS - compile options for the executable
@@ -480,10 +479,6 @@ function(add_versioned_executable NAME)
 
     if(ARG_LINK_PRIVATE)
         target_link_libraries(${NAME} PRIVATE ${ARG_LINK_PRIVATE})
-    endif()
-
-    if(ARG_LINK_PUBLIC)
-        target_link_libraries(${NAME} PUBLIC ${ARG_LINK_PUBLIC})
     endif()
 
     if(ARG_COMPILE_OPTIONS)
@@ -508,15 +503,29 @@ endfunction()
 #   LINK_OPTIONS  - link options for the fuzzer executable
 #   COMPILE_OPTIONS - compile options for the fuzzer executable
 function(add_versioned_fuzzer_executable NAME)
-    if(NOT FUZZER_ENABLED)
-        _vmsg("add_versioned_fuzzer_executable(${NAME}) skipped (FUZZER_ENABLED=OFF)")
-        return()
-    endif()
-
     set(options)
     set(oneValueArgs)
     set(multiValueArgs SOURCES LINK_PRIVATE LINK_PRIVATE_INSTRUMENT LINK_OPTIONS COMPILE_OPTIONS)
     cmake_parse_arguments(ARG "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+
+    # first add the debug fuzzer which does not link in any instrumented objects, but adds StandaloneFuzzTargetMain.cpp to the build
+    add_versioned_executable(${NAME}_debug
+        SOURCES
+            ${ARG_SOURCES}
+            src/StandaloneFuzzTargetMain.cpp
+        LINK_PRIVATE
+            ${ARG_LINK_PRIVATE}
+            ${ARG_LINK_PRIVATE_INSTRUMENT}
+        LINK_OPTIONS
+            ${ARG_LINK_OPTIONS}
+        COMPILE_OPTIONS
+            ${ARG_COMPILE_OPTIONS}
+    )
+
+    if(NOT FUZZER_ENABLED)
+        _vmsg("add_versioned_fuzzer_executable(${NAME}) skipped (FUZZER_ENABLED=OFF)")
+        return()
+    endif()
 
     _vmsg("add_versioned_fuzzer_executable(${NAME})")
 
