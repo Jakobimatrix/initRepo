@@ -351,7 +351,8 @@ function(add_versioned_library NAME)
         set(obj ${NAME}_obj_coverage)
 
         add_library(${obj} OBJECT ${ARG_SOURCES})
-        _vmsg("NOT ENABLE_COVERAGE --> creating coverage instrumented object ${NAME}_obj_coverage librarie")
+        _vmsg("  NOT ENABLE_COVERAGE --> creating coverage instrumented object librarie")
+        _vmsg("    ${NAME}_obj_coverage")
 
         target_include_directories(${obj} PUBLIC
             $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>

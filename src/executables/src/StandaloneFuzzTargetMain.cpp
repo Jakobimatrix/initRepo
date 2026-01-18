@@ -28,19 +28,6 @@
 #include <utility>
 #include <vector>
 
-#if defined(_WIN32)
-#define FUZZ_PLATFORM_WINDOWS
-#include <windows.h>
-#include <cstring>
-#elif defined(__linux__)
-#define FUZZ_PLATFORM_LINUX
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <unistd.h>
-#else
-#error Unsupported platform
-#endif
-
 extern "C" int LLVMFuzzerTestOneInput(const std::uint8_t* data, std::size_t size);
 extern "C" int LLVMFuzzerInitialize(int* argc, char*** argv) __attribute__((weak));
 
@@ -67,103 +54,6 @@ auto read_file(const std::string& path)
   return {std::move(buffer), {}};
 }
 
-enum class RunResult { ok, rejected, crashed, undefined };
-
-#if defined(FUZZ_PLATFORM_LINUX)
-auto run_isolated(const std::vector<std::uint8_t>& data) -> RunResult {
-  const pid_t pid = fork();
-  if (pid < 0) {
-    return RunResult::crashed;
-  }
-
-  if (pid == 0) {
-    const int result = LLVMFuzzerTestOneInput(data.data(), data.size());
-    _exit(result);
-  }
-
-  int status = 0;
-  if (waitpid(pid, &status, 0) < 0) {
-    return RunResult::crashed;
-  }
-
-  if (WIFEXITED(status)) {
-    const int code = WEXITSTATUS(status);
-    if (code == 0) {
-      return RunResult::ok;
-    }
-    if (code == 255)  // -1 truncated
-    {
-      return RunResult::rejected;
-    }
-    return RunResult::undefined;
-  }
-
-  if (WIFSIGNALED(status)) {
-    return RunResult::crashed;
-  }
-
-  return RunResult::undefined;
-}
-#endif
-
-#if defined(FUZZ_PLATFORM_WINDOWS)
-constexpr unsigned int EXIT_OK        = 0;
-constexpr unsigned int EXIT_REJECTED  = 1;
-constexpr unsigned int EXIT_UNDEFINED = 2;
-
-auto run_child(const char* input_path) -> int {
-  const auto [data, error] = read_file(input_path);
-  if (error) {
-    return EXIT_UNDEFINED;
-  }
-
-  const int result = LLVMFuzzerTestOneInput(data.data(), data.size());
-
-  if (result == 0) {
-    return EXIT_OK;
-  }
-  if (result == -1) {
-    return EXIT_REJECTED;
-  }
-
-  return EXIT_UNDEFINED;
-}
-
-auto run_isolated(const std::wstring& exe_path, const std::wstring& input_path) -> RunResult {
-  std::wstring command =
-    L"\"" + exe_path + L"\" --fuzz-child \"" + input_path + L"\"";
-
-  STARTUPINFOW startup_info{};
-  startup_info.cb = sizeof(startup_info);
-
-  PROCESS_INFORMATION process_info{};
-
-  if (CreateProcessW(
-        nullptr, command.data(), nullptr, nullptr, FALSE, CREATE_NO_WINDOW, nullptr, nullptr, &startup_info, &process_info) ==
-      FALSE) {
-    return RunResult::crashed;
-  }
-
-  WaitForSingleObject(process_info.hProcess, INFINITE);
-
-  DWORD exit_code = 0;
-  if (GetExitCodeProcess(process_info.hProcess, &exit_code) == FALSE) {
-    exit_code = EXIT_UNDEFINED;
-  }
-
-  CloseHandle(process_info.hThread);
-  CloseHandle(process_info.hProcess);
-
-  if (exit_code == EXIT_OK) {
-    return RunResult::ok;
-  }
-  if (exit_code == EXIT_REJECTED) {
-    return RunResult::rejected;
-  }
-
-  return RunResult::crashed;
-}
-#endif
 }  // namespace
 
 
@@ -211,11 +101,6 @@ auto main(int argc, char** argv) -> int {
 
   std::vector<std::string> crash_list;
 
-#if defined(FUZZ_PLATFORM_WINDOWS)
-  wchar_t exe_path[MAX_PATH]{};
-  GetModuleFileNameW(nullptr, exe_path, MAX_PATH);
-#endif
-
   for (int i = 1; i < argc; ++i) {
     const std::string input_path{argv[i]};
     ++parsed;
@@ -226,41 +111,17 @@ auto main(int argc, char** argv) -> int {
       continue;
     }
 
-#if defined(FUZZ_PLATFORM_LINUX)
-    // const RunResult result = run_isolated(data);
-    RunResult result;
     try {
-      result = LLVMFuzzerTestOneInput(data.data(), data.size()) == 0
-                 ? RunResult::ok
-                 : RunResult::rejected;
+      const int res = LLVMFuzzerTestOneInput(data.data(), data.size());
+      if (res == 0) {
+        ++ok;
+      } else
+        () { ++rejected; }
     } catch (const std::exception& e) {
       std::cerr << "CRASHED: " << e.what() << "\n";
-      result = RunResult::crashed;
+      crash_list.push_back(input_path);
+      ++crashed;
     };
-#elif defined(FUZZ_PLATFORM_WINDOWS)
-    const std::wstring w_input{input_path.begin(), input_path.end()};
-    const RunResult result = run_isolated(exe_path, w_input);
-#endif
-
-    switch (result) {
-      case RunResult::ok:
-        ++ok;
-        break;
-
-      case RunResult::rejected:
-        ++rejected;
-        break;
-
-      case RunResult::crashed:
-        ++crashed;
-        crash_list.push_back(input_path);
-        std::cerr << "Crash detected: " << input_path << '\n';
-        break;
-
-      case RunResult::undefined:
-        std::cerr << "Undefined fuzzer result: " << input_path << '\n';
-        break;
-    }
   }
 
   std::cerr << "\nSummary:\n";
