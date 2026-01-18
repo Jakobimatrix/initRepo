@@ -196,6 +196,50 @@ function(manage_library lib_name version)
     set(ACCEPTED_LIB_VERSION "${_found_version}" PARENT_SCOPE)
 endfunction()
 
+# Set coverage flags for target
+function(set_coverage target_name)
+    
+    get_filename_component(BUILD_DIR_NAME "${CMAKE_BINARY_DIR}" NAME)
+    set(PROFILE_OUTPUT_DIR
+        "${CMAKE_SOURCE_DIR}/profraw/${BUILD_DIR_NAME}"
+    )
+
+    file(MAKE_DIRECTORY "${PROFILE_OUTPUT_DIR}")
+    _vmsg("Enable coverage report for target ${target_name} to: ${PROFILE_OUTPUT_DIR}")
+
+    if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+        # Generate instrumentation for binary
+        target_compile_options(${target_name} INTERFACE
+            -fprofile-instr-generate=${PROFILE_OUTPUT_DIR}/%m-%p.profraw
+            -fcoverage-mapping
+        )
+        # Link with profile runtime library
+        target_link_options(${target_name} INTERFACE
+            -fprofile-instr-generate=${PROFILE_OUTPUT_DIR}/%m-%p.profraw
+            -fcoverage-mapping
+        )
+
+    elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+        target_compile_options(${target_name} INTERFACE
+            --coverage          # Enable gcov coverage instrumentation
+        )
+        target_link_options(${target_name} INTERFACE
+            --coverage          # Link with gcov libraries
+        )
+    elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+        target_compile_options(${target_name} INTERFACE
+            /PROFILE            # Enable profiling instrumentation
+            /COVERAGE           # Enable coverage instrumentation
+            /DEBUG              # Generate debug information
+        )
+        target_link_options(${target_name} INTERFACE
+            /PROFILE            # Enable profiling at link time
+            /COVERAGE           # Enable coverage
+            /DEBUG              # Include debug information in output
+        )
+    endif()
+endfunction()
+
 # Set fuzzer sanitizer flags based on FUZZ_MODE
 function(set_fuzzer_sanitizer_flags FUZZ_MODE)
     string(TOUPPER "${FUZZ_MODE}" FUZZ_MODE_UPPER)
