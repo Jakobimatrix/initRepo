@@ -662,7 +662,7 @@ function(add_versioned_fuzzer_executable NAME)
         )
 
         target_link_options(${EXE_DBG} PRIVATE
-            -fsanitize=fuzzer,${FUZZER_SAN_FLAGS}
+            -fsanitize=fuzzer-no-link,${FUZZER_SAN_FLAGS}
             -fno-omit-frame-pointer
         )
 
