@@ -209,30 +209,30 @@ function(set_coverage target_name)
 
     if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
         # Generate instrumentation for binary
-        target_compile_options(${target_name} INTERFACE
+        target_compile_options(${target_name} PUBLIC
             -fprofile-instr-generate=${PROFILE_OUTPUT_DIR}/%m-%p.profraw
             -fcoverage-mapping
         )
         # Link with profile runtime library
-        target_link_options(${target_name} INTERFACE
+        target_link_options(${target_name} PUBLIC
             -fprofile-instr-generate=${PROFILE_OUTPUT_DIR}/%m-%p.profraw
             -fcoverage-mapping
         )
 
     elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-        target_compile_options(${target_name} INTERFACE
+        target_compile_options(${target_name} PUBLIC
             --coverage          # Enable gcov coverage instrumentation
         )
-        target_link_options(${target_name} INTERFACE
+        target_link_options(${target_name} INTERPUBLICFACE
             --coverage          # Link with gcov libraries
         )
     elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-        target_compile_options(${target_name} INTERFACE
+        target_compile_options(${target_name} PUBLIC
             /PROFILE            # Enable profiling instrumentation
             /COVERAGE           # Enable coverage instrumentation
             /DEBUG              # Generate debug information
         )
-        target_link_options(${target_name} INTERFACE
+        target_link_options(${target_name} PUBLIC
             /PROFILE            # Enable profiling at link time
             /COVERAGE           # Enable coverage
             /DEBUG              # Include debug information in output
