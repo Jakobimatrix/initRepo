@@ -31,7 +31,7 @@ function(set_compiler_settings target)
             $<$<CONFIG:O2Debug>:-O2 -g>
             $<$<CONFIG:O3Debug>:-O3 -g>
         )
-    endif
+    endif()
 endfunction()
 
 
@@ -40,5 +40,5 @@ if (MSVC)
     add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
     # Force conformance mode
     add_compile_options(/permissive- /Zc:preprocessor)
-endif ()
+endif()
 
