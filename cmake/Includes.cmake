@@ -534,7 +534,7 @@ function(add_versioned_fuzzer_executable NAME)
 
     # first add the debug fuzzer which does not link in any instrumented objects, but adds StandaloneFuzzTargetMain.cpp to the build
     if(ENABLE_COVERAGE)
-        add_versioned_executable(${NAME}_debug
+        add_versioned_executable(${NAME}_coverage
             SOURCES
                 ${ARG_SOURCES}
                 src/StandaloneFuzzTargetMain.cpp
@@ -558,6 +558,8 @@ function(add_versioned_fuzzer_executable NAME)
             COMPILE_OPTIONS
                 ${ARG_COMPILE_OPTIONS}
         )
+        set_coverage(${NAME}_coverage)
+
         # coverage instrumented object libraries
         foreach(LIB IN LISTS ARG_LINK_PRIVATE_INSTRUMENT)
             set(OBJ ${LIB}_obj_coverage)
