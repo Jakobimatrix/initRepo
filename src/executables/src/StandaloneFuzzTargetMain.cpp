@@ -56,7 +56,6 @@ auto read_file(const std::string& path)
 
 }  // namespace
 
-
 auto main(int argc, char** argv) -> int {
   bool waitDebugger = false;
   int write_index   = 1;
@@ -73,7 +72,7 @@ auto main(int argc, char** argv) -> int {
 
   if (waitDebugger) {
     std::cerr << "\nNow attach debugger and press enter.\n";
-#if defined(FUZZ_PLATFORM_LINUX)
+#if defined(__linux__)
     std::cerr
       << "If you get an error from ptrace 'Could not attach to the process.' "
          "Use 'echo 0 | sudo tee /proc/sys/kernel/yama/ptrace_scope' to relax "
@@ -83,7 +82,7 @@ auto main(int argc, char** argv) -> int {
     getchar();
   }
 
-#if defined(FUZZ_PLATFORM_WINDOWS)
+#if defined(_WIN32)
   // ---- child mode ----
   if (argc == 3 && std::string_view{argv[1]} == "--fuzz-child") {
     return run_child(argv[2]);
