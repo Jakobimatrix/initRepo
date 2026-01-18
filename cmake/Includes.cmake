@@ -1,5 +1,3 @@
-include(ProjectSettings.cmake)
-
 macro(_vmsg msg)
     message(STATUS "[DEBUG] ${msg}")
 endmacro()
@@ -353,7 +351,7 @@ function(add_versioned_library NAME)
         set(obj ${NAME}_obj_coverage)
 
         add_library(${obj} OBJECT ${ARG_SOURCES})
-        _vmsg("    ${obj}")
+        _vmsg("NOT ENABLE_COVERAGE --> creating coverage instrumented object ${NAME}_obj_coverage librarie")
 
         target_include_directories(${obj} PUBLIC
             $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -370,7 +368,7 @@ function(add_versioned_library NAME)
     # Fuzzer object libraries
     # --------------------------------------------------
     if(FUZZER_ENABLED)
-        _vmsg("  FUZZER_ENABLED → creating instrumented object libraries")
+        _vmsg("  FUZZER_ENABLED --> creating instrumented object libraries")
 
         foreach(MODE IN ITEMS ${FUZZ_MODES})
             set_fuzzer_sanitizer_flags(${MODE})
