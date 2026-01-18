@@ -126,14 +126,50 @@ Two simple CI / CD pipeline for github is included.
 7. you can copy initRepo/.environment into your root and change the settings.
 6. To update scripts: `./initRepo/scripts/update.sh`
 
-   
+### Build
+
+Use the provided `build.sh` script.
+
+Important flags:
+* `-h`
+  help
+* `-t`
+  build tests
+* `-T`
+  run tests
+* `-i`
+  install all targets
+
+* `--compiler clang`
+  default is gcc
+
+* `-d` or `-o` or `-r`
+  Selects the optimization level:
+
+  * `-d` → Debug-like build using **`-O0 -g`**
+  * `-o` → RelWithDebInfo using **`-O2 -g`**
+  * `-r` → Release using **`-O3`**
+
+Example:
+
+```bash
+./build.sh -t --compiler clang -d
+```
+
+---
+You can also use the provided CMakePresets.json but you probably need to change the compiler paths!
+
+`cmake --preset <preset name>`
+`cmake --build --preset <preset name>`
+`ctest --preset <preset name>`
+`cmake --install --preset <preset name>`
 
 ---
 
 ## Fuzzing
 
 The fuzzer helps automatically find bugs by executing your code with a large number of generated and mutated inputs.
-This project uses **Clang libFuzzer**, optionally combined with sanitizers, to detect memory errors, undefined behavior, and logic bugs.
+This project uses **Clang libFuzzer**
 
 ---
 
@@ -155,38 +191,8 @@ This function is called repeatedly by libFuzzer with different inputs.
 
 ---
 
-### Build
-
-Use the provided `build.sh` script.
-
-Important flags:
-
-* `-f`
-  Enables the fuzzer build configuration (libFuzzer + sanitizers)
-
-* `--compiler clang`
-  Required, since libFuzzer is a Clang tool
-
-* `-d` or `-o`
-  Selects the optimization level:
-
-  * `-d` → Debug-like build using **`-O1 -g`**
-  * `-o` → RelWithDebInfo using **`-O2 -g`**
-
-Example:
-
-```bash
-./build.sh -f --compiler clang -d
-```
-
-or
-
-```bash
-./build.sh -f --compiler clang -o
-```
-
 **Note:**
-Pure Debug builds (`-O0`) are intentionally rejected for fuzzing, because libFuzzer and sanitizers rely on compiler optimizations to work correctly. Release builds (`-O3`) are also discouraged for fuzzing, because aggressive optimizations can remove code paths, inline away checks, and reduce coverage quality, making bugs harder to detect and debugging more difficult.
+Pure Debug builds (`-O0`) are intentionally rejected for fuzzing, because libFuzzer and sanitizers rely on compiler optimizations to work correctly. Release builds (`-O3`) are  discouraged for fuzzing, because aggressive optimizations can remove code paths, inline away checks, and reduce coverage quality, making bugs harder to detect and debugging more difficult.
 
 **Important:**
 Each fuzzer target now produces **three executables** (`_fuzz_address`, `_fuzz_memory`, `_fuzz_thread`) for the same source.
@@ -199,8 +205,12 @@ This increases compile time roughly **3×**, so plan your CI/build accordingly.
 | Fuzzer executable       | Detects / Bugs / Errors                                                                |
 | ----------------------- | -------------------------------------------------------------------------------------- |
 | `<target>_fuzz_address` | Heap use-after-free, stack out-of-bounds, null dereference, general undefined behavior |
-| `<target>_fuzz_memory`  | Uninitialized reads, memory leaks, buffer misuse                                       |
-| `<target>_fuzz_thread`  | Data races, thread-safety violations, race-condition-induced UB                        |
+| `<target>_fuzz_memory`  | Uninitialized reads, memory leaks, buffer misuse |
+| `<target>_fuzz_thread`  | Data races, thread-safety violations, race-condition-induced UB |
+| `<target>_fuzz_addressOXDebug` | for debugging crashes created by `<target>_fuzz_address` |
+| `<target>_fuzz_memoryOXDebug` | for debugging crashes created by `<target>_fuzz_memory` |
+| `<target>_fuzz_threadOXDebug` | for debugging crashes created by `<target>_fuzz_thread` |
+| `<target>_fuzz_coverage` | feed it the corpus to create coverage reports (.profraw) |
 
 * **Address**: combines AddressSanitizer + UndefinedBehaviorSanitizer
 * **Memory**: MemorySanitizer detects uninitialized memory access and leaks
@@ -249,11 +259,11 @@ Different optimization levels expose **different classes of bugs**. `-O2` does *
 
 ### Reproducing crashes
 
-Follow the same procedure as before for Qt Creator or VS Code.
 
-* Use the crash file produced by libFuzzer
-* Apply `-runs=1` and `-handle_segv=0` for debugging
-* Step through `LLVMFuzzerTestOneInput` to locate the issue
+* Run the .*_fuzz_.*_Debug version of the fuzzer with the arguments `-d path/to/crash`
+* Process waits for User input (enter)  --> Attach debugger to running process, then press enter.
+* The debugger should stop where the bug manifests.
+
 
 ---
 

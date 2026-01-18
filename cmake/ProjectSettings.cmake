@@ -56,8 +56,12 @@ set(GCC_WARNINGS
 
 function(set_coverage target_name)
     if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-        set(PROFILE_OUTPUT_DIR "profraw")
-        file(MAKE_DIRECTORY ${PROFILE_OUTPUT_DIR})
+        get_filename_component(BUILD_DIR_NAME "${CMAKE_BINARY_DIR}" NAME)
+        set(PROFILE_OUTPUT_DIR
+            "${CMAKE_SOURCE_DIR}/profraw/${BUILD_DIR_NAME}"
+        )
+
+        file(MAKE_DIRECTORY "${PROFILE_OUTPUT_DIR}")
 
         # Generate instrumentation for binary
         target_compile_options(${target_name} INTERFACE
