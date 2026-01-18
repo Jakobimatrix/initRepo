@@ -29,3 +29,10 @@ add_subdirectory(src/executables)
 add_subdirectory(src/tests)
 
 endif()
+
+
+cmake_language(
+    DEFER
+    DIRECTORY "${CMAKE_TOP_LEVEL_SOURCE_DIR}"
+    CALL remove_managed_library_cache
+)

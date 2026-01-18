@@ -156,6 +156,12 @@ function(add_catch_test FOLDER)
   endif()
 endfunction()
 
+# remove include guard cache for next cmake run
+function(remove_managed_library_cache)
+    unset(LIB_LIST CACHE)
+    unset(LIB_LIST_VERSION CACHE)
+endfunction()
+
 # include guard for multiple includes of the same library cmake
 function(manage_library lib_name version)
     # Get current LIB_LIST and LIB_LIST_VERSION
@@ -223,7 +229,7 @@ function(set_coverage target_name)
         target_compile_options(${target_name} PUBLIC
             --coverage          # Enable gcov coverage instrumentation
         )
-        target_link_options(${target_name} INTERPUBLICFACE
+        target_link_options(${target_name} PUBLIC
             --coverage          # Link with gcov libraries
         )
     elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
