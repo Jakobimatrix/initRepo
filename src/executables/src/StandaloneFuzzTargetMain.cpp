@@ -115,8 +115,9 @@ auto main(int argc, char** argv) -> int {
       const int res = LLVMFuzzerTestOneInput(data.data(), data.size());
       if (res == 0) {
         ++ok;
-      } else
-        () { ++rejected; }
+      } else {
+        ++rejected;
+      }
     } catch (const std::exception& e) {
       std::cerr << "CRASHED: " << e.what() << "\n";
       crash_list.push_back(input_path);
