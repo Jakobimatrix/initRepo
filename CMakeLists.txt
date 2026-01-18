@@ -26,7 +26,7 @@ else()
 endif ()
 
 if (FUZZER_ENABLED)
-    if (CMAKE_BUILD_TYPE STREQUAL "O0Debug")
+    if (CMAKE_BUILD_TYPE STREQUAL "O0Debug" OR CMAKE_BUILD_TYPE STREQUAL "Debug")
         message(FATAL_ERROR
             "FUZZER_ENABLED requires optimization > O0 (-O1 or higher). "
             "Current build type: ${CMAKE_BUILD_TYPE}")

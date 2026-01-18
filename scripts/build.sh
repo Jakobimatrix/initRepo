@@ -283,12 +283,10 @@ if [[ "$SKIP_BUILD" == false ]]; then
     fi
 
     # Validate fuzzer option
-    if [[ "$FUZZER_ENABLED" == "ON" && "$BUILD_TYPE" == "Release" ]]; then
-        if [[ "$BUILD_TYPE" == "Release" || "$BUILD_TYPE" == "Debug" || "$BUILD_TYPE" == "O0Debug" ]]; then
-            echo "Error: Fuzzing (-f) needs to be done in one of the following modes: --o1debug or --o2debug or --o3debug:"
-            show_help
-            exit 1
-        fi
+    if [[ "$BUILD_TYPE" == "Release" || "$BUILD_TYPE" == "Debug" || "$BUILD_TYPE" == "O0Debug" ]]; then
+        echo "Error: Fuzzing (-f) needs to be done in one of the following modes: --o1debug or --o2debug or --o3debug:"
+        show_help
+        exit 1
     fi
 
     # Clean build directory if requested
