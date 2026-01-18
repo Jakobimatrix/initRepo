@@ -54,6 +54,43 @@ set(GCC_WARNINGS
     -Wlogical-op # warn about logical operations being used where bitwise were probably wanted
 )
 
+function(set_coverage target_name)
+    if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+        set(PROFILE_OUTPUT_DIR "profraw")
+        file(MAKE_DIRECTORY ${PROFILE_OUTPUT_DIR})
+
+        # Generate instrumentation for binary
+        target_compile_options(${target_name} INTERFACE
+            -fprofile-instr-generate=${PROFILE_OUTPUT_DIR}/%m-%p.profraw
+            -fcoverage-mapping
+        )
+        # Link with profile runtime library
+        target_link_options(${target_name} INTERFACE
+            -fprofile-instr-generate=${PROFILE_OUTPUT_DIR}/%m-%p.profraw
+            -fcoverage-mapping
+        )
+
+    elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+        target_compile_options(${target_name} INTERFACE
+            --coverage          # Enable gcov coverage instrumentation
+        )
+        target_link_options(${target_name} INTERFACE
+            --coverage          # Link with gcov libraries
+        )
+    elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+        target_compile_options(${target_name} INTERFACE
+            /PROFILE            # Enable profiling instrumentation
+            /COVERAGE           # Enable coverage instrumentation
+            /DEBUG              # Generate debug information
+        )
+        target_link_options(${target_name} INTERFACE
+            /PROFILE            # Enable profiling at link time
+            /COVERAGE           # Enable coverage
+            /DEBUG              # Include debug information in output
+        )
+    endif()
+endfunction()
+
 
 function(set_project_settings target_name)
     # Propagate the globally set C++ standard to all consumers of the INTERFACE target
@@ -248,40 +285,7 @@ function(set_project_settings target_name)
         if(FUZZER_ENABLED)
             message(FATAL_ERROR "Code coverage and fuzzy testing cannot be enabled at the same time.")
         endif()
-        if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-            set(PROFILE_OUTPUT_DIR "${CMAKE_BINARY_DIR}/profraw")
-            file(MAKE_DIRECTORY ${PROFILE_OUTPUT_DIR})
-
-            # Generate instrumentation for binary
-            target_compile_options(${target_name} INTERFACE
-                -fprofile-instr-generate=${PROFILE_OUTPUT_DIR}/%m-%p.profraw
-                -fcoverage-mapping
-            )
-            # Link with profile runtime library
-            target_link_options(${target_name} INTERFACE
-                -fprofile-instr-generate=${PROFILE_OUTPUT_DIR}/%m-%p.profraw
-                -fcoverage-mapping
-            )
-
-        elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-            target_compile_options(${target_name} INTERFACE
-                --coverage          # Enable gcov coverage instrumentation
-            )
-            target_link_options(${target_name} INTERFACE
-                --coverage          # Link with gcov libraries
-            )
-        elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-            target_compile_options(${target_name} INTERFACE
-                /PROFILE            # Enable profiling instrumentation
-                /COVERAGE           # Enable coverage instrumentation
-                /DEBUG              # Generate debug information
-            )
-            target_link_options(${target_name} INTERFACE
-                /PROFILE            # Enable profiling at link time
-                /COVERAGE           # Enable coverage
-                /DEBUG              # Include debug information in output
-            )
-        endif()
+        set_coverage(${target_name})
     endif()
         
 endfunction()

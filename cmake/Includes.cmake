@@ -1,3 +1,5 @@
+include(ProjectSettings.cmake)
+
 macro(_vmsg msg)
     message(STATUS "[DEBUG] ${msg}")
 endmacro()
@@ -344,6 +346,25 @@ function(add_versioned_library NAME)
         ${CMAKE_CURRENT_BINARY_DIR}/${NAME}ConfigVersion.cmake
         DESTINATION lib/cmake/${NAME}
     )
+    # --------------------------------------------------
+    # Fuzzer object coverage librarie
+    # --------------------------------------------------
+    if(NOT ENABLE_COVERAGE)
+        set(obj ${NAME}_obj_coverage)
+
+        add_library(${obj} OBJECT ${ARG_SOURCES})
+        _vmsg("    ${obj}")
+
+        target_include_directories(${obj} PUBLIC
+            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        )
+
+        if(ARG_LINK_PRIVATE)
+            target_link_libraries(${obj} PRIVATE ${ARG_LINK_PRIVATE})
+        endif()
+
+        set_coverage(${obj})
+    endif()
 
     # --------------------------------------------------
     # Fuzzer object libraries
@@ -374,6 +395,7 @@ function(add_versioned_library NAME)
                 -fsanitize=fuzzer-no-link,${FUZZER_SAN_FLAGS}
             )
         endforeach()
+
     endif()
 endfunction()
 
@@ -510,18 +532,54 @@ function(add_versioned_fuzzer_executable NAME)
     cmake_parse_arguments(ARG "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
     # first add the debug fuzzer which does not link in any instrumented objects, but adds StandaloneFuzzTargetMain.cpp to the build
-    add_versioned_executable(${NAME}_debug
-        SOURCES
-            ${ARG_SOURCES}
-            src/StandaloneFuzzTargetMain.cpp
-        LINK_PRIVATE
-            ${ARG_LINK_PRIVATE}
-            ${ARG_LINK_PRIVATE_INSTRUMENT}
-        LINK_OPTIONS
-            ${ARG_LINK_OPTIONS}
-        COMPILE_OPTIONS
-            ${ARG_COMPILE_OPTIONS}
-    )
+    if(ENABLE_COVERAGE)
+        add_versioned_executable(${NAME}_debug
+            SOURCES
+                ${ARG_SOURCES}
+                src/StandaloneFuzzTargetMain.cpp
+            LINK_PRIVATE
+                ${ARG_LINK_PRIVATE}
+                ${ARG_LINK_PRIVATE_INSTRUMENT}
+            LINK_OPTIONS
+                ${ARG_LINK_OPTIONS}
+            COMPILE_OPTIONS
+                ${ARG_COMPILE_OPTIONS}
+        )
+    else()
+        add_versioned_executable(${NAME}_debug
+            SOURCES
+                ${ARG_SOURCES}
+                src/StandaloneFuzzTargetMain.cpp
+            LINK_PRIVATE
+                ${ARG_LINK_PRIVATE}
+            LINK_OPTIONS
+                ${ARG_LINK_OPTIONS}
+            COMPILE_OPTIONS
+                ${ARG_COMPILE_OPTIONS}
+        )
+        # coverage instrumented object libraries
+        foreach(LIB IN LISTS ARG_LINK_PRIVATE_INSTRUMENT)
+            set(OBJ ${LIB}_obj_coverage)
+
+            if(NOT TARGET ${OBJ})
+                message(FATAL_ERROR
+                    "Fuzzer ${NAME}_debug: expected instrumented object library ${OBJ} does not exist"
+                )
+            endif()
+
+            target_sources(${NAME}_debug PRIVATE
+                $<TARGET_OBJECTS:${OBJ}>
+            )
+
+            if(NOT TARGET ${LIB}_headers)
+                message(FATAL_ERROR
+                    "Fuzzer ${NAME}_debug: expected instrumented object library headers target '${LIB}_headers' does not exist"
+                )
+            endif()
+
+            target_link_libraries(${NAME}_debug PRIVATE ${LIB}_headers)
+        endforeach()
+    endif()
 
     if(NOT FUZZER_ENABLED)
         _vmsg("add_versioned_fuzzer_executable(${NAME}) skipped (FUZZER_ENABLED=OFF)")
@@ -554,7 +612,7 @@ function(add_versioned_fuzzer_executable NAME)
             target_link_libraries(${EXE} PRIVATE ${ARG_LINK_PRIVATE})
         endif()
 
-        # instrumented object libraries # theyre header-only only sibling targets
+        # instrumented object libraries
         foreach(LIB IN LISTS ARG_LINK_PRIVATE_INSTRUMENT)
             set(OBJ ${LIB}_obj_fuzz_${MODE})
 

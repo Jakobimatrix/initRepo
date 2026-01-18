@@ -235,7 +235,7 @@ auto main(int argc, char** argv) -> int {
                  : RunResult::rejected;
     } catch (const std::exception& e) {
       std::cerr << "CRASHED: " << e.what() << "\n";
-      result = RunResult::crashed
+      result = RunResult::crashed;
     };
 #elif defined(FUZZ_PLATFORM_WINDOWS)
     const std::wstring w_input{input_path.begin(), input_path.end()};
