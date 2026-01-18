@@ -604,9 +604,10 @@ function(add_versioned_fuzzer_executable NAME)
     foreach(MODE IN ITEMS ${FUZZ_MODES})
         set_fuzzer_sanitizer_flags(${MODE})
 
-        set(EXE ${NAME}_${MODE}_${CMAKE_BUILD_TYPE})
-        set(EXE_DBG ${NAME}_${MODE}_${CMAKE_BUILD_TYPE}_Debuger)
+        set(EXE ${NAME}_${MODE})
+        set(EXE_DBG ${NAME}_${MODE}_${CMAKE_BUILD_TYPE})
         _vmsg("  creating ${EXE}")
+        _vmsg("  creating ${EXE_DBG}")
 
         add_executable(${EXE} ${ARG_SOURCES})
         add_executable(${EXE_DBG} ${ARG_SOURCES} src/StandaloneFuzzTargetMain.cpp)
