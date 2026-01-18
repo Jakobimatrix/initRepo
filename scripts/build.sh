@@ -276,18 +276,20 @@ if [[ "$SKIP_BUILD" == false ]]; then
     fi
 
     # Validate fuzzer option
-    if [[ "$FUZZER_ENABLED" == "ON" && "$COMPILER" != "clang++" ]]; then
-        echo "Error: Fuzzing (-f) is only supported with the clang compiler. Use --compiler clang:"
-        show_help
-        exit 1
+    if [[ "$FUZZER_ENABLED" == "ON" ]]; then
+        if [[ "$COMPILER" != "clang++" ]]; then
+            echo "Error: Fuzzing (-f) is only supported with the clang compiler. Use --compiler clang:"
+            show_help
+            exit 1
+        fi
+        if [[ "$BUILD_TYPE" == "Release" || "$BUILD_TYPE" == "Debug" || "$BUILD_TYPE" == "O0Debug" ]]; then
+            echo "Error: Fuzzing (-f) needs to be done in one of the following modes: --o1debug or --o2debug or --o3debug:"
+            show_help
+            exit 1
+        fi
     fi
 
-    # Validate fuzzer option
-    if [[ "$BUILD_TYPE" == "Release" || "$BUILD_TYPE" == "Debug" || "$BUILD_TYPE" == "O0Debug" ]]; then
-        echo "Error: Fuzzing (-f) needs to be done in one of the following modes: --o1debug or --o2debug or --o3debug:"
-        show_help
-        exit 1
-    fi
+
 
     # Clean build directory if requested
     if [[ "$CLEAN" == true ]]; then
