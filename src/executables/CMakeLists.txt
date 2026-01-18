@@ -1,4 +1,4 @@
-#add_versioned_executable(time_tool
+#add_versioned_executable(executableName
 #    VERSION 
 #      1.2.0
 #    SOURCES 
@@ -15,7 +15,7 @@
 #)
 
 
-add_versioned_executable(hello_world
+add_versioned_executable(fuzzerName
     SOURCES 
       src/hello_world.cpp
     LINK_PRIVATE

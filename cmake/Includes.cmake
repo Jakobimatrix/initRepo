@@ -503,6 +503,7 @@ endfunction()
 #   LINK_OPTIONS  - link options for the fuzzer executable
 #   COMPILE_OPTIONS - compile options for the fuzzer executable
 function(add_versioned_fuzzer_executable NAME)
+    NAME=fuzz_${NAME}
     set(options)
     set(oneValueArgs)
     set(multiValueArgs SOURCES LINK_PRIVATE LINK_PRIVATE_INSTRUMENT LINK_OPTIONS COMPILE_OPTIONS)
@@ -527,7 +528,7 @@ function(add_versioned_fuzzer_executable NAME)
         return()
     endif()
 
-    _vmsg("add_versioned_fuzzer_executable(${NAME})")
+    _vmsg("add_versioned_fuzzer_executables for (${NAME}) for modes: ${FUZZ_MODES}")
 
     if(NOT ARG_SOURCES)
         message(FATAL_ERROR "add_versioned_fuzzer_executable(${NAME}): SOURCES is empty")
