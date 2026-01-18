@@ -168,9 +168,9 @@ jobs:
             COMPILER_FLAG="--compiler clang"
           fi
 
-          OPTIMIZATION_FLAG="-d"
+          OPTIMIZATION_FLAG="--o1debug"
           if [ "${{ matrix.build_type }}" = "release" ]; then
-            OPTIMIZATION_FLAG="-r"
+            OPTIMIZATION_FLAG="--release"
           fi
 
           FUZZER_FLAG=""

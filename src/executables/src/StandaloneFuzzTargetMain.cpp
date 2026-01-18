@@ -227,7 +227,16 @@ auto main(int argc, char** argv) -> int {
     }
 
 #if defined(FUZZ_PLATFORM_LINUX)
-    const RunResult result = run_isolated(data);
+    // const RunResult result = run_isolated(data);
+    RunResult result;
+    try {
+      result = LLVMFuzzerTestOneInput(data.data(), data.size()) == 0
+                 ? RunResult::ok
+                 : RunResult::rejected;
+    } catch (const std::exception& e) {
+      std::cerr << "CRASHED: " << e.what() << "\n";
+      result = RunResult::crashed
+    };
 #elif defined(FUZZ_PLATFORM_WINDOWS)
     const std::wstring w_input{input_path.begin(), input_path.end()};
     const RunResult result = run_isolated(exe_path, w_input);
