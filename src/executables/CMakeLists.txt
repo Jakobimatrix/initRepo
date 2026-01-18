@@ -15,7 +15,7 @@
 #)
 
 
-add_versioned_executable(fuzzerName
+add_versioned_executable(hello_world
     SOURCES 
       src/hello_world.cpp
     LINK_PRIVATE

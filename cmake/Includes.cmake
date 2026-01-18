@@ -503,7 +503,7 @@ endfunction()
 #   LINK_OPTIONS  - link options for the fuzzer executable
 #   COMPILE_OPTIONS - compile options for the fuzzer executable
 function(add_versioned_fuzzer_executable NAME)
-    set(NAME "fuzz_${NAME}")
+    set(NAME "${NAME}_fuzz")
     set(options)
     set(oneValueArgs)
     set(multiValueArgs SOURCES LINK_PRIVATE LINK_PRIVATE_INSTRUMENT LINK_OPTIONS COMPILE_OPTIONS)
@@ -544,7 +544,7 @@ function(add_versioned_fuzzer_executable NAME)
     foreach(MODE IN ITEMS ${FUZZ_MODES})
         set_fuzzer_sanitizer_flags(${MODE})
 
-        set(EXE ${NAME}_fuzz_${MODE}_${CMAKE_BUILD_TYPE})
+        set(EXE ${NAME}_${MODE}_${CMAKE_BUILD_TYPE})
         _vmsg("  creating ${EXE}")
 
         add_executable(${EXE} ${ARG_SOURCES})
