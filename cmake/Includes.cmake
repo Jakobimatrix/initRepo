@@ -599,7 +599,6 @@ function(add_versioned_fuzzer_executable NAME)
             COMPILE_OPTIONS
                 ${ARG_COMPILE_OPTIONS}
         )
-        set_coverage(${NAME}_coverage)
 
         # coverage instrumented object libraries
         foreach(LIB IN LISTS ARG_LINK_PRIVATE_INSTRUMENT)
@@ -625,6 +624,7 @@ function(add_versioned_fuzzer_executable NAME)
 
         endforeach()
     endif()
+    set_coverage(${NAME}_coverage)
 
     foreach(MODE IN ITEMS ${FUZZ_MODES})
         set_fuzzer_sanitizer_flags(${MODE})

@@ -55,6 +55,7 @@ set(GCC_WARNINGS
 )
 
 function(set_coverage target_name)
+    message(STATUS "Enable coverage report for target ${target_name}")
     if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
         get_filename_component(BUILD_DIR_NAME "${CMAKE_BINARY_DIR}" NAME)
         set(PROFILE_OUTPUT_DIR
