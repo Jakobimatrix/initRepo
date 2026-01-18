@@ -503,7 +503,7 @@ endfunction()
 #   LINK_OPTIONS  - link options for the fuzzer executable
 #   COMPILE_OPTIONS - compile options for the fuzzer executable
 function(add_versioned_fuzzer_executable NAME)
-    NAME=fuzz_${NAME}
+    NAME="fuzz_${NAME}"
     set(options)
     set(oneValueArgs)
     set(multiValueArgs SOURCES LINK_PRIVATE LINK_PRIVATE_INSTRUMENT LINK_OPTIONS COMPILE_OPTIONS)
