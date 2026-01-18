@@ -2,13 +2,13 @@ macro(_vmsg msg)
     message(STATUS "[DEBUG] ${msg}")
 endmacro()
 
-set(FUZZ_MODES address memory PARENT_SCOPE)
-
+set(FUZZ_MODES address memory)
 if(CMAKE_SIZEOF_VOID_P EQUAL 8)
     list(APPEND FUZZ_MODES thread)
 else()
     message(STATUS "[FUZZ] ThreadSanitizer disabled on 32-bit targets")
 endif()
+set(FUZZ_MODES "${FUZZ_MODES}" PARENT_SCOPE)
 
 # Include Boost with target-specific flags
 function(include_boost target_name)
