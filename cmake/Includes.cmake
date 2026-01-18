@@ -2,7 +2,7 @@ macro(_vmsg msg)
     message(STATUS "[DEBUG] ${msg}")
 endmacro()
 
-set(FUZZ_MODES address memory)
+set(FUZZ_MODES address memory PARENT_SCOPE)
 
 if(CMAKE_SIZEOF_VOID_P EQUAL 8)
     list(APPEND FUZZ_MODES thread)
