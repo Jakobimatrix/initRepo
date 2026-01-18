@@ -283,13 +283,5 @@ function(set_project_settings target_name)
             -bigobj # Increase the number of sections in .obj files
         )
     endif ()
-
-    # Code coverage instrumentation
-    if (ENABLE_COVERAGE)
-        if(FUZZER_ENABLED)
-            message(FATAL_ERROR "Code coverage and fuzzy testing cannot be enabled at the same time.")
-        endif()
-        set_coverage(${target_name})
-    endif()
         
 endfunction()

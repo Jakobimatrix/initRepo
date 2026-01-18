@@ -215,7 +215,7 @@ endfunction()
 # creates:
 # lib_obj                (normal objects)
 # lib_headers            (INTERFACE)
-# lib                (packaged library)
+# lib                    (packaged library)
 # if FUZZER_ENABLED:
 # lib_obj_fuzz_address   (instrumented object)
 # lib_obj_fuzz_memory    (instrumented object)
@@ -305,6 +305,10 @@ function(add_versioned_library NAME)
 
     target_link_libraries(${NAME} PUBLIC ${NAME}_headers)
 
+    if(ENABLE_COVERAGE)
+        set_coverage(${NAME})
+    endif()
+
     # --------------------------------------------------
     # Install + package
     # --------------------------------------------------
@@ -344,31 +348,32 @@ function(add_versioned_library NAME)
         ${CMAKE_CURRENT_BINARY_DIR}/${NAME}ConfigVersion.cmake
         DESTINATION lib/cmake/${NAME}
     )
-    # --------------------------------------------------
-    # Fuzzer object coverage librarie
-    # --------------------------------------------------
-    if(NOT ENABLE_COVERAGE)
-        set(obj ${NAME}_obj_coverage)
-
-        add_library(${obj} OBJECT ${ARG_SOURCES})
-        _vmsg("  NOT ENABLE_COVERAGE --> creating coverage instrumented object librarie")
-        _vmsg("    ${NAME}_obj_coverage")
-
-        target_include_directories(${obj} PUBLIC
-            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-        )
-
-        if(ARG_LINK_PRIVATE)
-            target_link_libraries(${obj} PRIVATE ${ARG_LINK_PRIVATE})
-        endif()
-
-        set_coverage(${obj})
-    endif()
 
     # --------------------------------------------------
     # Fuzzer object libraries
     # --------------------------------------------------
     if(FUZZER_ENABLED)
+        # --------------------------------------------------
+        # Fuzzer object coverage librarie
+        # --------------------------------------------------
+        if(NOT ENABLE_COVERAGE)
+            set(obj ${NAME}_obj_coverage)
+
+            add_library(${obj} OBJECT ${ARG_SOURCES})
+            _vmsg("  NOT ENABLE_COVERAGE --> creating coverage instrumented object librarie")
+            _vmsg("    ${NAME}_obj_coverage")
+
+            target_include_directories(${obj} PUBLIC
+                $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+            )
+
+            if(ARG_LINK_PRIVATE)
+                target_link_libraries(${obj} PRIVATE ${ARG_LINK_PRIVATE})
+            endif()
+
+            set_coverage(${obj})
+        endif()
+
         _vmsg("  FUZZER_ENABLED --> creating instrumented object libraries")
 
         foreach(MODE IN ITEMS ${FUZZ_MODES})
@@ -512,12 +517,18 @@ function(add_versioned_executable NAME)
         target_link_options(${NAME} PRIVATE ${ARG_LINK_OPTIONS})
     endif()
 
+    if(ENABLE_COVERAGE)
+        set_coverage(${NAME})
+    endif()
+
     install(TARGETS ${NAME} RUNTIME DESTINATION bin)
 endfunction()
 
 
 # Function: add_versioned_fuzzer_executable
 # creates 3 executables for each sanitizer mode (address, memory, thread)
+# creates 3 debug executables for each sanitizer mode (address, memory, thread)
+# creates 1 coverage executable
 # Args:
 #   NAME          - name of the fuzzer executable
 #   SOURCES       - source files for the fuzzer executable
@@ -532,7 +543,37 @@ function(add_versioned_fuzzer_executable NAME)
     set(multiValueArgs SOURCES LINK_PRIVATE LINK_PRIVATE_INSTRUMENT LINK_OPTIONS COMPILE_OPTIONS)
     cmake_parse_arguments(ARG "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
-    # first add the debug fuzzer which does not link in any instrumented objects, but adds StandaloneFuzzTargetMain.cpp to the build
+    if(NOT FUZZER_ENABLED)
+        _vmsg("add_versioned_fuzzer_executable(${NAME}) skipped (FUZZER_ENABLED=OFF) create 1 useless executable to force test for successfull build")
+        add_versioned_executable(${NAME}_force_build_test
+            SOURCES
+                ${ARG_SOURCES}
+                src/StandaloneFuzzTargetMain.cpp
+            LINK_PRIVATE
+                ${ARG_LINK_PRIVATE}
+                ${ARG_LINK_PRIVATE_INSTRUMENT}
+            LINK_OPTIONS
+                ${ARG_LINK_OPTIONS}
+            COMPILE_OPTIONS
+                ${ARG_COMPILE_OPTIONS}
+        )
+        return()
+    endif()
+
+    _vmsg("add_versioned_fuzzer_executables for (${NAME}) for modes: ${FUZZ_MODES}")
+
+    if(NOT ARG_SOURCES)
+        message(FATAL_ERROR "add_versioned_fuzzer_executable(${NAME}): SOURCES is empty")
+    endif()
+
+    if(NOT ARG_LINK_PRIVATE_INSTRUMENT)
+        message(FATAL_ERROR
+            "add_versioned_fuzzer_executable(${NAME}): "
+            "LINK_PRIVATE_INSTRUMENT must be specified"
+        )
+    endif()
+
+    # first add the coverage fuzzer which does not link in any instrumented objects, but adds StandaloneFuzzTargetMain.cpp to the build
     if(ENABLE_COVERAGE)
         add_versioned_executable(${NAME}_coverage
             SOURCES
@@ -583,24 +624,6 @@ function(add_versioned_fuzzer_executable NAME)
             target_link_libraries(${NAME}_coverage PRIVATE ${LIB}_headers)
 
         endforeach()
-    endif()
-
-    if(NOT FUZZER_ENABLED)
-        _vmsg("add_versioned_fuzzer_executable(${NAME}) skipped (FUZZER_ENABLED=OFF)")
-        return()
-    endif()
-
-    _vmsg("add_versioned_fuzzer_executables for (${NAME}) for modes: ${FUZZ_MODES}")
-
-    if(NOT ARG_SOURCES)
-        message(FATAL_ERROR "add_versioned_fuzzer_executable(${NAME}): SOURCES is empty")
-    endif()
-
-    if(NOT ARG_LINK_PRIVATE_INSTRUMENT)
-        message(FATAL_ERROR
-            "add_versioned_fuzzer_executable(${NAME}): "
-            "LINK_PRIVATE_INSTRUMENT must be specified"
-        )
     endif()
 
     foreach(MODE IN ITEMS ${FUZZ_MODES})
