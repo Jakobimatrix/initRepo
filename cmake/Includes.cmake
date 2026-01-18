@@ -388,10 +388,12 @@ function(add_versioned_library NAME)
 
             target_compile_options(${obj} PRIVATE
                 -fsanitize=fuzzer-no-link,${FUZZER_SAN_FLAGS}
+                -fno-omit-frame-pointer
             )
 
             target_link_options(${obj} PRIVATE
                 -fsanitize=fuzzer-no-link,${FUZZER_SAN_FLAGS}
+                -fno-omit-frame-pointer
             )
         endforeach()
 
@@ -636,10 +638,12 @@ function(add_versioned_fuzzer_executable NAME)
 
         target_compile_options(${EXE} PRIVATE
             -fsanitize=fuzzer,${FUZZER_SAN_FLAGS}
+            -fno-omit-frame-pointer
         )
 
         target_link_options(${EXE} PRIVATE
             -fsanitize=fuzzer,${FUZZER_SAN_FLAGS}
+            -fno-omit-frame-pointer
         )
 
         if(ARG_COMPILE_OPTIONS)

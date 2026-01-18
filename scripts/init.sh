@@ -38,6 +38,7 @@ GITHUB_HOOK_FILE_UBUNTU="ubuntu_build_test.yml"
 GITHUB_HOOK_FILE_WINDOWS="windows_build_test.yml"
 GITHUB_HOOK_FILE_DEST=".github/workflows"
 CMAKE_LISTS_FILE="CMakeLists.txt"
+CMAKE_PRESETS_FILE="CMakePresets.json"
 PROCECT_STRUCUR_FOLDER="src/"
 PROCECT_STRUCUR_TEMPLATE="../src/"
 
@@ -201,11 +202,6 @@ then
   copyFileWithPrompt "$TEMPLATE_FILE_PATH$GITHUB_HOOK_FILE_WINDOWS" "${REPO}$GITHUB_HOOK_FILE_DEST/$GITHUB_HOOK_FILE_WINDOWS"
 fi
 
-task="Do you want to copy the Cmake project?"
-askYesNo
-if [ $answer = 1 ]; then
-  copyFileWithPrompt "$TEMPLATE_FILE_PATH$CMAKE_LISTS_FILE" "$REPO$CMAKE_LISTS_FILE"
-fi
 
 task="Do you want to copy the procect structure?"
 askYesNo
@@ -213,6 +209,8 @@ if [ $answer = 1 ]
 then
   if [ ! -d "$REPO$PROCECT_STRUCUR_FOLDER" ]; then
     cp -r "$PROCECT_STRUCUR_TEMPLATE" "$REPO$PROCECT_STRUCUR_FOLDER"
+    cp "$TEMPLATE_FILE_PATH$CMAKE_LISTS_FILE" "$REPO$CMAKE_LISTS_FILE"
+    cp "$TEMPLATE_FILE_PATH$CMAKE_PRESETS_FILE" "$REPO$CMAKE_PRESETS_FILE"
     echo "$REPO$PROCECT_STRUCUR_FOLDER installed"
   else
     WARN "$REPO$PROCECT_STRUCUR_FOLDER already exists. !!!Do you really want to Overwrite???  ARE  YOU  SURE  ?"
@@ -220,6 +218,8 @@ then
     if [ $answer = 1 ]; then
       rm -rf "$REPO$PROCECT_STRUCUR_FOLDER"
       cp -r "$PROCECT_STRUCUR_TEMPLATE" "$REPO$PROCECT_STRUCUR_FOLDER"
+      cp "$TEMPLATE_FILE_PATH$CMAKE_LISTS_FILE" "$REPO$CMAKE_LISTS_FILE"
+      cp "$TEMPLATE_FILE_PATH$CMAKE_PRESETS_FILE" "$REPO$CMAKE_PRESETS_FILE"
       echo "$REPO$PROCECT_STRUCUR_FOLDER overwritten"
     fi
   fi

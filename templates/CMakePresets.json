@@ -1,0 +1,136 @@
+{
+  "version": 4,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 19,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "gcc-debug-tests",
+      "displayName": "GCC 13 Debug + Tests",
+      "description": "Debug build with tests, GCC 13, Linux x64",
+      "binaryDir": "${sourceDir}/build-gcc-13-debug",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_C_COMPILER": "/usr/bin/gcc-13",
+        "CMAKE_CXX_COMPILER": "/usr/bin/g++-13",
+        "BUILD_TESTING": "ON",
+        "FUZZER_ENABLED": "OFF"
+      },
+      "hidden": false
+    },
+    {
+      "name": "clang-debug-tests",
+      "displayName": "Clang 19 Debug + Tests",
+      "description": "Debug build with tests, Clang 19, Linux x64",
+      "binaryDir": "${sourceDir}/build-clang-19-debug",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_C_COMPILER": "/usr/bin/clang-19",
+        "CMAKE_CXX_COMPILER": "/usr/bin/clang++-19",
+        "BUILD_TESTING": "ON",
+        "FUZZER_ENABLED": "OFF"
+      },
+      "hidden": false
+    },
+    {
+      "name": "gcc-relwithdebinfo-tests",
+      "displayName": "GCC 13 RelWithDebInfo + Tests",
+      "description": "RelWithDebInfo build with tests, GCC 13, Linux x64",
+      "binaryDir": "${sourceDir}/build-gcc-13-relwithdebinfo",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+        "CMAKE_C_COMPILER": "/usr/bin/gcc-13",
+        "CMAKE_CXX_COMPILER": "/usr/bin/g++-13",
+        "BUILD_TESTING": "ON",
+        "FUZZER_ENABLED": "OFF"
+      },
+      "hidden": false
+    },
+    {
+      "name": "clang-relwithdebinfo-tests",
+      "displayName": "Clang 19 RelWithDebInfo + Tests",
+      "description": "RelWithDebInfo build with tests, Clang 19, Linux x64",
+      "binaryDir": "${sourceDir}/build-clang-19-relwithdebinfo",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+        "CMAKE_C_COMPILER": "/usr/bin/clang-19",
+        "CMAKE_CXX_COMPILER": "/usr/bin/clang++-19",
+        "BUILD_TESTING": "ON",
+        "FUZZER_ENABLED": "OFF"
+      },
+      "hidden": false
+    },
+    {
+      "name": "gcc-release",
+      "displayName": "GCC 13 Release",
+      "description": "Release build, GCC 13, Linux x64",
+      "binaryDir": "${sourceDir}/build-gcc-13-release",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_C_COMPILER": "/usr/bin/gcc-13",
+        "CMAKE_CXX_COMPILER": "/usr/bin/g++-13",
+        "BUILD_TESTING": "OFF",
+        "FUZZER_ENABLED": "OFF"
+      },
+      "hidden": false
+    },
+    {
+      "name": "clang-release",
+      "displayName": "Clang 19 Release",
+      "description": "Release build, Clang 19, Linux x64",
+      "binaryDir": "${sourceDir}/build-clang-19-release",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_C_COMPILER": "/usr/bin/clang-19",
+        "CMAKE_CXX_COMPILER": "/usr/bin/clang++-19",
+        "BUILD_TESTING": "OFF",
+        "FUZZER_ENABLED": "OFF"
+      },
+      "hidden": false
+    },
+    {
+      "name": "clang-o1debug-fuzz",
+      "displayName": "Clang 19 O1Debug + Fuzz",
+      "description": "O1Debug build with fuzzing, Clang 19, Linux x64",
+      "binaryDir": "${sourceDir}/build-clang-19-o1debug",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "O1Debug",
+        "CMAKE_C_COMPILER": "/usr/bin/clang-19",
+        "CMAKE_CXX_COMPILER": "/usr/bin/clang++-19",
+        "BUILD_TESTING": "OFF",
+        "FUZZER_ENABLED": "ON"
+      },
+      "hidden": false
+    },
+    {
+      "name": "clang-o2debug-fuzz",
+      "displayName": "Clang 19 O2Debug + Fuzz",
+      "description": "O2Debug build with fuzzing, Clang 19, Linux x64",
+      "binaryDir": "${sourceDir}/build-clang-19-o2debug",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "O2Debug",
+        "CMAKE_C_COMPILER": "/usr/bin/clang-19",
+        "CMAKE_CXX_COMPILER": "/usr/bin/clang++-19",
+        "BUILD_TESTING": "OFF",
+        "FUZZER_ENABLED": "ON"
+      },
+      "hidden": false
+    },
+    {
+      "name": "clang-o3debug-fuzz",
+      "displayName": "Clang 19 O3Debug + Fuzz",
+      "description": "O3Debug build with fuzzing, Clang 19, Linux x64",
+      "binaryDir": "${sourceDir}/build-clang-19-o3debug",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "O3Debug",
+        "CMAKE_C_COMPILER": "/usr/bin/clang-19",
+        "CMAKE_CXX_COMPILER": "/usr/bin/clang++-19",
+        "BUILD_TESTING": "OFF",
+        "FUZZER_ENABLED": "ON"
+      },
+      "hidden": false
+    }
+  ]
+}
