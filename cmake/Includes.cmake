@@ -547,7 +547,7 @@ function(add_versioned_fuzzer_executable NAME)
                 ${ARG_COMPILE_OPTIONS}
         )
     else()
-        add_versioned_executable(${NAME}_debug
+        add_versioned_executable(${NAME}_coverage
             SOURCES
                 ${ARG_SOURCES}
                 src/StandaloneFuzzTargetMain.cpp
@@ -568,17 +568,18 @@ function(add_versioned_fuzzer_executable NAME)
                 )
             endif()
 
-            target_sources(${NAME}_debug PRIVATE
+            target_sources(${NAME}_coverage PRIVATE
                 $<TARGET_OBJECTS:${OBJ}>
             )
 
             if(NOT TARGET ${LIB}_headers)
                 message(FATAL_ERROR
-                    "Fuzzer ${NAME}_debug: expected instrumented object library headers target '${LIB}_headers' does not exist"
+                    "Fuzzer ${NAME}_coverage: expected instrumented object library headers target '${LIB}_headers' does not exist"
                 )
             endif()
 
-            target_link_libraries(${NAME}_debug PRIVATE ${LIB}_headers)
+            target_link_libraries(${NAME}_coverage PRIVATE ${LIB}_headers)
+
         endforeach()
     endif()
 
@@ -604,13 +605,16 @@ function(add_versioned_fuzzer_executable NAME)
         set_fuzzer_sanitizer_flags(${MODE})
 
         set(EXE ${NAME}_${MODE}_${CMAKE_BUILD_TYPE})
+        set(EXE_DBG ${NAME}_${MODE}_${CMAKE_BUILD_TYPE}_Debuger)
         _vmsg("  creating ${EXE}")
 
         add_executable(${EXE} ${ARG_SOURCES})
+        add_executable(${EXE_DBG} ${ARG_SOURCES} src/StandaloneFuzzTargetMain.cpp)
 
         # normal private libs
         if(ARG_LINK_PRIVATE)
             target_link_libraries(${EXE} PRIVATE ${ARG_LINK_PRIVATE})
+            target_link_libraries(${EXE_DBG} PRIVATE ${ARG_LINK_PRIVATE})
         endif()
 
         # instrumented object libraries
@@ -627,6 +631,10 @@ function(add_versioned_fuzzer_executable NAME)
                 $<TARGET_OBJECTS:${OBJ}>
             )
 
+            target_sources(${EXE_DBG} PRIVATE
+                $<TARGET_OBJECTS:${OBJ}>
+            )
+
             if(NOT TARGET ${LIB}_headers)
                 message(FATAL_ERROR
                     "Fuzzer ${EXE}: expected instrumented object library headers target '${LIB}_headers' does not exist"
@@ -634,10 +642,16 @@ function(add_versioned_fuzzer_executable NAME)
             endif()
 
             target_link_libraries(${EXE} PRIVATE ${LIB}_headers)
+            target_link_libraries(${EXE_DBG} PRIVATE ${LIB}_headers)
         endforeach()
 
         target_compile_options(${EXE} PRIVATE
             -fsanitize=fuzzer,${FUZZER_SAN_FLAGS}
+            -fno-omit-frame-pointer
+        )
+
+        target_compile_options(${EXE_DBG} PRIVATE
+            -fsanitize=fuzzer-no-link,${FUZZER_SAN_FLAGS}
             -fno-omit-frame-pointer
         )
 
@@ -646,14 +660,22 @@ function(add_versioned_fuzzer_executable NAME)
             -fno-omit-frame-pointer
         )
 
+        target_link_options(${EXE_DBG} PRIVATE
+            -fsanitize=fuzzer,${FUZZER_SAN_FLAGS}
+            -fno-omit-frame-pointer
+        )
+
         if(ARG_COMPILE_OPTIONS)
             target_compile_options(${EXE} PRIVATE ${ARG_COMPILE_OPTIONS})
+            target_compile_options(${EXE_DBG} PRIVATE ${ARG_COMPILE_OPTIONS})
         endif()
 
         if(ARG_LINK_OPTIONS)
             target_link_options(${EXE} PRIVATE ${ARG_LINK_OPTIONS})
+            target_link_options(${EXE_DBG} PRIVATE ${ARG_LINK_OPTIONS})
         endif()
 
         install(TARGETS ${EXE} RUNTIME DESTINATION bin)
+        install(TARGETS ${EXE_DBG} RUNTIME DESTINATION bin)
     endforeach()
 endfunction()

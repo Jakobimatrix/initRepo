@@ -56,6 +56,7 @@ auto read_file(const std::string& path)
 
 }  // namespace
 
+
 auto main(int argc, char** argv) -> int {
   bool waitDebugger = false;
   int write_index   = 1;
